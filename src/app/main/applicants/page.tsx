@@ -17,6 +17,7 @@ import TableFooterComponent from "@/components/ui/tablefooter/page";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Modal from "@/components/modals/ApplicationDetailModal/page";
+import NewApplicationModal from "@/components/modals/NewApplicationModal/page";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store";
 import { PAGINATION_CONFIG } from "@/config/pagination";
@@ -24,6 +25,7 @@ import {
   fetchApplications,
   setCurrentPage,
 } from "@/store/slices/applicationsSlice";
+import PlusGreenSvg from "@/Assets/svgs/PlusGreenSvg";
 
 const modalParams = {
   name: "Linda Blair",
@@ -227,7 +229,7 @@ const customers: any = [
     priority: "Low Priority",
     visaType: "Business Visa",
   },
-];
+]
 
 const LoadingSkeleton = () =>
   [...Array(PAGINATION_CONFIG.DEFAULT_PAGE_SIZE)].map((_, index) => (
@@ -298,6 +300,7 @@ export default function Applications() {
   const pathname = usePathname();
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isNewApplicationModalOpen, setIsNewApplicationModalOpen] = useState(false);
   const { applications, isLoading, error, total, currentPage } = useSelector(
     (state: RootState) => state.applicantions
   );
@@ -345,8 +348,17 @@ export default function Applications() {
 
   return (
     <>
+
       <div className="flex justify-between mt-3">
         <h1 className={styles.header}>Manage Applications Lists</h1>
+        <button
+          type="button"
+          className={styles.customerBtn}
+          onClick={() => setIsNewApplicationModalOpen(true)}
+        >
+          <PlusGreenSvg className={styles.btnPlusIcon} />
+          Add New Application
+        </button>
       </div>
 
       <div className={tableStyles.mainContainer}>
@@ -473,6 +485,12 @@ export default function Applications() {
       </div>
       {isModalOpen && (
         <Modal onClose={closeModal} isOpen={isModalOpen} data={modalParams} />
+      )}
+      {isNewApplicationModalOpen && (
+        <NewApplicationModal
+          isOpen={isNewApplicationModalOpen}
+          onClose={() => setIsNewApplicationModalOpen(false)}
+        />
       )}
     </>
   );
