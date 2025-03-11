@@ -39,11 +39,11 @@
 }
 
 .phoneContainer {
-  @apply w-full;
+  @apply w-full border-[1px] rounded-[8px] py-[4px];
 }
 
 .phoneInput {
-  @apply w-full h-[42px] px-4 border border-gray-300 rounded-lg !pl-[48px];
+  @apply border-none  text-[14px]
 }
 
 .selectWrapper {

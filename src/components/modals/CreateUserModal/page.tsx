@@ -88,7 +88,7 @@ export default function CreateUserModal({
   };
 
   const handleSubmit = async (
-    values: FormValues, 
+    values: FormValues,
     { setSubmitting, setErrors }: FormikHelpers<FormValues>
   ) => {
     try {
@@ -103,23 +103,23 @@ export default function CreateUserModal({
         // Remove unnecessary fields for update
         delete userData.password;
         delete userData.isEditing;
-        
-        resultAction = await dispatch(updateUser({ 
-          id: editData.id, 
-          data: userData 
+
+        resultAction = await dispatch(updateUser({
+          id: editData.id,
+          data: userData
         }));
       } else {
         resultAction = await dispatch(createUser(userData));
       }
-      
+
       if ((editData ? updateUser : createUser).fulfilled.match(resultAction)) {
         onSuccess();
         onClose();
       }
     } catch (error: any) {
-    //   setErrors({ 
-    //     submit: error.message || `Failed to ${editData ? 'update' : 'create'} user` 
-    //   });
+      //   setErrors({ 
+      //     submit: error.message || `Failed to ${editData ? 'update' : 'create'} user` 
+      //   });
     } finally {
       setSubmitting(false);
       setIsSubmitting(false);
@@ -291,8 +291,8 @@ export default function CreateUserModal({
                       disabled={isSubmitting}
                       className={styles.submitButton}
                     >
-                      {isSubmitting 
-                        ? (editData ? "Updating..." : "Creating...") 
+                      {isSubmitting
+                        ? (editData ? "Updating..." : "Creating...")
                         : (editData ? "Update User" : "Create User")}
                     </button>
                   </div>

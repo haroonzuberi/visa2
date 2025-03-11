@@ -12,7 +12,7 @@ interface InputFieldProps {
   icon?: React.ReactNode;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
-  error?: string;
+  error?: any;
   disabled?: boolean;
   value?: string;
 }
