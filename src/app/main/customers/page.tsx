@@ -30,35 +30,67 @@ import GeneralData from "../../../components/ui/tableheader/page";
 import TableFooter from "../../../components/ui/tablefooter/page";
 import { useRouter } from "next/navigation"; // ✅ Make sure to import from "next/navigation" in App Router (Next.js 13+)
 import { AppDispatch, RootState } from "@/store";
+import CreateCustomerModal from "@/components/modals/CreateCustomerModal/page";
 // import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CustomerTable() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
 
   // Get customers state from Redux
   const { customers, isLoading, error, total, currentPage } = useSelector(
     (state: RootState) => state.customers
   );
 
-  // Fetch customers on mount and when page changes
+  // Fetch customers only when page changes or search term changes
   useEffect(() => {
     const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
-    // if (error) {
-    //   return;
-    // }
     dispatch(fetchCustomers({ skip, search: searchTerm }));
-  }, [dispatch, currentPage, searchTerm]);
-  
+  }, [currentPage, searchTerm]); // Only depend on currentPage and searchTerm
+
+  // Remove the original useEffect that was fetching on mount
+  // Fetch customers on mount and when page changes
+  // useEffect(() => {
+  //   const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
+  //   dispatch(fetchCustomers({ skip, search: searchTerm }));
+  // }, [dispatch, currentPage, searchTerm]);
+
   // Handle page change
   const handlePageChange = (page: number) => {
-    dispatch(setCurrentPage(page));
+    const totalPages = Math.ceil(total / PAGINATION_CONFIG.DEFAULT_PAGE_SIZE);
+    if (page >= 1 && page <= totalPages) {
+      dispatch(setCurrentPage(page));
+    }
   };
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
     dispatch(setCurrentPage(1));
+  };
+
+  const handleCreateSuccess = () => {
+    // If we're not on page 1, go to page 1 to see the new item
+    if (currentPage !== 1) {
+      handlePageChange(1);
+    } else {
+      // Just refresh current page
+      const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
+      dispatch(fetchCustomers({ skip, search: searchTerm }));
+    }
+    handleModalClose();
+  };
+
+  const handleModalClose = () => {
+    setIsCreateModalOpen(false);
+    setSelectedCustomer(null);
+  };
+
+  const handleEditClick = (customer: any) => {
+    setSelectedCustomer(customer);
+    setIsCreateModalOpen(true);
   };
 
   const LoadingSkeleton = () =>
@@ -115,15 +147,20 @@ export default function CustomerTable() {
 
   return (
     <>
+      {/* Header Section */}
       <div className="flex justify-between mt-3">
-        <h1 className={styles.header}>Manage customers</h1>
-        <button type="button" className={styles.customerBtn}>
+        <h1 className={styles.header}>Manage Customers</h1>
+        <button
+          type="button"
+          className={styles.customerBtn}
+          onClick={() => setIsCreateModalOpen(true)}
+        >
           <PlusGreenSvg className={styles.btnPlusIcon} />
-          Add New User
+          Add New Customer
         </button>
       </div>
       <div className={tableStyles.mainContainer}>
-        {/* Header with Search */}
+        {/* Search Section */}
         <GeneralData
           search={true}
           header="Customer List"
@@ -217,7 +254,7 @@ export default function CustomerTable() {
                         </div>
                       </TableCell>
                       <TableCell className={tableStyles.userName}>
-                        {new Date(customer.createdAt).toLocaleDateString(
+                        {new Date(customer.created_at).toLocaleDateString(
                           "en-US",
                           {
                             day: "numeric",
@@ -258,7 +295,10 @@ export default function CustomerTable() {
                                 </span>
                               </DropdownMenuItem>
                               <hr />
-                              <DropdownMenuItem className="flex items-center p-4">
+                              <DropdownMenuItem
+                                className="flex items-center p-4"
+                                onClick={() => handleEditClick(customer)}
+                              >
                                 <EditSvg className="w-4 h-4" />
                                 <span className={styles.dropdownText}>
                                   Edit
@@ -297,6 +337,13 @@ export default function CustomerTable() {
           onPageChange={handlePageChange}
         />
       </div>
+
+      <CreateCustomerModal
+        isOpen={isCreateModalOpen}
+        onClose={handleModalClose}
+        onSuccess={handleCreateSuccess}
+        editData={selectedCustomer}
+      />
     </>
   );
 }
