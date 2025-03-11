@@ -1,5 +1,5 @@
 .modalContainer {
-  @apply bg-white rounded-xl w-[800px] max-h-[90vh] overflow-y-auto shadow-lg;
+  @apply bg-white rounded-xl w-[90vw] xl:w-[800px] lg:w-[800px] md:w-[800px] max-h-[90vh] overflow-y-auto shadow-lg;
 }
 
 .modalHeader {
@@ -23,7 +23,7 @@
 }
 
 .formGrid {
-  @apply grid grid-cols-2 gap-6;
+  @apply grid sm:grid-cols-1 md:grid-cols-2 gap-6;
 }
 
 .formColumn {
