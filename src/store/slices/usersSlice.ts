@@ -119,7 +119,7 @@ export const updateUser = createAsyncThunk(
   "users/updateUser",
   async ({ id, data }: { id: number; data: any }, { rejectWithValue }) => {
     try {
-      const response: any = await putAPIWithAuth(`api/v1/users/${id}`, data);
+      const response: any = await putAPIWithAuth(`users/${id}`, data);
 
       if (!response.success) {
         throw new Error(response.message || "Failed to update user");
