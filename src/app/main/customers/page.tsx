@@ -47,8 +47,7 @@ export default function CustomerTable() {
 
   // Fetch customers only when page changes or search term changes
   useEffect(() => {
-    const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
-    dispatch(fetchCustomers({ skip, search: searchTerm }));
+    fetchData()
   }, [currentPage, searchTerm]); // Only depend on currentPage and searchTerm
 
   // Remove the original useEffect that was fetching on mount
@@ -58,6 +57,11 @@ export default function CustomerTable() {
   //   dispatch(fetchCustomers({ skip, search: searchTerm }));
   // }, [dispatch, currentPage, searchTerm]);
 
+  const fetchData = () => {
+    const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
+    dispatch(fetchCustomers({ skip, search: searchTerm }));
+
+  }
   // Handle page change
   const handlePageChange = (page: number) => {
     const totalPages = Math.ceil(total / PAGINATION_CONFIG.DEFAULT_PAGE_SIZE);

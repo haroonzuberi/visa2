@@ -179,7 +179,6 @@ export default function CreateCustomerModal({
                         <Select
                           options={options}
                           isSearchable
-                          // className="border-[#e6e6e7] w-full" // Apply the styles here
                           styles={{
                             control: (baseStyles, state) => ({
                               ...baseStyles,
