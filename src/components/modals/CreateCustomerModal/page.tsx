@@ -179,11 +179,27 @@ export default function CreateCustomerModal({
                         <Select
                           options={options}
                           isSearchable
+                          // className="border-[#e6e6e7] w-full" // Apply the styles here
+                          styles={{
+                            control: (baseStyles, state) => ({
+                              ...baseStyles,
+                              height: '50px',
+                              borderRadius: '12px',
+                              borderColor: '#e6e6e7',
+                              '&:hover': {
+                                borderColor: '#42DA82'
+                              }
+                            }),
+                            option: (baseStyles, state) => ({
+                              ...baseStyles,
+                              backgroundColor: state.isSelected ? '#e6e6e7' : 'white',
+                              '&:hover': {
+                                backgroundColor: '#f8f8f8'
+                              }
+                            })
+                          }}
                           value={options.find((option: any) => option.label === values.country)} // Ensure this finds the correct option based on label
                           onChange={(selectedOption) => setFieldValue("country", selectedOption.label)} // Store only the label
-
-                        // value={values.country}
-                        // onChange={(value) => setFieldValue("country", value)}
                         />
                         {touched.country && errors.country && (
                           <span className={styles.error}>{errors.country}</span>
