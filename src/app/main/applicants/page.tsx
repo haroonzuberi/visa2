@@ -1,6 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useAppDispatch, useAppSelector } from "@/store";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchApplicants,
+  deleteApplicant,
+  setCurrentPage,
+} from "@/store/slices/applicantsSlice";
+import { AppDispatch, RootState } from "@/store";
+import { PAGINATION_CONFIG } from "@/config/pagination";
+import styles from "./styles.module.css";
+import tableStyles from "../table.styles.module.css";
 import {
   Table,
   TableBody,
@@ -15,169 +24,87 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import styles from "./styles.module.css";
-import tableStyles from "../table.styles.module.css";
+import GeneralData from "@/components/ui/tableheader/page";
+import TableFooter from "@/components/ui/tablefooter/page";
+import ConfirmDialog from "@/components/ui/confirmDialogue/confirmDialogu";
+import CreateApplicantModal from "@/components/modals/CreateApplicantModal/page";
 import PlusGreenSvg from "@/Assets/svgs/PlusGreenSvg";
 import CalendarSvg from "@/Assets/svgs/CalendarSvg";
 import PhoneSvg from "@/Assets/svgs/PhoneSvg";
-import TimeSvg from "@/Assets/svgs/TimeSvg";
 import DropdownSVG from "@/Assets/svgs/DropdownSVG";
-import TrashSvg from "@/Assets/svgs/TrashSvg";
-import UserSvg from "@/Assets/svgs/UserSvg";
 import EditSvg from "@/Assets/svgs/EditSvg";
-import DownloadSvg from "@/Assets/svgs/DownloadSvg";
-import GeneralData from "../../../components/ui/tableheader/page";
-import TableFooter from "../../../components/ui/tablefooter/page";
-import { toast } from "react-toastify";
-import ConfirmDialog from "@/components/ui/confirmDialogue/confirmDialogu";
-import {
-  deleteUser,
-  fetchUsers,
-  setCurrentPage,
-} from "@/store/slices/usersSlice";
-import { PAGINATION_CONFIG } from "@/config/pagination";
-import CreateUserModal from "@/components/modals/CreateUserModal/page";
+import TrashSvg from "@/Assets/svgs/TrashSvg";
+import TimeSvg from "@/Assets/svgs/TimeSvg";
 
 export default function ApplicantsTable() {
-  const dispatch = useAppDispatch();
-  const { users, isLoading, error, currentPage, total } = useAppSelector(
-    (state) => state.users
+  const dispatch = useDispatch<AppDispatch>();
+  const { applicants, isLoading, total, currentPage } = useSelector(
+    (state: RootState) => state.applicants
   );
 
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedApplicant, setSelectedApplicant] = useState<any>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [applicantToDelete, setApplicantToDelete] = useState<any>(null);
 
   useEffect(() => {
     const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
-    // if (error) {
-    //   return;
-    // }
-    dispatch(fetchUsers({ skip, search: searchQuery }));
-  }, [currentPage, searchQuery]);
-
-  // useEffect(() => {
-  //   if (searchQuery.trim() === "") {
-  //     setFilteredUsers(users);
-  //   } else {
-  //     const filtered = users.filter((user) =>
-  //       Object.values(user).some((value) =>
-  //         String(value).toLowerCase().includes(searchQuery.toLowerCase())
-  //       )
-  //     );
-  //     setFilteredUsers(filtered);
-  //   }
-  // }, [users, searchQuery]);
+    dispatch(fetchApplicants({ skip, search: searchQuery }));
+  }, [currentPage, searchQuery, dispatch]);
 
   const handlePageChange = (page: number) => {
-    const totalPages = Math.ceil(total / PAGINATION_CONFIG.DEFAULT_PAGE_SIZE);
-    if (page >= 1 && page <= totalPages) {
-      dispatch(setCurrentPage(page));
-    }
+    dispatch(setCurrentPage(page));
   };
-  const handleDeleteClick = (user: any) => {
-    setUserToDelete(user);
+
+  const handleCreateSuccess = () => {
+    setIsCreateModalOpen(false);
+    setSelectedApplicant(null);
+  };
+
+  const handleEditClick = (applicant: any) => {
+    setSelectedApplicant(applicant);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleDeleteClick = (applicant: any) => {
+    setApplicantToDelete(applicant);
     setIsDeleteDialogOpen(true);
   };
 
   const handleConfirmDelete = async () => {
-    if (userToDelete) {
-      try {
-        // We'll implement this action in usersSlice
-        await dispatch(deleteUser(userToDelete.id));
-        // Refresh the users list
-        // dispatch(fetchUsers({ skip: (currentPage - 1) * limit, limit }));
-      } catch (error: any) {
-        toast.error(error.message || "Failed to delete user");
-      }
+    if (applicantToDelete) {
+      await dispatch(deleteApplicant(applicantToDelete.id));
+      setIsDeleteDialogOpen(false);
+      setApplicantToDelete(null);
     }
-    setIsDeleteDialogOpen(false);
-    setUserToDelete(null);
   };
 
-  const handleCreateSuccess = () => {
-    // Refresh the users list
-    handleModalClose()
-    // const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
-    // dispatch(fetchUsers({ skip, search: searchQuery }));
-  };
-
-  const handleEditClick = (user: any) => {
-    setSelectedUser(user);
-    setIsCreateModalOpen(true);
-  };
-
-  const handleModalClose = () => {
-    setIsCreateModalOpen(false);
-    setSelectedUser(null);
-  };
-
-  // Helper functions
-  function getRoleColor(role: string) {
-    if (role) {
-      switch (role.toLowerCase()) {
-        case "admin":
-          return styles.roleBtnRed;
-        case "user":
-          return styles.roleBtnBlue;
-        default:
-          return styles.roleBtnGreen;
-      }
-    }
-    return styles.roleBtnGreen;
-  }
-
-  function getLastLoginTime(lastLogin: string) {
-    if (!lastLogin) return "Never";
-    const date = new Date(lastLogin);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-
-    if (hours < 24) {
-      return `${hours}hr ago`;
-    }
-    return `${Math.floor(hours / 24)}d ago`;
-  }
-
-  const LoadingSkeleton = () =>
-    [...Array(PAGINATION_CONFIG.DEFAULT_PAGE_SIZE)].map((_, index) => (
-      <TableRow key={index}>
-        <TableCell>
-          <div className="flex flex-col gap-2">
-            <div className="h-4 w-24 bg-gray-200 rounded"></div>
-            <div className="h-3 w-32 bg-gray-100 rounded"></div>
-          </div>
-        </TableCell>
-        <TableCell>
-          <div className="h-4 w-24 bg-gray-200 rounded "></div>
-        </TableCell>
-        <TableCell>
-          <div className="h-4 w-28 bg-gray-200 rounded "></div>
-        </TableCell>
-        <TableCell>
-          <div className="h-6 w-16 bg-gray-200 rounded-full "></div>
-        </TableCell>
-        <TableCell>
-          <div className="h-4 w-16 bg-gray-200 rounded"></div>
-        </TableCell>
-        <TableCell>
-          <div className="flex gap-2">
-            <div className="h-8 w-8 bg-gray-200 rounded"></div>
-            <div className="h-8 w-8 bg-gray-200 rounded"></div>
-          </div>
-        </TableCell>
-      </TableRow>
-    ));
-
-  const NoDataRow = () => (
-    <TableRow>
-      <TableCell colSpan={6} className="text-center py-6">
-        <p className="text-sm font-medium text-gray-400">No data found</p>
-      </TableCell>
-    </TableRow>
+  const LoadingSkeleton = () => (
+    <>
+      {[...Array(PAGINATION_CONFIG.DEFAULT_PAGE_SIZE)].map((_, index) => (
+        <TableRow key={index}>
+          <TableCell>
+            <div className="flex flex-col gap-2">
+              <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-3 w-24 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          </TableCell>
+          <TableCell>
+            <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+          </TableCell>
+          <TableCell>
+            <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
+          </TableCell>
+          <TableCell>
+            <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+          </TableCell>
+          <TableCell>
+            <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+          </TableCell>
+        </TableRow>
+      ))}
+    </>
   );
 
   return (
@@ -195,14 +122,13 @@ export default function ApplicantsTable() {
       </div>
 
       <div className={tableStyles.mainContainer}>
-        {/* Header */}
         <GeneralData
           search={true}
           header="Applicants List"
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
         />
-        {/* User Table */}
+        {/* Applicants Table */}
         <div className="bg-white rounded-xl">
           <Table>
             <TableHeader>
@@ -247,64 +173,53 @@ export default function ApplicantsTable() {
             <TableBody>
               {isLoading ? (
                 <LoadingSkeleton />
-              ) : users.length === 0 ? (
-                <NoDataRow />
+              ) : applicants.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-4">
+                    No applicants found
+                  </TableCell>
+                </TableRow>
               ) : (
-                users.map((user, index) => (
-                  <TableRow key={user.id || index} className="hover:bg-gray-50">
+                applicants.map((applicant) => (
+                  <TableRow key={applicant.id}>
                     <TableCell>
                       <div className="flex flex-col">
                         <span className={tableStyles.userName}>
-                          {user.name}
+                          {applicant.name}
                         </span>
                         <span className={tableStyles.userEmail}>
-                          {user.email}
+                          {applicant.email}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className={` ${tableStyles.userName}`}>
-                      {new Date(user.created_at).toLocaleDateString()}
+                    <TableCell>
+                      {new Date(applicant.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell className={` ${tableStyles.userName}`}>
-                      {user.phone || "N/A"}
+                      {applicant.phone || "N/A"}
                     </TableCell>
                     
                     <TableCell className={tableStyles.tableHeaders}>
-                      {getLastLoginTime(user.last_login)}
-                    </TableCell>
+                    {applicant.passport_number}
+                                        </TableCell>
                     <TableCell className="">
                       <span className="flex align-center gap-2">
                         <DropdownMenu>
                           <DropdownMenuTrigger>
                             <DropdownSVG className="cursor-pointer" />
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent className={styles.dropdownItem}>
-                            <DropdownMenuItem className="flex items-center p-4">
-                              <UserSvg color="#727A90" className="w-4 h-4" />
-                              <span className={styles.dropdownText}>
-                                Change Account Type
-                              </span>
-                            </DropdownMenuItem>
-                            <hr />
-                            <DropdownMenuItem 
-                              className="flex items-center p-4"
-                              onClick={() => handleEditClick(user)}
+                          <DropdownMenuContent>
+                            <DropdownMenuItem
+                              onClick={() => handleEditClick(applicant)}
                             >
-                              <EditSvg className="w-4 h-4" />
-                              <span className={styles.dropdownText}>Edit</span>
-                            </DropdownMenuItem>
-                            <hr />
-                            <DropdownMenuItem className="flex items-center p-4">
-                              <DownloadSvg className="w-4 h-4" />
-                              <span className={styles.dropdownText}>
-                                Resend Invite
-                              </span>
+                              <EditSvg className="w-4 h-4 mr-2" />
+                              Edit
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                         <TrashSvg
                           className="cursor-pointer"
-                          onClick={() => handleDeleteClick(user)}
+                          onClick={() => handleDeleteClick(applicant)}
                         />
                       </span>
                     </TableCell>
@@ -314,7 +229,7 @@ export default function ApplicantsTable() {
             </TableBody>
           </Table>
         </div>
-        {/* Footer Section */}
+
         <TableFooter
           total={total}
           currentPage={currentPage}
@@ -322,20 +237,23 @@ export default function ApplicantsTable() {
         />
       </div>
 
+      <CreateApplicantModal
+        isOpen={isCreateModalOpen}
+        onClose={() => {
+            setSelectedApplicant(null)
+            setIsCreateModalOpen(false)
+        }}
+        onSuccess={handleCreateSuccess}
+        editData={selectedApplicant}
+      />
+
       <ConfirmDialog
         isOpen={isDeleteDialogOpen}
         setIsOpen={setIsDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
-        title="Delete User"
-        description={`Are you sure you want to delete ${userToDelete?.name}? This action cannot be undone.`}
-        triggerText={""}
-      />
-
-      <CreateUserModal
-        isOpen={isCreateModalOpen}
-        onClose={handleModalClose}
-        onSuccess={handleCreateSuccess}
-        editData={selectedUser}
+        title="Delete Applicant"
+        description={`Are you sure you want to delete ${applicantToDelete?.name}? This action cannot be undone.`}
+        triggerText=""
       />
     </>
   );

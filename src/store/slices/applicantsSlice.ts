@@ -1,9 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { getApiWithAuth } from "@/utils/api";
+import {
+  postAPIWithAuth,
+  getApiWithAuth,
+  putAPIWithAuth,
+  deleteApi,
+} from "@/utils/api";
 import { toast } from "react-toastify";
 import { PAGINATION_CONFIG } from "@/config/pagination";
-
-// Types
 
 interface ApplicantsState {
   applicants: any[];
@@ -16,10 +19,15 @@ interface ApplicantsState {
 // Async Actions
 export const fetchApplicants = createAsyncThunk(
   "applicants/fetchApplicants",
-  async ({ skip = 0, search = "" }: { skip?: number; search?: string }, { rejectWithValue }) => {
+  async (
+    { skip = 0, search = "" }: { skip?: number; search?: string },
+    { rejectWithValue }
+  ) => {
     try {
       const response: any = await getApiWithAuth(
-        `applicants/?skip=${skip}&limit=${PAGINATION_CONFIG.DEFAULT_PAGE_SIZE}${search ? `&search=${search}` : ''}`
+        `applicants/?skip=${skip}&limit=${PAGINATION_CONFIG.DEFAULT_PAGE_SIZE}${
+          search ? `&search=${search}` : ""
+        }`
       );
 
       if (!response.success) {
@@ -31,7 +39,80 @@ export const fetchApplicants = createAsyncThunk(
         total: response.results,
       };
     } catch (error: any) {
-      return rejectWithValue(error.message || "Failed to fetch applicants");
+      toast.error(error.message || "Failed to fetch applicants");
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const createApplicant = createAsyncThunk(
+  "applicants/createApplicant",
+  async (applicantData: any, { getState, dispatch }) => {
+    try {
+      const response: any = await postAPIWithAuth("applicants/", applicantData);
+
+      if (!response.success) {
+        throw new Error(response.message || "Failed to create applicant");
+      }
+
+      const state: any = getState();
+      const currentPage = state.applicants.currentPage;
+      const total = state.applicants.total + 1;
+
+      if (
+        currentPage !== 1 &&
+        total > PAGINATION_CONFIG.DEFAULT_PAGE_SIZE * (currentPage - 1)
+      ) {
+        const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
+        dispatch(fetchApplicants({ skip }));
+      }
+
+      toast.success("Applicant created successfully");
+      return {
+        applicant: response.data,
+        shouldAddToList: currentPage === 1,
+      };
+    } catch (error: any) {
+      toast.error(error.message || "Failed to create applicant");
+      throw error;
+    }
+  }
+);
+
+export const updateApplicant = createAsyncThunk(
+  "applicants/updateApplicant",
+  async ({ id, data }: { id: number; data: any }, { rejectWithValue }) => {
+    try {
+      const response: any = await putAPIWithAuth(`applicants/${id}`, data);
+
+      if (!response.success) {
+        throw new Error(response.message || "Failed to update applicant");
+      }
+
+      toast.success("Applicant updated successfully");
+      return { id, ...data };
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update applicant");
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const deleteApplicant = createAsyncThunk(
+  "applicants/deleteApplicant",
+  async (id: number, { rejectWithValue }) => {
+    try {
+      const response: any = await deleteApi(`applicants/${id}`);
+
+      if (!response.success) {
+        throw new Error(response.message || "Failed to delete applicant");
+      }
+
+      toast.success("Applicant deleted successfully");
+      return id;
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete applicant");
+      return rejectWithValue(error.message);
     }
   }
 );
@@ -53,19 +134,48 @@ const applicantsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Fetch Applicants
       .addCase(fetchApplicants.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchApplicants.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.applicants = action.payload.applicants;
+        state.applicants = action.payload.applicants.data;
         state.total = action.payload.total;
       })
       .addCase(fetchApplicants.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
-        toast.error(action.payload as string);
+      })
+      // Create Applicant
+      .addCase(createApplicant.fulfilled, (state, action) => {
+        if (action.payload.shouldAddToList) {
+          state.applicants.unshift(action.payload.applicant);
+          if (state.applicants.length > PAGINATION_CONFIG.DEFAULT_PAGE_SIZE) {
+            state.applicants.pop();
+          }
+        }
+        state.total += 1;
+      })
+      // Update Applicant
+      .addCase(updateApplicant.fulfilled, (state, action) => {
+        const index = state.applicants.findIndex(
+          (applicant) => applicant.id === action.payload.id
+        );
+        if (index !== -1) {
+          state.applicants[index] = {
+            ...state.applicants[index],
+            ...action.payload,
+          };
+        }
+      })
+      // Delete Applicant
+      .addCase(deleteApplicant.fulfilled, (state, action) => {
+        state.applicants = state.applicants.filter(
+          (applicant) => applicant.id !== action.payload
+        );
+        state.total -= 1;
       });
   },
 });

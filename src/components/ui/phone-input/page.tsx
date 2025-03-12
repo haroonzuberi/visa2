@@ -5,8 +5,8 @@ import styles from "./styles.module.css";
 interface PhoneInputFieldProps {
   value: string;
   onChange: (value: string) => void;
-  error?: string;
-  touched?: boolean;
+  error?: any;
+  touched?: any;
 }
 
 export default function PhoneInputField({
@@ -32,9 +32,7 @@ export default function PhoneInputField({
           searchPlaceholder="Search country..."
         />
       </div>
-      {touched && error && (
-        <span className={styles.error}>{error}</span>
-      )}
+      {touched && error && <span className={styles.error}>{error}</span>}
     </div>
   );
-} 
+}
