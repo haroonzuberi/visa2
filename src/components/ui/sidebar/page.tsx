@@ -36,6 +36,11 @@ const menuItems = [
     path: "/main/customers",
   },
   {
+    name: "Applicant List",
+    icon: CustomerListIcon,
+    path: "/main/applicants",
+  },
+  {
     name: "Applicantions List",
     icon: ApplicationSidebar,
     path: "/main/applications",

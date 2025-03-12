@@ -20,6 +20,8 @@ import countryList from "react-select-country-list";
 // } from "@/components/ui/select";
 import Select from "react-select";
 import "react-phone-input-2/lib/style.css";
+import CountryPicker from "@/components/ui/country-picker/page";
+import PhoneInputField from "@/components/ui/phone-input/page";
 
 interface CreateCustomerModalProps {
   isOpen: boolean;
@@ -138,28 +140,12 @@ export default function CreateCustomerModal({
                         error={touched.name && errors.name}
                         value={values.name}
                       />
-                      <div className={styles.inputWrapper}>
-                        <label className={styles.label}>Phone</label>
-                        <div className="relative w-full">
-                          <PhoneInput
-                            country={"us"}
-                            value={values.phone}
-                            onChange={(phone) => setFieldValue("phone", phone)}
-                            inputClass="!w-full !h-[50px] !py-3 !pl-16  !pr-[100px] !text-gray-800  !bg-white !border !border-gray-300 !rounded-[12px] !focus:border-blue-500 !focus:ring-2 !focus:ring-blue-300 transition-all"
-                            containerClass="!w-full"
-                            buttonClass="!bg-gray-100 !border-r !border-gray-300 !py-4 !px-[10px] !rounded-l-[12px] !h-[50px]r"
-                            dropdownClass="!bg-white  !shadow-lg !rounded-lg "
-                            searchClass="!bg-gray-100 !text-gray-800 !p-2 !rounded-md !border !border-gray-300 !focus:border-blue-400 !focus:ring-1 !focus:ring-blue-300 transition-all"
-                            enableSearch
-                            searchPlaceholder="Search country..."
-                          />
-                        </div>
-                        {touched.phone && errors.phone && (
-                          <span className="text-red-500 text-sm">
-                            {errors.phone}
-                          </span>
-                        )}
-                      </div>
+                      <PhoneInputField
+                        value={values.phone}
+                        onChange={(phone) => setFieldValue("phone", phone)}
+                        error={errors.phone}
+                        touched={touched.phone}
+                      />
                       <InputField
                         fieldName="email"
                         label="Email"
@@ -174,36 +160,12 @@ export default function CreateCustomerModal({
 
                     {/* Right Column */}
                     <div className={styles.formColumn}>
-                      <div className={styles.selectWrapper}>
-                        <label className={styles.label}>Country</label>
-                        <Select
-                          options={options}
-                          isSearchable
-                          styles={{
-                            control: (baseStyles, state) => ({
-                              ...baseStyles,
-                              height: '50px',
-                              borderRadius: '12px',
-                              borderColor: '#e6e6e7',
-                              '&:hover': {
-                                borderColor: '#42DA82'
-                              }
-                            }),
-                            option: (baseStyles, state) => ({
-                              ...baseStyles,
-                              backgroundColor: state.isSelected ? '#e6e6e7' : 'white',
-                              '&:hover': {
-                                backgroundColor: '#f8f8f8'
-                              }
-                            })
-                          }}
-                          value={options.find((option: any) => option.label === values.country)} // Ensure this finds the correct option based on label
-                          onChange={(selectedOption) => setFieldValue("country", selectedOption.label)} // Store only the label
-                        />
-                        {touched.country && errors.country && (
-                          <span className={styles.error}>{errors.country}</span>
-                        )}
-                      </div>
+                      <CountryPicker
+                        value={values.country}
+                        onChange={(value) => setFieldValue("country", value)}
+                        error={errors.country}
+                        touched={touched.country}
+                      />
                       <InputField
                         fieldName="creation_source"
                         label="Creation Source"
@@ -211,14 +173,11 @@ export default function CreateCustomerModal({
                         disabled
                         placeHolder={""}
                       />
-
                       <InputField
                         fieldName="address"
                         label="Address"
                         placeHolder="Enter address"
-                        onChange={(e) =>
-                          setFieldValue("address", e.target.value)
-                        }
+                        onChange={(e) => setFieldValue("address", e.target.value)}
                         onBlur={handleBlur}
                         error={touched.address && errors.address}
                         value={values.address}
