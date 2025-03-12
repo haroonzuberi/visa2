@@ -76,6 +76,7 @@ export const getApiWithAuth = async <T>(
   url: string
 ): Promise<ApiResponse<T>> => {
   try {
+
     await setApiHeader();
     const res = await axios.get<T>(url);
     return { data: res?.data, status: res.status, success: true };

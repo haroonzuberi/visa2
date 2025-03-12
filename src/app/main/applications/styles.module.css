@@ -9,3 +9,15 @@
 .tags{
     @apply text-[12px] font-[400] text-[#727A90];
 }
+
+.customerBtn {
+    @apply text-[14px] font-[400] text-[#ffff] flex items-center justify-center gap-2;
+    border-radius: 12px;
+    background-color: #42DA82;
+    height: 40px;
+    padding: 10px;
+}
+
+.btnPlusIcon {
+    @apply w-[16px] h-[16px] text-[#ffff]
+}

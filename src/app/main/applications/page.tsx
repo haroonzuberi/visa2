@@ -17,26 +17,38 @@ import TableFooterComponent from "@/components/ui/tablefooter/page";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Modal from "@/components/modals/ApplicationDetailModal/page";
+import NewApplicationModal from "@/components/modals/NewApplicationModal/page";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/store";
+import { PAGINATION_CONFIG } from "@/config/pagination";
+import {
+  fetchApplications,
+  setCurrentPage,
+} from "@/store/slices/applicationsSlice";
+import PlusGreenSvg from "@/Assets/svgs/PlusGreenSvg";
 
 const modalParams = {
-  name: 'Linda Blair',
-  photoUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRTgD14vQ6I-UBiHTcwxZYnpSfLFJ2fclwS2A&s', // Replace with actual image path
-  email: 'abc@gmail.com',
-  phone: '050 414 8788',
-  visaType: 'Business Visa',
-  country: 'India',
-  flightDate: '26 October 2024',
-  passportPhotoUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRTgD14vQ6I-UBiHTcwxZYnpSfLFJ2fclwS2A&s', // Replace with actual image path
-  applicationId: 'ID0121',
-  passportNumber: '050 414 8788',
-  status: 'Cancel',
-  cancellationReason: 'Cancellation Reason: The applicant has decided to postpone their travel plans due to unforeseen personal circumstances. As a result, the visa application is no longer required at this time',
-  internalNotes: '',
-  paidAmount: '$2000',
-  paymentDate: '20 Oct 2024',
+  name: "Linda Blair",
+  photoUrl:
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRTgD14vQ6I-UBiHTcwxZYnpSfLFJ2fclwS2A&s", // Replace with actual image path
+  email: "abc@gmail.com",
+  phone: "050 414 8788",
+  visaType: "Business Visa",
+  country: "India",
+  flightDate: "26 October 2024",
+  passportPhotoUrl:
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRTgD14vQ6I-UBiHTcwxZYnpSfLFJ2fclwS2A&s", // Replace with actual image path
+  applicationId: "ID0121",
+  passportNumber: "050 414 8788",
+  status: "Cancel",
+  cancellationReason:
+    "Cancellation Reason: The applicant has decided to postpone their travel plans due to unforeseen personal circumstances. As a result, the visa application is no longer required at this time",
+  internalNotes: "",
+  paidAmount: "$2000",
+  paymentDate: "20 Oct 2024",
   invoiceFiles: [
-    { name: 'Invoice name here', url: '/path-to-invoice.pdf' }, // Replace with actual paths
-    { name: 'Visa Invoice name here', url: '/path-to-visa-invoice.pdf' },
+    { name: "Invoice name here", url: "/path-to-invoice.pdf" }, // Replace with actual paths
+    { name: "Visa Invoice name here", url: "/path-to-visa-invoice.pdf" },
   ],
 };
 
@@ -217,14 +229,89 @@ const customers: any = [
     priority: "Low Priority",
     visaType: "Business Visa",
   },
-];
+]
+
+const LoadingSkeleton = () =>
+  [...Array(PAGINATION_CONFIG.DEFAULT_PAGE_SIZE)].map((_, index) => (
+    <TableRow key={index} className="border-b border-gray-100">
+      {/* Customers Column (ID & Creation Source) */}
+      <TableCell className="py-4">
+        <div className="flex flex-col gap-1">
+          <div className="h-4 w-[60px] bg-gray-200 rounded"></div>
+          <div className="h-3 w-[100px] bg-gray-100 rounded"></div>
+        </div>
+      </TableCell>
+
+      {/* Tags Column */}
+      <TableCell className="py-4">
+        <div className="flex flex-col gap-1">
+          <div className="h-3 w-[140px] bg-gray-100 rounded"></div>
+        </div>
+      </TableCell>
+
+      {/* Application Date Column */}
+      <TableCell className="py-4">
+        <div className="h-4 w-[140px] bg-gray-200 rounded"></div>
+      </TableCell>
+
+      {/* Flight Date Column */}
+      <TableCell className="py-4">
+        <div className="h-4 w-[120px] bg-gray-200 rounded"></div>
+      </TableCell>
+
+      {/* Priority Level Column */}
+      <TableCell className="py-4">
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 bg-gray-200 rounded-full"></div>
+          <div className="h-4 w-[100px] bg-gray-200 rounded"></div>
+        </div>
+      </TableCell>
+
+      {/* Status Column */}
+      <TableCell className="py-4">
+        <div className="h-6 w-[100px] bg-gray-200 rounded-full"></div>
+      </TableCell>
+
+      {/* Visa Type & Country Column */}
+      <TableCell className="py-4">
+        <div className="flex flex-col gap-1">
+          <div className="h-4 w-[120px] bg-gray-200 rounded"></div>
+          <div className="flex items-center gap-2">
+            <div className="h-5 w-5 bg-gray-200 rounded"></div>
+            <div className="h-4 w-[80px] bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </TableCell>
+
+      {/* Actions Column */}
+      <TableCell className="py-4">
+        <div className="flex justify-center items-center gap-2">
+          <div className="h-5 w-5 bg-gray-200 rounded"></div>
+          <div className="h-5 w-5 bg-gray-200 rounded"></div>
+        </div>
+      </TableCell>
+    </TableRow>
+  ));
 
 export default function Applications() {
-
+  const dispatch = useDispatch<AppDispatch>();
+  const [searchTerm, setSearchTerm] = useState("");
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isNewApplicationModalOpen, setIsNewApplicationModalOpen] = useState(false);
+  const { applications, isLoading, error, total, currentPage } = useSelector(
+    (state: RootState) => state.applicantions
+  );
+
+  useEffect(() => {
+    const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
+    // if (error) {
+    //   return;
+    // }
+    dispatch(fetchApplications({ skip, search: searchTerm }));
+  }, [dispatch, currentPage, searchTerm]);
 
   useEffect(() => {
     setIsModalOpen(searchParams.get("modal") === "open");
@@ -242,6 +329,14 @@ export default function Applications() {
     };
   }, [isModalOpen]);
 
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    dispatch(setCurrentPage(1));
+  };
+
+  const handlePageChange = (page: number) => {
+    dispatch(setCurrentPage(page));
+  };
 
   const openModal = () => {
     router.push(`${pathname}?modal=open`);
@@ -253,8 +348,17 @@ export default function Applications() {
 
   return (
     <>
+
       <div className="flex justify-between mt-3">
         <h1 className={styles.header}>Manage Applications Lists</h1>
+        <button
+          type="button"
+          className={styles.customerBtn}
+          onClick={() => setIsNewApplicationModalOpen(true)}
+        >
+          <PlusGreenSvg className={styles.btnPlusIcon} />
+          Add New Application
+        </button>
       </div>
 
       <div className={tableStyles.mainContainer}>
@@ -264,20 +368,35 @@ export default function Applications() {
           header="Application List"
           showFilters={true}
           showSeeMore={true}
+          onSearchChange={handleSearch}
+          searchQuery={searchTerm}
         />
-        {/* Customer Table */}
+
+        {/* Application Table */}
         <div className="bg-white rounded-xl">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Customers</TableHead>
-                <TableHead>Tags</TableHead>
-                <TableHead>Application Date</TableHead>
-                <TableHead>Flight Date</TableHead>
-                <TableHead>Priority Level</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Visa Type & Country</TableHead>
-                <TableHead className="text-center">
+                <TableHead className={tableStyles.tableHeaders}>
+                  Customers
+                </TableHead>
+                <TableHead className={tableStyles.tableHeaders}>Tags</TableHead>
+                <TableHead className={tableStyles.tableHeaders}>
+                  Application Date
+                </TableHead>
+                <TableHead className={tableStyles.tableHeaders}>
+                  Flight Date
+                </TableHead>
+                <TableHead className={tableStyles.tableHeaders}>
+                  Priority Level
+                </TableHead>
+                <TableHead className={tableStyles.tableHeaders}>
+                  Status
+                </TableHead>
+                <TableHead className={tableStyles.tableHeaders}>
+                  Visa Type & Country
+                </TableHead>
+                <TableHead className={tableStyles.tableHeaders}>
                   <span className="flex items-center justify-center gap-2">
                     Actions
                     <DropdownSVG />
@@ -287,63 +406,92 @@ export default function Applications() {
             </TableHeader>
 
             <TableBody>
-              {customers.map((customer, index) => (
-                <TableRow key={index} className="hover:bg-gray-50">
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className={tableStyles.userEmail}>
-                        {customer.id}
-                      </span>
-                      <span className={tableStyles.userName}>
-                        {customer.platform}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col w-[140px]">
-                      <span className={styles.tags}>
-                        #tag, #tag, #tag,#tag, #tag, #tag,
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{customer.createdDate}</TableCell>
-                  <TableCell>{customer.phone}</TableCell>
-                  <TableCell>
-                    <Priority level={customer.priority} />
-                  </TableCell>
-                  <TableCell>
-                    <Status status={customer.status} />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1">
-                      <span className={styles.visaText}>{customer.visaType}</span>
-                      <div className="flex items-center gap-2">
-                        <IndiaFlag className="w-5 h-5" />
-                        <span className="text-sm">India</span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-center items-center gap-2">
-                      <EyeIcon onClick={openModal} className="cursor-pointer " />
-                      <DropdownSVG className="cursor-pointer w-[13px] h-[8px]" />
-                    </div>
+              {isLoading ? (
+                <LoadingSkeleton />
+              ) : applications.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8">
+                    No applications found
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                applications.map((applicant, index) => (
+                  <TableRow
+                    key={applicant.id || index}
+                    className="hover:bg-gray-50"
+                  >
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className={tableStyles.userEmail}>
+                          #{applicant.id}
+                        </span>
+                        <span className={tableStyles.userName}>
+                          {applicant.name || "N/A"}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col w-[140px]">
+                        <span className={styles.tags}>
+                          {applicant.tags.map((tag) => {
+                            tag + ",";
+                          })}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{applicant.created_at}</TableCell>
+                    <TableCell>{applicant.flight_date}</TableCell>
+                    <TableCell>
+                      <Priority level={applicant.priority || "N/A"} />
+                    </TableCell>
+                    <TableCell>
+                      <Status status={applicant.visa_status || "N/A"} />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <span className={styles.visaText}>
+                          {applicant.visa_type || "N/A"}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <IndiaFlag className="w-5 h-5" />
+                          <span className="text-sm">
+                            {applicant.visa_country || "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-center items-center gap-2">
+                        <EyeIcon
+                          onClick={openModal}
+                          className="cursor-pointer "
+                        />
+                        <DropdownSVG className="cursor-pointer w-[13px] h-[8px]" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
+
         {/* Footer Section */}
         <TableFooterComponent
-          total={customers.length}
-          currentPage={1}
-          onPageChange={(page) => {
-            // Handle page change
-          }}
+          total={total}
+          currentPage={currentPage}
+          onPageChange={handlePageChange}
         />
       </div>
-      {isModalOpen && <Modal onClose={closeModal} isOpen={isModalOpen} data={modalParams} />}
+      {isModalOpen && (
+        <Modal onClose={closeModal} isOpen={isModalOpen} data={modalParams} />
+      )}
+      {isNewApplicationModalOpen && (
+        <NewApplicationModal
+          isOpen={isNewApplicationModalOpen}
+          onClose={() => setIsNewApplicationModalOpen(false)}
+        />
+      )}
     </>
   );
 }

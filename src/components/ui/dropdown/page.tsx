@@ -48,7 +48,7 @@ const DropDown: React.FC<DropDownProps> = ({
 
       {/* Dropdown */}
       <Select onValueChange={handleChange} defaultValue={defaultValue}>
-        <SelectTrigger className="w-full h-[52px] bg-transparent border-2 border-[#E9EAEA] rounded-[12px] px-3 py-2 text-[18px] font-[400] focus:border-primary focus:ring-1 focus:ring-primary">
+        <SelectTrigger className="w-full text-[#727A90] h-[52px] bg-transparent border-2 border-[#E9EAEA] rounded-[12px] px-3 py-2 text-[18px] font-[400] focus:border-primary focus:ring-1 focus:ring-primary">
           <SelectValue placeholder="Select an option" />
         </SelectTrigger>
         <SelectContent className="bg-white border border-[#E9EAEA] rounded-[12px] shadow-md">
@@ -57,7 +57,7 @@ const DropDown: React.FC<DropDownProps> = ({
               <SelectItem
                 key={index}
                 value={String(ele)}
-                className="text-[18px] font-[400] px-4 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-all duration-200"
+                className="text-[18px] font-[400] px-4 py-2 hover:bg-[#F3F4F6] text-[#727A90] cursor-pointer transition-all duration-200"
               >
                 {ele}
               </SelectItem>

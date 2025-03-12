@@ -1,6 +1,7 @@
 // components/Chip.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import styles from "./../../../app/main/customerDetails/styles.module.css";
+import styles from "./../../../app/main/customerDetails/[id]/styles.module.css";
+import DropDownRedSvg from '@/Assets/svgs/DropdownRedSvg';
 
 // Expandable Icon (Chevron Down/Right)
 const ExpandableIcon = () => (
@@ -125,11 +126,11 @@ const Chip = ({ status, className }: ChipProps) => {
     <div className="relative inline-block" ref={chipRef}>
       {/* Chip */}
       <span
-        className={styles.tableChip}
+        className={`${styles.tableChip} flex items-center gap-1`}
         onClick={toggleDropdown}
       >
         {status}
-        <DropDownSvg />
+        <DropDownRedSvg />
       </span>
 
       {/* Main Dropdown Menu */}

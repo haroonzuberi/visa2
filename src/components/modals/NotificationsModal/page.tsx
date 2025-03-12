@@ -5,6 +5,7 @@ import styles from '../ApplicationDetailModal/styles.module.css';
 import InfoSvg from '@/Assets/svgs/InfoSvg';
 import TimeSvg from '@/Assets/svgs/TimeSvg';
 import { Check } from 'lucide-react';
+import BellSvg from '@/Assets/svgs/BellSvg';
 
 function NotificationModal({ closeModal }: { closeModal: () => void }) {
 
@@ -81,12 +82,22 @@ function NotificationModal({ closeModal }: { closeModal: () => void }) {
                         <div className='w-full'>
                             <div className="flex justify-between p-6 pb-0 items-center">
                                 <div className="flex items-center gap-2">
-                                    <button onClick={() => { closeModal }}>
+                                    <button onClick={() => { closeModal() }}>
                                         <LeftArrowSvg />
                                     </button>
+                                    <div className="relative cursor-pointer mr-2">
+                                        <BellSvg />
+                                        {notifications.filter((notif) => !notif.read).length > 0 && (
+                                            <div className="Notification">
+                                                <span className="NotifactionNm">
+                                                    {notifications.filter((notif) => !notif.read).length || ""}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
                                     <h2 className="text-lg font-semibold">Notifications</h2>
                                 </div>
-                                <button onClick={() => { closeModal }} className="border-[#E9EAEA] border-[1px] p-2 rounded-[10px]">
+                                <button onClick={() => { closeModal() }} className="border-[#E9EAEA] border-[1px] p-2 rounded-[10px]">
                                     <CrossSvg />
                                 </button>
                             </div>

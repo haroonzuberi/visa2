@@ -30,8 +30,13 @@ import GeneralData from "../../../components/ui/tableheader/page";
 import TableFooter from "../../../components/ui/tablefooter/page";
 import { toast } from "react-toastify";
 import ConfirmDialog from "@/components/ui/confirmDialogue/confirmDialogu";
-import { fetchUsers, setCurrentPage } from "@/store/slices/usersSlice";
+import {
+  deleteUser,
+  fetchUsers,
+  setCurrentPage,
+} from "@/store/slices/usersSlice";
 import { PAGINATION_CONFIG } from "@/config/pagination";
+import CreateUserModal from "@/components/modals/CreateUserModal/page";
 
 export default function UserTable() {
   const dispatch = useAppDispatch();
@@ -42,28 +47,29 @@ export default function UserTable() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredUsers, setFilteredUsers] = useState(users);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
 
   useEffect(() => {
-    dispatch(
-      fetchUsers({
-        skip: (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE,
-      })
-    );
-  }, [dispatch, currentPage]);
+    const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
+    // if (error) {
+    //   return;
+    // }
+    dispatch(fetchUsers({ skip, search: searchQuery }));
+  }, [currentPage, searchQuery]);
 
-  useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFilteredUsers(users);
-    } else {
-      const filtered = users.filter((user) =>
-        Object.values(user).some((value) =>
-          String(value).toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      );
-      setFilteredUsers(filtered);
-    }
-  }, [users, searchQuery]);
+  // useEffect(() => {
+  //   if (searchQuery.trim() === "") {
+  //     setFilteredUsers(users);
+  //   } else {
+  //     const filtered = users.filter((user) =>
+  //       Object.values(user).some((value) =>
+  //         String(value).toLowerCase().includes(searchQuery.toLowerCase())
+  //       )
+  //     );
+  //     setFilteredUsers(filtered);
+  //   }
+  // }, [users, searchQuery]);
 
   const handlePageChange = (page: number) => {
     const totalPages = Math.ceil(total / PAGINATION_CONFIG.DEFAULT_PAGE_SIZE);
@@ -80,8 +86,7 @@ export default function UserTable() {
     if (userToDelete) {
       try {
         // We'll implement this action in usersSlice
-        // await dispatch(deleteUser(userToDelete.id)).unwrap();
-        // toast.success("User deleted successfully");
+        await dispatch(deleteUser(userToDelete.id));
         // Refresh the users list
         // dispatch(fetchUsers({ skip: (currentPage - 1) * limit, limit }));
       } catch (error: any) {
@@ -92,20 +97,36 @@ export default function UserTable() {
     setUserToDelete(null);
   };
 
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+  const handleCreateSuccess = () => {
+    // Refresh the users list
+    handleModalClose()
+    // const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
+    // dispatch(fetchUsers({ skip, search: searchQuery }));
+  };
+
+  const handleEditClick = (user: any) => {
+    setSelectedUser(user);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsCreateModalOpen(false);
+    setSelectedUser(null);
+  };
 
   // Helper functions
   function getRoleColor(role: string) {
-    switch (role.toLowerCase()) {
-      case "admin":
-        return styles.roleBtnRed;
-      case "user":
-        return styles.roleBtnBlue;
-      default:
-        return styles.roleBtnGreen;
+    if (role) {
+      switch (role.toLowerCase()) {
+        case "admin":
+          return styles.roleBtnRed;
+        case "user":
+          return styles.roleBtnBlue;
+        default:
+          return styles.roleBtnGreen;
+      }
     }
+    return styles.roleBtnGreen;
   }
 
   function getLastLoginTime(lastLogin: string) {
@@ -161,9 +182,13 @@ export default function UserTable() {
 
   return (
     <>
-      <div className="flex justify-between  mt-3">
+      <div className="flex justify-between mt-3">
         <h1 className={styles.header}>Manage users</h1>
-        <button type="button" className={styles.userBtn}>
+        <button
+          type="button"
+          className={styles.userBtn}
+          onClick={() => setIsCreateModalOpen(true)}
+        >
           <PlusGreenSvg className={styles.btnPlusIcon} />
           Add New User
         </button>
@@ -223,10 +248,10 @@ export default function UserTable() {
             <TableBody>
               {isLoading ? (
                 <LoadingSkeleton />
-              ) : filteredUsers.length === 0 ? (
+              ) : users.length === 0 ? (
                 <NoDataRow />
               ) : (
-                filteredUsers.map((user, index) => (
+                users.map((user, index) => (
                   <TableRow key={user.id || index} className="hover:bg-gray-50">
                     <TableCell>
                       <div className="flex flex-col">
@@ -238,14 +263,10 @@ export default function UserTable() {
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell
-                      className={` ${tableStyles.userName}`}
-                    >
+                    <TableCell className={` ${tableStyles.userName}`}>
                       {new Date(user.created_at).toLocaleDateString()}
                     </TableCell>
-                    <TableCell
-                      className={` ${tableStyles.userName}`}
-                    >
+                    <TableCell className={` ${tableStyles.userName}`}>
                       {user.phone || "N/A"}
                     </TableCell>
                     <TableCell className="">
@@ -261,7 +282,7 @@ export default function UserTable() {
                       {getLastLoginTime(user.last_login)}
                     </TableCell>
                     <TableCell className="">
-                      <span className="flex justify-center align-center gap-2">
+                      <span className="flex align-center gap-2">
                         <DropdownMenu>
                           <DropdownMenuTrigger>
                             <DropdownSVG className="cursor-pointer" />
@@ -274,7 +295,10 @@ export default function UserTable() {
                               </span>
                             </DropdownMenuItem>
                             <hr />
-                            <DropdownMenuItem className="flex items-center p-4">
+                            <DropdownMenuItem 
+                              className="flex items-center p-4"
+                              onClick={() => handleEditClick(user)}
+                            >
                               <EditSvg className="w-4 h-4" />
                               <span className={styles.dropdownText}>Edit</span>
                             </DropdownMenuItem>
@@ -301,7 +325,7 @@ export default function UserTable() {
         </div>
         {/* Footer Section */}
         <TableFooter
-          total={searchQuery ? filteredUsers.length : total}
+          total={total}
           currentPage={currentPage}
           onPageChange={handlePageChange}
         />
@@ -314,6 +338,13 @@ export default function UserTable() {
         title="Delete User"
         description={`Are you sure you want to delete ${userToDelete?.name}? This action cannot be undone.`}
         triggerText={""}
+      />
+
+      <CreateUserModal
+        isOpen={isCreateModalOpen}
+        onClose={handleModalClose}
+        onSuccess={handleCreateSuccess}
+        editData={selectedUser}
       />
     </>
   );

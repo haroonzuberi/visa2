@@ -21,6 +21,7 @@ const Header = () => {
   const router = useRouter();
   const isModalOpen = searchParams.get("modal") === "seeMore";
   const closeModal = () => {
+    console.log("Close Modal Function Working In Header Component");
     router.push(pathname, { scroll: false });
   };
   const [isOpen, setIsOpen] = useState(false);

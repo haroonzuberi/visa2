@@ -1,0 +1,63 @@
+.modalContainer {
+  @apply bg-white rounded-xl w-[800px] max-h-[90vh] overflow-y-auto shadow-lg;
+}
+
+.modalHeader {
+  @apply flex items-center justify-between p-6 border-b border-gray-200 bg-gray-50;
+}
+
+.modalTitle {
+  @apply text-2xl font-semibold text-gray-900;
+}
+
+.closeButton {
+  @apply text-gray-400 hover:text-gray-500 transition-colors p-1 rounded-lg hover:bg-gray-100;
+}
+
+.modalBody {
+  @apply p-6;
+}
+
+.form {
+  @apply space-y-6;
+}
+
+.formGrid {
+  @apply grid grid-cols-2 gap-6;
+}
+
+.formColumn {
+  @apply space-y-4;
+}
+
+.selectWrapper {
+  @apply space-y-2;
+}
+
+.label {
+  @apply text-[18px] font-[500] text-[#24282E] block;
+}
+
+.select {
+  @apply w-full border border-gray-300 rounded-lg h-[42px] px-4;
+}
+
+.selectContent {
+  @apply bg-white border border-gray-200 shadow-lg rounded-lg;
+}
+
+.error {
+  @apply text-danger text-sm mt-1 block;
+}
+
+.modalFooter {
+  @apply flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200;
+}
+
+.cancelButton {
+  @apply px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium;
+}
+
+.submitButton {
+  @apply px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 font-medium;
+} 

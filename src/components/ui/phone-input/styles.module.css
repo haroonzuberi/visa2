@@ -1,0 +1,11 @@
+.inputWrapper {
+  @apply space-y-2;
+}
+
+.label {
+  @apply text-[18px] font-[500] text-[#24282E] block;
+}
+
+.error {
+  @apply text-danger text-sm mt-1 block;
+} 

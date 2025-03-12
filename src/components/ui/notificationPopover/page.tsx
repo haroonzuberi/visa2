@@ -92,11 +92,13 @@ const NotificationPopover = () => {
                 <PopoverTrigger asChild>
                     <div className="relative cursor-pointer">
                         <BellSvg />
-                        <div className="Notification">
-                            <span className="NotifactionNm">
-                                {notifications.filter((notif) => !notif.read).length || ""}
-                            </span>
-                        </div>
+                        {notifications.filter((notif) => !notif.read).length > 0 && (
+                            <div className="Notification">
+                                <span className="NotifactionNm">
+                                    {notifications.filter((notif) => !notif.read).length || ""}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </PopoverTrigger>
                 <PopoverContent

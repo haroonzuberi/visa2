@@ -12,7 +12,9 @@ interface InputFieldProps {
   icon?: React.ReactNode;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
-  error?: string;
+  error?: any;
+  disabled?: boolean;
+  value?: string;
 }
 
 const InputField = ({
@@ -22,9 +24,11 @@ const InputField = ({
   type = "text",
   isPassword = false,
   icon,
+  value = "",
   onChange,
   onBlur,
   error,
+  disabled = false,
 }: InputFieldProps) => {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -47,7 +51,9 @@ const InputField = ({
           name={fieldName}
           placeholder={placeHolder}
           onChange={onChange}
+          disabled={disabled}
           onBlur={onBlur}
+          value={value}
         />
         {isPassword && (
           <button
@@ -58,7 +64,9 @@ const InputField = ({
             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
           </button>
         )}
-        {error && <span className="text-danger text-sm mt-1 block">{error}</span>}
+        {error && (
+          <span className="text-danger text-sm mt-1 block">{error}</span>
+        )}
       </div>
     </div>
   );

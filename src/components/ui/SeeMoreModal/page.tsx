@@ -7,8 +7,9 @@ export default function SeeMoreModal() {
     const router = useRouter();
     const pathname = usePathname();
     const closeModal = () => {
+        console.log("Close Modal Function Working In See More Modal Component");
         router.push(pathname);
-      };
+    };
     return (
         <div className="p-6">
             <NotificationPopover />
