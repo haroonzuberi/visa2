@@ -1,6 +1,6 @@
 // components/Chip.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import styles from "./../../../app/main/customerDetails/styles.module.css";
+import styles from "./../../../app/main/customerDetails/[id]/styles.module.css";
 import DropDownRedSvg from '@/Assets/svgs/DropdownRedSvg';
 
 // Expandable Icon (Chevron Down/Right)

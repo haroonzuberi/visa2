@@ -47,7 +47,7 @@ export default function CustomerTable() {
 
   // Fetch customers only when page changes or search term changes
   useEffect(() => {
-    fetchData()
+    fetchData();
   }, [currentPage, searchTerm]); // Only depend on currentPage and searchTerm
 
   // Remove the original useEffect that was fetching on mount
@@ -60,8 +60,7 @@ export default function CustomerTable() {
   const fetchData = () => {
     const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
     dispatch(fetchCustomers({ skip, search: searchTerm }));
-
-  }
+  };
   // Handle page change
   const handlePageChange = (page: number) => {
     const totalPages = Math.ceil(total / PAGINATION_CONFIG.DEFAULT_PAGE_SIZE);
@@ -281,7 +280,14 @@ export default function CustomerTable() {
                         </div>
                       </TableCell>
                       <TableCell className={tableStyles.tableName}>
-                        {customer.totalOrders || 0}
+                        <button
+                          onClick={() =>
+                            router.push(`/main/customerDetails/${customer.id}`)
+                          }
+                          className="hover:text-primary"
+                        >
+                          {customer.totalOrders || 0}
+                        </button>
                       </TableCell>
                       <TableCell className="">
                         <span className="flex  items-center gap-2">
@@ -318,7 +324,11 @@ export default function CustomerTable() {
                             </DropdownMenuContent>
                           </DropdownMenu>
                           <button
-                            onClick={() => router.push("/main/customerDetails")}
+                            onClick={() =>
+                              router.push(
+                                `/main/customerDetails/${customer.id}`
+                              )
+                            }
                             type="button"
                             className={styles.customerBtn}
                           >
