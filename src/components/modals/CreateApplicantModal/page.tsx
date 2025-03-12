@@ -13,6 +13,7 @@ import {
 import { AppDispatch } from "@/store";
 import styles from "./styles.module.css";
 import PhoneInputField from "@/components/ui/phone-input/page";
+import CustomerAutocomplete from "@/components/ui/customer-autocomplete/page";
 
 interface CreateApplicantModalProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ const validationSchema = Yup.object().shape({
   email: Yup.string().email("Invalid email").required("Email is required"),
   phone: Yup.string().required("Phone is required"),
   passport_number: Yup.string().required("Passport number is required"),
+  customer_id: Yup.number().required("Customer is required"),
 });
 
 export default function CreateApplicantModal({
@@ -44,6 +46,8 @@ export default function CreateApplicantModal({
     email: editData?.email || "",
     phone: editData?.phone || "",
     passport_number: editData?.passport_number || "",
+    customer_id: editData?.customer_id || null,
+    customer_name: editData?.customer_name || "",
   };
 
   const handleSubmit = async (values: any, { setSubmitting }: any) => {
@@ -92,6 +96,16 @@ export default function CreateApplicantModal({
               <Form className={styles.form}>
                 <div className={styles.formGrid}>
                   <div className={styles.formColumn}>
+                    <CustomerAutocomplete
+                      value={values.customer_name}
+                      customerId={values.customer_id}
+                      onChange={(name, id) => {
+                        setFieldValue("customer_name", name);
+                        setFieldValue("customer_id", id);
+                      }}
+                      error={errors.customer_id}
+                      touched={touched.customer_id}
+                    />
                     <InputField
                       fieldName="name"
                       label="Name"
@@ -101,6 +115,8 @@ export default function CreateApplicantModal({
                       error={touched.name && errors.name}
                       onBlur={handleBlur}
                     />
+                  </div>
+                  <div className={styles.formColumn}>
                     <InputField
                       fieldName="email"
                       label="Email"
@@ -111,26 +127,26 @@ export default function CreateApplicantModal({
                       error={touched.email && errors.email}
                       onBlur={handleBlur}
                     />
-                  </div>
-                  <div className={styles.formColumn}>
                     <PhoneInputField
-                      value={initialValues.phone}
+                      value={values.phone}
                       onChange={(phone) => setFieldValue("phone", phone)}
                       error={errors.phone}
                       touched={touched.phone}
                     />
-                    <InputField
-                      fieldName="passport_number"
-                      label="Passport Number"
-                      placeHolder="Enter passport number"
-                      error={touched.passport_number && errors.passport_number}
-                      value={values.passport_number}
-                      onChange={(e) =>
-                        setFieldValue("passport_number", e.target.value)
-                      }
-                      onBlur={handleBlur}
-                    />
                   </div>
+                </div>
+                <div className={styles.formColumn}>
+                  <InputField
+                    fieldName="passport_number"
+                    label="Passport Number"
+                    placeHolder="Enter passport number"
+                    error={touched.passport_number && errors.passport_number}
+                    value={values.passport_number}
+                    onChange={(e) =>
+                      setFieldValue("passport_number", e.target.value)
+                    }
+                    onBlur={handleBlur}
+                  />
                 </div>
 
                 <div className={styles.modalFooter}>

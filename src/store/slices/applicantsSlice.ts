@@ -34,9 +34,11 @@ export const fetchApplicants = createAsyncThunk(
         throw new Error(response.message || "Failed to fetch applicants");
       }
 
+      console.log(response.data.meta.total);
+
       return {
         applicants: response.data,
-        total: response.results,
+        total:response.data.meta.total,
       };
     } catch (error: any) {
       toast.error(error.message || "Failed to fetch applicants");
@@ -52,7 +54,7 @@ export const createApplicant = createAsyncThunk(
       const response: any = await postAPIWithAuth("applicants/", applicantData);
 
       if (!response.success) {
-        throw new Error(response.message || "Failed to create applicant");
+        throw new Error(response.data.detail.message || "Failed to create applicant");
       }
 
       const state: any = getState();
