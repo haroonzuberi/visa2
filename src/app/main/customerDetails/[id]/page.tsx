@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCustomerDetails } from "@/store/slices/customerDetailsSlice";
 import styles from "./styles.module.css";
@@ -21,9 +21,13 @@ import DownloadSvg from "@/Assets/svgs/DownloadSvg";
 import WhatsappSvg from "@/Assets/svgs/WhatsappSvf";
 import { DropdownMenu, DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
 import { DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { ArrowLeftIcon } from "lucide-react";
 
 export default function CustomerDetails() {
+  const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
+  const fromPage = searchParams.get('fromPage');
   const dispatch = useDispatch<AppDispatch>();
   const [expandedSections, setExpandedSections] = useState<number[]>([]);
 
@@ -44,6 +48,14 @@ export default function CustomerDetails() {
     );
   };
 
+  const handleBack = () => {
+    // if (fromPage) {
+      router.push(`/main/customers?fromDetails=true&page=${fromPage}`);
+    // } else {
+    //   router.push('/main/customers');
+    // }
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -56,7 +68,16 @@ export default function CustomerDetails() {
     <>
       {/* Page Header */}
       <div className="flex justify-between mt-3">
-        <h1 className={styles.header}>All Customers</h1>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+          >
+            <ArrowLeftIcon className="w-5 h-5" />
+            <span>Back to Customers</span>
+          </button>
+          <h1 className={styles.header}>All Customers</h1>
+        </div>
         <button type="button" className={styles.customerBtn}>
           <PlusGreenSvg className={styles.btnPlusIcon} />
           Add New User

@@ -28,13 +28,14 @@ import EditSvg from "@/Assets/svgs/EditSvg";
 import DownloadSvg from "@/Assets/svgs/DownloadSvg";
 import GeneralData from "../../../components/ui/tableheader/page";
 import TableFooter from "../../../components/ui/tablefooter/page";
-import { useRouter } from "next/navigation"; // ✅ Make sure to import from "next/navigation" in App Router (Next.js 13+)
+import { useRouter, usePathname } from "next/navigation"; // ✅ Make sure to import from "next/navigation" in App Router (Next.js 13+)
 import { AppDispatch, RootState } from "@/store";
 import CreateCustomerModal from "@/components/modals/CreateCustomerModal/page";
 // import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CustomerTable() {
   const router = useRouter();
+  const pathname = usePathname();
   const dispatch = useDispatch<AppDispatch>();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -47,8 +48,13 @@ export default function CustomerTable() {
 
   // Fetch customers only when page changes or search term changes
   useEffect(() => {
-    fetchData();
-  }, [currentPage, searchTerm]); // Only depend on currentPage and searchTerm
+    const searchParams = new URLSearchParams(window.location.search);
+    const isFromDetails = searchParams.get("fromDetails");
+
+    if (!isFromDetails) {
+      fetchData();
+    }
+  }, [currentPage, searchTerm]);
 
   // Remove the original useEffect that was fetching on mount
   // Fetch customers on mount and when page changes
@@ -94,6 +100,10 @@ export default function CustomerTable() {
   const handleEditClick = (customer: any) => {
     setSelectedCustomer(customer);
     setIsCreateModalOpen(true);
+  };
+
+  const handleNavigateToDetails = (customerId: string) => {
+    router.push(`/main/customerDetails/${customerId}?fromPage=${currentPage}`);
   };
 
   const LoadingSkeleton = () =>
@@ -281,9 +291,7 @@ export default function CustomerTable() {
                       </TableCell>
                       <TableCell className={tableStyles.tableName}>
                         <button
-                          onClick={() =>
-                            router.push(`/main/customerDetails/${customer.id}`)
-                          }
+                          onClick={() => handleNavigateToDetails(customer.id)}
                           className="hover:text-primary"
                         >
                           {customer.totalOrders || 0}
@@ -324,11 +332,7 @@ export default function CustomerTable() {
                             </DropdownMenuContent>
                           </DropdownMenu>
                           <button
-                            onClick={() =>
-                              router.push(
-                                `/main/customerDetails/${customer.id}`
-                              )
-                            }
+                              onClick={() => handleNavigateToDetails(customer.id)}
                             type="button"
                             className={styles.customerBtn}
                           >
