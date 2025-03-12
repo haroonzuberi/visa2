@@ -36,9 +36,9 @@ const menuItems = [
     path: "/main/customers",
   },
   {
-    name: "Applicants List",
+    name: "Applicantions List",
     icon: ApplicationSidebar,
-    path: "/main/applicants",
+    path: "/main/applications",
   },
   {
     name: "Settings",
