@@ -5,7 +5,6 @@ import RightIconSvg from "@/Assets/svgs/RightSvg";
 import LeftSvg from "@/Assets/svgs/LeftSvg";
 import styles from "./styles.module.css";
 import { useAppDispatch, useAppSelector } from "@/store";
-import { fetchUsers, setCurrentPage } from "@/store/slices/usersSlice";
 import { PAGINATION_CONFIG } from "@/config/pagination";
 
 const TableFooter = ({

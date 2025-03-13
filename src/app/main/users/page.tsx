@@ -51,32 +51,29 @@ export default function UserTable() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
   useEffect(() => {
-    const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
-    // if (error) {
-    //   return;
-    // }
-    dispatch(fetchUsers({ skip, search: searchQuery }));
-  }, [currentPage, searchQuery]);
+    fetchData();
+  }, []);
 
-  // useEffect(() => {
-  //   if (searchQuery.trim() === "") {
-  //     setFilteredUsers(users);
-  //   } else {
-  //     const filtered = users.filter((user) =>
-  //       Object.values(user).some((value) =>
-  //         String(value).toLowerCase().includes(searchQuery.toLowerCase())
-  //       )
-  //     );
-  //     setFilteredUsers(filtered);
-  //   }
-  // }, [users, searchQuery]);
+  const fetchData = () => {
+    const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
+    dispatch(fetchUsers({ skip, search: searchQuery }));
+  };
 
   const handlePageChange = (page: number) => {
     const totalPages = Math.ceil(total / PAGINATION_CONFIG.DEFAULT_PAGE_SIZE);
     if (page >= 1 && page <= totalPages) {
       dispatch(setCurrentPage(page));
+      const skip = (page - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
+      dispatch(fetchUsers({ skip, search: searchQuery }));
     }
   };
+
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
+    dispatch(setCurrentPage(1));
+    dispatch(fetchUsers({ search: value }));
+  };
+
   const handleDeleteClick = (user: any) => {
     setUserToDelete(user);
     setIsDeleteDialogOpen(true);
@@ -99,9 +96,7 @@ export default function UserTable() {
 
   const handleCreateSuccess = () => {
     // Refresh the users list
-    handleModalClose()
-    // const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
-    // dispatch(fetchUsers({ skip, search: searchQuery }));
+    handleModalClose();
   };
 
   const handleEditClick = (user: any) => {
@@ -200,7 +195,7 @@ export default function UserTable() {
           search={true}
           header="User List"
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={handleSearch}
         />
         {/* User Table */}
         <div className="bg-white rounded-xl">
@@ -295,7 +290,7 @@ export default function UserTable() {
                               </span>
                             </DropdownMenuItem>
                             <hr />
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               className="flex items-center p-4"
                               onClick={() => handleEditClick(user)}
                             >

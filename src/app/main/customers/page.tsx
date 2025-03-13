@@ -78,7 +78,6 @@ export default function CustomerTable() {
   // Handle page change
   const handlePageChange = (page: number) => {
     const totalPages = Math.ceil(total / PAGINATION_CONFIG.DEFAULT_PAGE_SIZE);
-    console.log("WE ARE HERE_____")
     if (page >= 1 && page <= totalPages) {
       dispatch(setCurrentPage(page));
       const skip = (page - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
