@@ -223,10 +223,11 @@ export default function GroupAutocomplete({
           )}
         </div>
       )}
-
       {showCreateForm && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4">
-          <h3 className="text-[16px] font-semibold mb-4">Create New Group</h3>
+        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-xl shadow-2xl p-6 h-[300px] overflow-auto">
+          <h3 className="text-lg font-bold text-gray-800 mb-4">
+            Create New Group
+          </h3>
 
           <Formik
             initialValues={initialValues}
@@ -234,11 +235,11 @@ export default function GroupAutocomplete({
             onSubmit={handleCreateNewGroup}
           >
             {({ values, handleChange, handleBlur, errors, touched }: any) => (
-              <Form className="space-y-3">
+              <Form className="space-y-4">
                 {/* Group Name Field */}
                 <InputField
                   type="text"
-                  placeHolder="Group Name"
+                  placeHolder="Enter group name"
                   value={values.name}
                   onChange={handleChange}
                   onBlur={handleBlur}
@@ -246,9 +247,11 @@ export default function GroupAutocomplete({
                   fieldName="name"
                   error={touched.name && errors.name}
                 />
+
+                {/* Contact Name Field */}
                 <InputField
                   type="text"
-                  placeHolder="Contact Name"
+                  placeHolder="Enter contact name"
                   value={values.contact_name}
                   onChange={handleChange}
                   onBlur={handleBlur}
@@ -261,7 +264,7 @@ export default function GroupAutocomplete({
                 <InputField
                   label="Email"
                   type="email"
-                  placeHolder="Contact Email"
+                  placeHolder="Enter contact email"
                   value={values.contact_email}
                   onChange={handleChange}
                   onBlur={handleBlur}
@@ -281,34 +284,37 @@ export default function GroupAutocomplete({
 
                 {/* Description Field */}
                 <div>
-                  <span className="text-[18px] highlight-color font-[500] font-jakarta text-[#24282E]">
+                  <label className="block text-gray-700 text-sm font-medium mb-1">
                     Description
-                  </span>
+                  </label>
                   <textarea
-                    placeholder="Description"
+                    placeholder="Add a short description"
                     name="description"
                     value={values.description}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring focus:ring-green-300 focus:outline-none transition"
                     rows={3}
                   />
                   {touched.description && errors.description && (
-                    <p className="text-red-500 text-sm">{errors.description}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.description}
+                    </p>
                   )}
                 </div>
+
                 {/* Action Buttons */}
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-3 pt-2 ">
                   <button
                     type="button"
                     onClick={() => setShowCreateForm(false)}
-                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                    className="px-5 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-[#42DA82] text-white rounded-lg hover:bg-[#3bc574]"
+                    className="px-5 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isLoading}
                   >
                     {isLoading ? "Creating..." : "Create Group"}
@@ -319,6 +325,7 @@ export default function GroupAutocomplete({
           </Formik>
         </div>
       )}
+
       {touched && error && (
         <span className="text-red-500 text-sm mt-1">{error}</span>
       )}
