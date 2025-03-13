@@ -78,6 +78,7 @@ export default function CustomerTable() {
   // Handle page change
   const handlePageChange = (page: number) => {
     const totalPages = Math.ceil(total / PAGINATION_CONFIG.DEFAULT_PAGE_SIZE);
+    console.log("WE ARE HERE_____")
     if (page >= 1 && page <= totalPages) {
       dispatch(setCurrentPage(page));
       const skip = (page - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
@@ -93,13 +94,13 @@ export default function CustomerTable() {
 
   const handleCreateSuccess = () => {
     // If we're not on page 1, go to page 1 to see the new item
-    if (currentPage !== 1) {
-      handlePageChange(1);
-    } else {
-      // Just refresh current page
-      const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
-      dispatch(fetchCustomers({ skip, search: searchTerm }));
-    }
+    // if (currentPage !== 1) {
+    //   handlePageChange(1);
+    // } else {
+    //   // Just refresh current page
+    //   const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
+    //   dispatch(fetchCustomers({ skip, search: searchTerm }));
+    // }
     handleModalClose();
   };
 
