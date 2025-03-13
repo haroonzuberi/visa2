@@ -14,6 +14,7 @@ import NewApplication2 from "../NewApplicationModal2/page";
 import CustomerAutocomplete from "@/components/ui/customer-autocomplete/page";
 import { toast } from "react-toastify";
 import { useDropzone } from "react-dropzone";
+import GroupAutocomplete from "@/components/ui/group-autocomplete/page";
 
 const SpecialTagInput = () => {
   const [tags, setTags] = useState(["Tag1"]);
@@ -152,6 +153,7 @@ const FileUploadBox = ({
 
 const NewApplication = ({ setIsNewApplication, onClose }: any) => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [isGroup, setIsGroup] = useState(false);
   // Add states for file previews
   const [passportPreview, setPassportPreview] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -207,262 +209,310 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
     }
   };
 
+  const handleSubmit = async (values: any, { setSubmitting }: any) => {
+    try {
+      console.log("Form Values:", values);
+      // Your submission logic here
+
+      if (currentStep === 1) {
+        setCurrentStep(2);
+      } else {
+        // Handle final submission
+      }
+    } catch (error) {
+      console.error("Submission error:", error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
-    <>
-      <div className=" fixed inset-0 z-50 overflow-y-auto">
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm">
-          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-h-[90vh]">
-            <div className="bg-white rounded-xl w-[90vw] xl:w-[800px] lg:w-[800px] md:w-[800px] h-[90vh] overflow-y-auto shadow-lg;">
-              {/* Header */}
-              <div className="flex flex-col h-full justify-between items-center w-full">
-                <div className="w-full">
-                  <div className="flex justify-between p-6 pb-0 items-center">
-                    <h2 className="text-lg font-semibold">
-                      Add New Application
-                    </h2>
-                    <button
-                      className="border-[#E9EAEA] border-[1px] p-2 rounded-[10px]"
-                      onClick={() => {
-                        console.log("SET APP---");
-                        onClose();
-                      }}
-                    >
-                      <CrossSvg size={24} />
-                    </button>
-                  </div>
+    <div className=" fixed inset-0 z-50 overflow-y-auto">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm">
+        <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-h-[90vh]">
+          <div className="bg-white rounded-xl w-[90vw] xl:w-[800px] lg:w-[800px] md:w-[800px] h-[90vh] overflow-y-auto shadow-lg;">
+            {/* Header */}
+            <div className="flex flex-col h-full justify-between items-center w-full">
+              <div className="w-full">
+                <div className="flex justify-between p-6 pb-0 items-center">
+                  <h2 className="text-lg font-semibold">Add New Application</h2>
+                  <button
+                    className="border-[#E9EAEA] border-[1px] p-2 rounded-[10px]"
+                    onClick={() => {
+                      console.log("SET APP---");
+                      onClose();
+                    }}
+                  >
+                    <CrossSvg size={24} />
+                  </button>
+                </div>
 
-                  <div className="px-8">
-                    <div className="flex justify-start">
-                      <div className="flex flex-col items-center space-y-2">
-                        {/* Stepper */}
-                        <div className="flex items-center justify-center ">
-                          {steps.map((step, index) => (
+                <div className="px-8">
+                  <div className="flex justify-start">
+                    <div className="flex flex-col items-center space-y-2">
+                      {/* Stepper */}
+                      <div className="flex items-center justify-center ">
+                        {steps.map((step, index) => (
+                          <div
+                            key={step.id}
+                            className="flex items-center m0imp"
+                          >
+                            {/* Step Circle */}
                             <div
-                              key={step.id}
-                              className="flex items-center m0imp"
+                              className={`w-8 h-8 flex items-center justify-center rounded-full border-2 
+                                                        transition-all ${
+                                                          currentStep > step.id
+                                                            ? "bg-[#42DA82] border-[#42DA82] text-white" // Completed step
+                                                            : currentStep ===
+                                                              step.id
+                                                            ? "border-[#42DA82] text-[#42DA82]" // Active step
+                                                            : "border-gray-300 text-gray-400" // Inactive step
+                                                        }`}
+                              onClick={() => handleStepClick(step.id)}
                             >
-                              {/* Step Circle */}
-                              <div
-                                className={`w-8 h-8 flex items-center justify-center rounded-full border-2 
-                                            transition-all ${
-                                              currentStep > step.id
-                                                ? "bg-[#42DA82] border-[#42DA82] text-white" // Completed step
-                                                : currentStep === step.id
-                                                ? "border-[#42DA82] text-[#42DA82]" // Active step
-                                                : "border-gray-300 text-gray-400" // Inactive step
-                                            }`}
-                                onClick={() => handleStepClick(step.id)}
-                              >
-                                {currentStep > step.id ? (
-                                  <Check className="w-5 h-5" /> // Show checkmark for completed steps
-                                ) : currentStep === step.id ? (
-                                  <span className="w-2 h-2 bg-[#42DA82] rounded-full"></span> // Show dot for active step
-                                ) : currentStep === 1 ? null : ( // If on first step, make second circle completely empty
-                                  <span className="w-2 h-2 bg-gray-300 rounded-full"></span> // Show gray dot for upcoming steps
-                                )}
-                              </div>
-
-                              {/* Line Between Steps */}
-                              {index !== steps.length - 1 && (
-                                <div
-                                  className={`w-[350px] h-1 ${
-                                    currentStep > step.id
-                                      ? "bg-[#42DA82]"
-                                      : "bg-[#D1D5DB]"
-                                  }`}
-                                />
+                              {currentStep > step.id ? (
+                                <Check className="w-5 h-5" /> // Show checkmark for completed steps
+                              ) : currentStep === step.id ? (
+                                <span className="w-2 h-2 bg-[#42DA82] rounded-full"></span> // Show dot for active step
+                              ) : currentStep === 1 ? null : ( // If on first step, make second circle completely empty
+                                <span className="w-2 h-2 bg-gray-300 rounded-full"></span> // Show gray dot for upcoming steps
                               )}
                             </div>
-                          ))}
-                        </div>
 
-                        {/* Step Labels */}
-                        <div className="flex justify-center space-x-[310px]">
-                          {steps.map((step) => (
-                            <span
-                              key={step.id}
-                              className={`text-[18px] font-[500] ${
-                                currentStep >= step.id
-                                  ? "text-black"
-                                  : "text-gray-500"
-                              }`}
-                            >
-                              {step.label}
-                            </span>
-                          ))}
-                        </div>
+                            {/* Line Between Steps */}
+                            {index !== steps.length - 1 && (
+                              <div
+                                className={`w-[350px] h-1 ${
+                                  currentStep > step.id
+                                    ? "bg-[#42DA82]"
+                                    : "bg-[#D1D5DB]"
+                                }`}
+                              />
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    </div>
 
-                    {currentStep === 1 && (
-                      <div className="mt-[10px]">
-                        {/* Form Section */}
-                        <div>
-                          <div className="flex items-center justify-between gap-6">
-                            <InputField
-                              fieldName="email"
-                              placeHolder="Email"
-                              type="text"
-                              label="Email"
-                            />
-                            <InputField
-                              fieldName="name"
-                              placeHolder="Name"
-                              type="text"
-                              label="Name"
-                            />
-                          </div>
-
-                          <div className="flex items-center justify-between gap-6 mt-[20px]">
-                            <InputField
-                              fieldName="phone"
-                              placeHolder="+923434348432"
-                              type="text"
-                              label="Phone"
-                            />
-                            <div className="w-full flex flex-col align-start justify-start gap-3">
-                              <label className="text-[#24282E] text-[18px] font-[500] font-jakarta">
-                                Special Tag
-                              </label>
-                              <SpecialTagInput />
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between gap-6 mt-[20px]">
-                            <InputField
-                              fieldName="price"
-                              placeHolder="Price"
-                              type="number"
-                              label="Price"
-                            />
-                            <DropDown
-                              label="Priority"
-                              options={["High Priority", "Medium Priority"]}
-                              fieldName="priority"
-                            />
-                          </div>
-
-                          <div className="flex items-center justify-between gap-6 mt-[20px]">
-                            <DropDown
-                              label="Visa type"
-                              options={["Business Visa", "Tourist Visa"]}
-                              fieldName="visaType"
-                            />
-                            <DropDown
-                              label="Visa country"
-                              options={["India", "USA", "UK"]}
-                              fieldName="visaCountry"
-                            />
-                          </div>
-                        </div>
-                        {/* Group Selection (Yes/No) */}
-                        <div className="col-span-5 flex flex-col gap-2 mt-2">
-                          <span className="text-[#24282E] font-jakarta font-[500] text-[18px]">
-                            Group?
+                      {/* Step Labels */}
+                      <div className="flex justify-center space-x-[310px]">
+                        {steps.map((step) => (
+                          <span
+                            key={step.id}
+                            className={`text-[18px] font-[500] ${
+                              currentStep >= step.id
+                                ? "text-black"
+                                : "text-gray-500"
+                            }`}
+                          >
+                            {step.label}
                           </span>
-                          <div className="flex items-center gap-4">
-                            <label className="flex items-center gap-2 cursor-pointer text-[#24282E] font-jakarta font-[500] text-[18px]">
-                              <input
-                                type="radio"
-                                name="group"
-                                value="yes"
-                                className="hidden peer"
-                              />
-                              <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-gray-400 peer-checked:bg-green-500 peer-checked:border-green-500">
-                                <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
-                              </div>
-                              Yes
-                            </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
 
-                            <label className="flex items-center gap-2 cursor-pointer text-[#24282E] font-jakarta font-[500] text-[18px]">
-                              <input
-                                type="radio"
-                                name="group"
-                                value="no"
-                                className="hidden peer"
-                              />
-                              <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-gray-400 peer-checked:bg-green-500 peer-checked:border-green-500">
-                                <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
-                              </div>
-                              No
+                  {currentStep === 1 && (
+                    <div className="mt-[10px]">
+                      {/* Form Section */}
+                      <div>
+                        <div className="flex items-center justify-between gap-6">
+                          <InputField
+                            fieldName="email"
+                            placeHolder="Email"
+                            type="text"
+                            label="Email"
+                          />
+                          <InputField
+                            fieldName="name"
+                            placeHolder="Name"
+                            type="text"
+                            label="Name"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between gap-6 mt-[20px]">
+                          <InputField
+                            fieldName="phone"
+                            placeHolder="+923434348432"
+                            type="text"
+                            label="Phone"
+                          />
+                          <div className="w-full flex flex-col align-start justify-start gap-3">
+                            <label className="text-[#24282E] text-[18px] font-[500] font-jakarta">
+                              Special Tag
                             </label>
+                            <SpecialTagInput />
                           </div>
                         </div>
-                        {/* Text Area */}
-                        <div className="mt-[20px]">
-                          <label className="text-[#24282E] font-jakarta font-[500] text-[18px]">
-                            Text Area
-                          </label>
-                          <textarea
-                            placeholder="Write Description Here"
-                            className="w-full border-2 border-[#E9EAEA] p-3 rounded-[12px] mt-1 focus:border-primary focus:outline-none"
-                            rows={3}
-                          ></textarea>
-                        </div>
-                        {/* Image Upload Section */}
-                        <div className="grid grid-cols-2 gap-6 my-3">
-                          {/* Passport Upload */}
-                          <div className="w-full">
-                            <label className="text-[#24282E] font-jakarta font-[500] text-[18px] mb-2 block">
-                              Passport
-                            </label>
-                            <FileUploadBox
-                              filePreview={passportPreview}
-                              file={passportFile}
-                              onUpload={(file) =>
-                                handleFileUpload(file, "passport")
-                              }
-                              onRemove={() => {
-                                setPassportPreview(null);
-                                setPassportFile(null);
-                              }}
-                              inputId="passport-upload"
-                            />
-                          </div>
 
-                          {/* Photo Upload */}
-                          <div className="w-full">
-                            <label className="text-[#24282E] font-jakarta font-[500] text-[18px] mb-2 block">
-                              Photo
-                            </label>
-                            <FileUploadBox
-                              filePreview={photoPreview}
-                              file={photoFile}
-                              onUpload={(file) =>
-                                handleFileUpload(file, "photo")
-                              }
-                              onRemove={() => {
-                                setPhotoPreview(null);
-                                setPhotoFile(null);
-                              }}
-                              inputId="photo-upload"
-                            />
-                          </div>
+                        <div className="flex items-center justify-between gap-6 mt-[20px]">
+                          <InputField
+                            fieldName="price"
+                            placeHolder="Price"
+                            type="number"
+                            label="Price"
+                          />
+                          <DropDown
+                            label="Priority"
+                            options={["High Priority", "Medium Priority"]}
+                            fieldName="priority"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between gap-6 mt-[20px]">
+                          <DropDown
+                            label="Visa type"
+                            options={["Business Visa", "Tourist Visa"]}
+                            fieldName="visaType"
+                          />
+                          <DropDown
+                            label="Visa country"
+                            options={["India", "USA", "UK"]}
+                            fieldName="visaCountry"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between gap-6 mt-[20px]">
+                          <CustomerAutocomplete
+                            value={""}
+                            customerId={0}
+                            onChange={function (
+                              value: string,
+                              customerId: number | null
+                            ): void {
+                              throw new Error("Function not implemented.");
+                            }}
+                          />
                         </div>
                       </div>
-                    )}
-
-                    {currentStep === 2 && <NewApplication2 />}
-                  </div>
-                </div>
-                {/* Footer */}
-                <div className="w-full">
-                  <hr className="my-2" />
-                  <div className="flex justify-end p-6 pt-0 items-center pt-4">
-                    <div className="flex gap-2 items-center">
-                      <button className={styles.refundBtn}>
-                        <CopyGreenSvg />
-                        <span className="text-[12px] font-[600] underline">
-                          Add Another Application for Same
+                      {/* Group Selection (Yes/No) */}
+                      <div className="col-span-5 flex flex-col gap-2 mt-2">
+                        <span className="text-[#24282E] font-jakarta font-[500] text-[18px]">
+                          Group?
                         </span>
-                      </button>
-                      <button
-                        onClick={handleNextStep}
-                        className="bg-[#42DA82] text-white px-6 py-2 rounded-[12px] font-semibold"
-                      >
-                        <span>Next Step</span>
-                      </button>
+                        <div className="flex items-center gap-4">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="is_group"
+                              checked={isGroup}
+                              onChange={() => {
+                                setIsGroup(true);
+                              }}
+                              className="hidden peer"
+                            />
+                            <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-gray-400 peer-checked:bg-[#42DA82] peer-checked:border-[#42DA82]">
+                              <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
+                            </div>
+                            <span>Yes</span>
+                          </label>
+
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="is_group"
+                              checked={isGroup}
+                              onChange={() => {
+                                setIsGroup(false);
+                              }}
+                              className="hidden peer"
+                            />
+                            <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-gray-400 peer-checked:bg-[#42DA82] peer-checked:border-[#42DA82]">
+                              <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
+                            </div>
+                            <span>No</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Group Autocomplete */}
+                      {isGroup && (
+                        <div className="mt-4">
+                          <GroupAutocomplete
+                            value={""}
+                            groupId={0}
+                            onChange={function (
+                              value: string,
+                              groupId: number | null
+                            ): void {
+                              throw new Error("Function not implemented.");
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Text Area */}
+                      <div className="mt-[20px]">
+                        <label className="text-[#24282E] font-jakarta font-[500] text-[18px]">
+                          Text Area
+                        </label>
+                        <textarea
+                          placeholder="Write Description Here"
+                          className="w-full border-2 border-[#E9EAEA] p-3 rounded-[12px] mt-1 focus:border-primary focus:outline-none"
+                          rows={3}
+                        ></textarea>
+                      </div>
+                      {/* Image Upload Section */}
+                      <div className="grid grid-cols-2 gap-6 my-3">
+                        {/* Passport Upload */}
+                        <div className="w-full">
+                          <label className="text-[#24282E] font-jakarta font-[500] text-[18px] mb-2 block">
+                            Passport
+                          </label>
+                          <FileUploadBox
+                            filePreview={passportPreview}
+                            file={passportFile}
+                            onUpload={(file) =>
+                              handleFileUpload(file, "passport")
+                            }
+                            onRemove={() => {
+                              setPassportPreview(null);
+                              setPassportFile(null);
+                            }}
+                            inputId="passport-upload"
+                          />
+                        </div>
+
+                        {/* Photo Upload */}
+                        <div className="w-full">
+                          <label className="text-[#24282E] font-jakarta font-[500] text-[18px] mb-2 block">
+                            Photo
+                          </label>
+                          <FileUploadBox
+                            filePreview={photoPreview}
+                            file={photoFile}
+                            onUpload={(file) => handleFileUpload(file, "photo")}
+                            onRemove={() => {
+                              setPhotoPreview(null);
+                              setPhotoFile(null);
+                            }}
+                            inputId="photo-upload"
+                          />
+                        </div>
+                      </div>
                     </div>
+                  )}
+
+                  {currentStep === 2 && <NewApplication2 />}
+                </div>
+              </div>
+              {/* Footer */}
+              <div className="w-full">
+                <hr className="my-2" />
+                <div className="flex justify-end p-6 pt-0 items-center ">
+                  <div className="flex gap-2 items-center">
+                    <button className={styles.refundBtn}>
+                      <CopyGreenSvg />
+                      <span className="text-[12px] font-[600] underline">
+                        Add Another Application for Same
+                      </span>
+                    </button>
+                    <button
+                      type="submit"
+                      className="bg-[#42DA82] text-white px-6 py-2 rounded-[12px] font-semibold"
+                    >
+                      <span>Next Step</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -470,7 +520,7 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

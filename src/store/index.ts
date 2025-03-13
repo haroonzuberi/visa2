@@ -7,6 +7,7 @@ import customersSlice from "./slices/customersSlice";
 import applicantsReducer from "./slices/applicantsSlice";
 import applicationsSlice from "./slices/applicationsSlice";
 import customerDetailsReducer from './slices/customerDetailsSlice';
+import groupsReducer from "./slices/groupsSlice";
 
 export const store = configureStore({
   reducer: {
@@ -17,6 +18,7 @@ export const store = configureStore({
     applicants: applicantsReducer,
     applicantions: applicationsSlice,
     customerDetails: customerDetailsReducer,
+    groups: groupsReducer,
   },
 });
 
