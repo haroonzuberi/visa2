@@ -132,8 +132,8 @@ export default function CreateCustomerModal({
                     {/* Left Column */}
                     <div className={styles.formColumn}>
                       <InputField
-                        fieldName="name"
                         label="Name"
+                        fieldName="name"
                         placeHolder="Enter name"
                         onChange={(e) => setFieldValue("name", e.target.value)}
                         onBlur={handleBlur}
@@ -147,8 +147,8 @@ export default function CreateCustomerModal({
                         touched={touched.phone}
                       />
                       <InputField
-                        fieldName="email"
                         label="Email"
+                        fieldName="email"
                         placeHolder="Enter email"
                         type="email"
                         onChange={(e) => setFieldValue("email", e.target.value)}
@@ -177,7 +177,9 @@ export default function CreateCustomerModal({
                         fieldName="address"
                         label="Address"
                         placeHolder="Enter address"
-                        onChange={(e) => setFieldValue("address", e.target.value)}
+                        onChange={(e) =>
+                          setFieldValue("address", e.target.value)
+                        }
                         onBlur={handleBlur}
                         error={touched.address && errors.address}
                         value={values.address}
@@ -203,8 +205,8 @@ export default function CreateCustomerModal({
                           ? "Updating..."
                           : "Creating..."
                         : editData
-                          ? "Update Customer"
-                          : "Create Customer"}
+                        ? "Update Customer"
+                        : "Create Customer"}
                     </button>
                   </div>
                 </Form>

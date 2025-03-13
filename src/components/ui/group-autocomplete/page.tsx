@@ -5,6 +5,9 @@ import styles from "./styles.module.css";
 import { Plus } from "lucide-react";
 import { toast } from "react-toastify";
 import PhoneInputField from "../phone-input/page";
+import InputField from "../input/input";
+import * as Yup from "yup";
+import { Formik, Form } from "formik";
 
 interface Group {
   id: number;
@@ -39,6 +42,27 @@ export default function GroupAutocomplete({
     description: "",
   });
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const initialValues = {
+    name: "",
+    contact_email: "",
+    contact_phone: "",
+    description: "",
+  };
+
+  // Validation Schema using Yup
+  const validationSchema = Yup.object({
+    name: Yup.string().required("Group Name is required"),
+    contact_email: Yup.string()
+      .email("Invalid email format")
+      .required("Email is required"),
+    contact_phone: Yup.string().required("Phone number is required"),
+    description: Yup.string().required("Description is required"),
+  });
+
+  // Form submission handler
+  const handleSubmit = (values: any) => {
+    handleCreateNewGroup(); // Pass form values to the submission function
+  };
 
   // Handle click outside
   useEffect(() => {
@@ -191,67 +215,88 @@ export default function GroupAutocomplete({
       {showCreateForm && (
         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4">
           <h3 className="text-[16px] font-semibold mb-4">Create New Group</h3>
-          <div className="space-y-3">
-            <input
-              type="text"
-              placeholder="Group Name"
-              value={newGroupData.name}
-              onChange={(e) =>
-                setNewGroupData({ ...newGroupData, name: e.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg"
-            />
-            <input
-              type="email"
-              placeholder="Contact Email"
-              value={newGroupData.contact_email}
-              onChange={(e) =>
-                setNewGroupData({
-                  ...newGroupData,
-                  contact_email: e.target.value,
-                })
-              }
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg"
-            />
-            <PhoneInputField
-              value={""}
-              onChange={function (value: string): void {
-                throw new Error("Function not implemented.");
-              }}
-            />
-            <textarea
-              placeholder="Description"
-              value={newGroupData.description}
-              onChange={(e) =>
-                setNewGroupData({
-                  ...newGroupData,
-                  description: e.target.value,
-                })
-              }
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg"
-              rows={3}
-            />
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowCreateForm(false)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateNewGroup}
-                className="px-4 py-2 bg-[#42DA82] text-white rounded-lg hover:bg-[#3bc574]"
-                disabled={isLoading}
-              >
-                {isLoading ? "Creating..." : "Create Group"}
-              </button>
-            </div>
-          </div>
+
+          <Formik
+            initialValues={initialValues}
+            validationSchema={validationSchema}
+            onSubmit={handleSubmit}
+          >
+            {({ values, handleChange, handleBlur, errors, touched }: any) => (
+              <Form className="space-y-3">
+                {/* Group Name Field */}
+                <InputField
+                  type="text"
+                  placeHolder="Group Name"
+                  value={values.name}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  label="Group Name"
+                  fieldName="name"
+                  error={touched.name && errors.name}
+                />
+
+                {/* Contact Email Field */}
+                <InputField
+                  label="Email"
+                  type="email"
+                  placeHolder="Contact Email"
+                  value={values.contact_email}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  fieldName="contact_email"
+                  error={touched.contact_email && errors.contact_email}
+                />
+
+                {/* Phone Number Field */}
+                <PhoneInputField
+                  value={values.contact_phone}
+                  onChange={(value) =>
+                    handleChange({ target: { name: "contact_phone", value } })
+                  }
+                  error={errors.contact_phone}
+                  touched={touched.contact_phone}
+                />
+
+                {/* Description Field */}
+                <div>
+                  <span className="text-[18px] highlight-color font-[500] font-jakarta text-[#24282E]">
+                    Description
+                  </span>
+                  <textarea
+                    placeholder="Description"
+                    name="description"
+                    value={values.description}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                    rows={3}
+                  />
+                  {touched.description && errors.description && (
+                    <p className="text-red-500 text-sm">{errors.description}</p>
+                  )}
+                </div>
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateForm(false)}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-[#42DA82] text-white rounded-lg hover:bg-[#3bc574]"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Creating..." : "Create Group"}
+                  </button>
+                </div>
+              </Form>
+            )}
+          </Formik>
         </div>
       )}
-
       {touched && error && (
         <span className="text-red-500 text-sm mt-1">{error}</span>
       )}
