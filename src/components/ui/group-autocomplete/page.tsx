@@ -37,6 +37,7 @@ export default function GroupAutocomplete({
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newGroupData, setNewGroupData] = useState({
     name: "",
+    contact_name: "",
     contact_email: "",
     contact_phone: "",
     description: "",
@@ -47,11 +48,14 @@ export default function GroupAutocomplete({
     contact_email: "",
     contact_phone: "",
     description: "",
+    contact_name: "",
   };
 
   // Validation Schema using Yup
   const validationSchema = Yup.object({
     name: Yup.string().required("Group Name is required"),
+    contact_name: Yup.string().required("Group Name is required"),
+
     contact_email: Yup.string()
       .email("Invalid email format")
       .required("Email is required"),
@@ -60,9 +64,9 @@ export default function GroupAutocomplete({
   });
 
   // Form submission handler
-  const handleSubmit = (values: any) => {
-    handleCreateNewGroup(); // Pass form values to the submission function
-  };
+  // const handleSubmit = (values: any) => {
+  //   handleCreateNewGroup(values); // Pass form values to the submission function
+  // };
 
   // Handle click outside
   useEffect(() => {
@@ -134,14 +138,21 @@ export default function GroupAutocomplete({
     setShowSuggestions(false);
   };
 
-  const handleCreateNewGroup = async () => {
+  const handleCreateNewGroup = async (
+    values: any,
+    { setSubmitting, resetForm }: any
+  ) => {
     try {
+      if (isLoading) return; // Prevent double submission
       setIsLoading(true);
-      const response: any = await postAPIWithAuth("groups", newGroupData);
+
+      const response: any = await postAPIWithAuth("groups/", values);
       if (response.success) {
         const newGroup = response.data.data;
+        console.log("newGroup", newGroup);
         handleSelectGroup(newGroup);
         setShowCreateForm(false);
+        resetForm();
         toast.success("Group created successfully");
       }
     } catch (error) {
@@ -149,6 +160,7 @@ export default function GroupAutocomplete({
       toast.error("Failed to create group");
     } finally {
       setIsLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -219,7 +231,7 @@ export default function GroupAutocomplete({
           <Formik
             initialValues={initialValues}
             validationSchema={validationSchema}
-            onSubmit={handleSubmit}
+            onSubmit={handleCreateNewGroup}
           >
             {({ values, handleChange, handleBlur, errors, touched }: any) => (
               <Form className="space-y-3">
@@ -233,6 +245,16 @@ export default function GroupAutocomplete({
                   label="Group Name"
                   fieldName="name"
                   error={touched.name && errors.name}
+                />
+                <InputField
+                  type="text"
+                  placeHolder="Contact Name"
+                  value={values.contact_name}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  label="Contact Name"
+                  fieldName="contact_name"
+                  error={touched.contact_name && errors.contact_name}
                 />
 
                 {/* Contact Email Field */}

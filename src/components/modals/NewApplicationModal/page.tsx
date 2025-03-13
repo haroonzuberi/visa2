@@ -429,13 +429,11 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                       {isGroup && (
                         <div className="mt-4">
                           <GroupAutocomplete
+                            // name="group"
                             value={""}
-                            groupId={0}
-                            onChange={function (
-                              value: string,
-                              groupId: number | null
-                            ): void {
-                              throw new Error("Function not implemented.");
+                            groupId={null}
+                            onChange={(name: string, id: number | null) => {
+                              // Handle group change
                             }}
                           />
                         </div>
