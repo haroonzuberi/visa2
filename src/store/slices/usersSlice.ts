@@ -69,13 +69,24 @@ export const createUser = createAsyncThunk(
           response.data.detail.message || "Failed to create user"
         );
       }
+      
       const state: any = getState();
-      const currentPage = state.users.currentPage;
-      await dispatch(fetchUsers({ skip: currentPage }));
+      const currentPage = state.applicants.currentPage;
+      const total = state.applicants.total + 1;
+
+      if (
+        currentPage !== 1 &&
+        total > PAGINATION_CONFIG.DEFAULT_PAGE_SIZE * (currentPage - 1)
+      ) {
+        const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
+        dispatch(fetchUsers({ skip }));
+      }
 
       toast.success("User created successfully");
-
-      return response.data;
+      return {
+        users: response.data,
+        shouldAddToList: currentPage === 1,
+      };
     } catch (error: any) {
       console.log("rES===----", error);
 
@@ -175,10 +186,13 @@ const usersSlice = createSlice({
         state.error = null;
       })
       .addCase(createUser.fulfilled, (state, action) => {
-        state.isLoading = false;
-        console.log("ACTION PAYLOAD", action.payload);
-        // state.users.unshift(action.payload.data);
-        // state.total += 1;
+        if (action.payload.shouldAddToList) {
+          state.users.unshift(action.payload.users);
+          if (state.users.length > PAGINATION_CONFIG.DEFAULT_PAGE_SIZE) {
+            state.users.pop();
+          }
+        }
+        state.total += 1;
       })
       .addCase(createUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -202,12 +216,14 @@ const usersSlice = createSlice({
         state.error = null;
       })
       .addCase(updateUser.fulfilled, (state, action) => {
-        state.isLoading = false;
         const index = state.users.findIndex(
-          (user) => user.id === action.payload.id
+          (applicant) => applicant.id === action.payload.id
         );
         if (index !== -1) {
-          state.users[index] = { ...state.users[index], ...action.payload };
+          state.users[index] = {
+            ...state.users[index],
+            ...action.payload,
+          };
         }
       })
       .addCase(updateUser.rejected, (state, action) => {

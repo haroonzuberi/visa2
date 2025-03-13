@@ -46,7 +46,6 @@ export default function CustomerTable() {
     (state: RootState) => state.customers
   );
 
-  // Fetch customers only when page changes or search term changes
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const isFromDetails = searchParams.get("fromDetails");
@@ -54,7 +53,16 @@ export default function CustomerTable() {
     if (!isFromDetails) {
       fetchData();
     }
-  }, [currentPage, searchTerm]);
+  }, []);
+  // Fetch customers only when page changes or search term changes
+  // useEffect(() => {
+  //   const searchParams = new URLSearchParams(window.location.search);
+  //   const isFromDetails = searchParams.get("fromDetails");
+
+  //   if (!isFromDetails) {
+  //     fetchData();
+  //   }
+  // }, [ searchTerm]);
 
   // Remove the original useEffect that was fetching on mount
   // Fetch customers on mount and when page changes
@@ -72,23 +80,26 @@ export default function CustomerTable() {
     const totalPages = Math.ceil(total / PAGINATION_CONFIG.DEFAULT_PAGE_SIZE);
     if (page >= 1 && page <= totalPages) {
       dispatch(setCurrentPage(page));
+      const skip = (page - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
+      dispatch(fetchCustomers({ skip, search: searchTerm }));
     }
   };
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
     dispatch(setCurrentPage(1));
+    dispatch(fetchCustomers({ skip: 0, search: value }));
   };
 
   const handleCreateSuccess = () => {
     // If we're not on page 1, go to page 1 to see the new item
-    if (currentPage !== 1) {
-      handlePageChange(1);
-    } else {
-      // Just refresh current page
-      const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
-      dispatch(fetchCustomers({ skip, search: searchTerm }));
-    }
+    // if (currentPage !== 1) {
+    //   handlePageChange(1);
+    // } else {
+    //   // Just refresh current page
+    //   const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
+    //   dispatch(fetchCustomers({ skip, search: searchTerm }));
+    // }
     handleModalClose();
   };
 
@@ -332,7 +343,7 @@ export default function CustomerTable() {
                             </DropdownMenuContent>
                           </DropdownMenu>
                           <button
-                              onClick={() => handleNavigateToDetails(customer.id)}
+                            onClick={() => handleNavigateToDetails(customer.id)}
                             type="button"
                             className={styles.customerBtn}
                           >
