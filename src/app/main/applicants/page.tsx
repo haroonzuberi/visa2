@@ -208,9 +208,10 @@ export default function ApplicantsTable() {
                           <DropdownMenuTrigger>
                             <DropdownSVG className="cursor-pointer" />
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent>
+                          <DropdownMenuContent className="bg-white ">
                             <DropdownMenuItem
                               onClick={() => handleEditClick(applicant)}
+                              className="bg-white"
                             >
                               <EditSvg className="w-4 h-4 mr-2" />
                               Edit
