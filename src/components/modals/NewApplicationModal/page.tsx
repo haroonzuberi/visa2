@@ -11,6 +11,9 @@ import InputField from "@/components/ui/input/input";
 import DropDown from "@/components/ui/dropdown/page";
 import CircleImageSvg from "@/Assets/svgs/CricleImageSvg";
 import NewApplication2 from "../NewApplicationModal2/page";
+import CustomerAutocomplete from "@/components/ui/customer-autocomplete/page";
+import { toast } from "react-toastify";
+import { useDropzone } from "react-dropzone";
 
 const SpecialTagInput = () => {
   const [tags, setTags] = useState(["Tag1"]);
@@ -63,8 +66,97 @@ const steps = [
   { id: 2, label: "Step 2" },
 ];
 
+// Add these constants for file validation
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/jpg"];
+
+const FileUploadBox = ({
+  filePreview,
+  file,
+  onUpload,
+  onRemove,
+  inputId,
+}: {
+  filePreview: string | null;
+  file: File | null;
+  onUpload: (file: File) => void;
+  onRemove: () => void;
+  inputId: string;
+}) => {
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: (acceptedFiles) => {
+      if (acceptedFiles?.[0]) {
+        onUpload(acceptedFiles[0]);
+      }
+    },
+    accept: {
+      "image/*": [".jpeg", ".jpg", ".png"],
+    },
+    multiple: false,
+  });
+
+  if (filePreview && file) {
+    return (
+      <div
+        {...getRootProps()}
+        className="bg-white !border-[1px] !border-[#E9EAEA] rounded-[16px] w-full h-[72px] flex items-center justify-between px-6 cursor-pointer"
+      >
+        <input {...getInputProps()} id={inputId} />
+        <div className="flex items-center gap-3">
+          <img
+            src={filePreview}
+            alt="Preview"
+            className="w-[40px] h-[40px] rounded-[8px] object-cover"
+          />
+          <div className="flex flex-col">
+            <span className="text-[14px] text-[#24282E]">{file.name}</span>
+            <span className="text-[12px] text-[#727A90]">
+              {Math.round(file.size / 1024)}kb
+            </span>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="bg-[#42DA82] text-white px-5 py-2 rounded-[12px] text-[14px] font-medium"
+        >
+          Change
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      {...getRootProps()}
+      className={`bg-white !border-[1px] !border-[#E9EAEA] rounded-[16px]  w-full h-[72px] flex items-center justify-between px-6 cursor-pointer
+        ${isDragActive ? "bg-[#F8F9FB]" : ""}`}
+    >
+      <input {...getInputProps()} id={inputId} />
+      <div className="flex items-center gap-3">
+        <div className="text-[#727A90]">
+          <CircleImageSvg className="w-[32px] h-[32px]" />
+        </div>
+        <span className="text-[14px] text-[#727A90]">
+          Drag and drop image here, or click add image
+        </span>
+      </div>
+      <button
+        type="button"
+        className="bg-[#42DA82] text-white px-5 py-2 rounded-[12px] text-[14px] font-medium"
+      >
+        Upload
+      </button>
+    </div>
+  );
+};
+
 const NewApplication = ({ setIsNewApplication, onClose }: any) => {
   const [currentStep, setCurrentStep] = useState(1);
+  // Add states for file previews
+  const [passportPreview, setPassportPreview] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [passportFile, setPassportFile] = useState<File | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   const handleStepClick = (step: number) => {
     setCurrentStep(step);
@@ -76,32 +168,68 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
     }
   };
 
+  const handleFileUpload = (file: File, fileType: "passport" | "photo") => {
+    if (file) {
+      // Validate file size
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error("File size should be less than 5MB");
+        return;
+      }
+
+      // Validate file type
+      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        toast.error("Only JPG, JPEG and PNG files are allowed");
+        return;
+      }
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (fileType === "passport") {
+          setPassportPreview(reader.result as string);
+          setPassportFile(file);
+        } else {
+          setPhotoPreview(reader.result as string);
+          setPhotoFile(file);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeFile = (fileType: "passport" | "photo") => {
+    if (fileType === "passport") {
+      setPassportPreview(null);
+      setPassportFile(null);
+    } else {
+      setPhotoPreview(null);
+      setPhotoFile(null);
+    }
+  };
+
   return (
     <>
       <div className=" fixed inset-0 z-50 overflow-y-auto">
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-        >
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm">
           <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-h-[90vh]">
             <div className="bg-white rounded-xl w-[90vw] xl:w-[800px] lg:w-[800px] md:w-[800px] h-[90vh] overflow-y-auto shadow-lg;">
-
               {/* Header */}
               <div className="flex flex-col h-full justify-between items-center w-full">
                 <div className="w-full">
                   <div className="flex justify-between p-6 pb-0 items-center">
-                    <h2 className="text-lg font-semibold">Add New Application</h2>
+                    <h2 className="text-lg font-semibold">
+                      Add New Application
+                    </h2>
                     <button
                       className="border-[#E9EAEA] border-[1px] p-2 rounded-[10px]"
                       onClick={() => {
-                        console.log("SET APP---")
+                        console.log("SET APP---");
                         onClose();
                       }}
                     >
                       <CrossSvg size={24} />
                     </button>
                   </div>
-                  <hr className="my-3" />
-                  {/* Main Content */}
 
                   <div className="px-8">
                     <div className="flex justify-start">
@@ -109,16 +237,20 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                         {/* Stepper */}
                         <div className="flex items-center justify-center ">
                           {steps.map((step, index) => (
-                            <div key={step.id} className="flex items-center m0imp">
+                            <div
+                              key={step.id}
+                              className="flex items-center m0imp"
+                            >
                               {/* Step Circle */}
                               <div
                                 className={`w-8 h-8 flex items-center justify-center rounded-full border-2 
-                                            transition-all ${currentStep > step.id
-                                    ? "bg-[#42DA82] border-[#42DA82] text-white" // Completed step
-                                    : currentStep === step.id
-                                      ? "border-[#42DA82] text-[#42DA82]" // Active step
-                                      : "border-gray-300 text-gray-400" // Inactive step
-                                  }`}
+                                            transition-all ${
+                                              currentStep > step.id
+                                                ? "bg-[#42DA82] border-[#42DA82] text-white" // Completed step
+                                                : currentStep === step.id
+                                                ? "border-[#42DA82] text-[#42DA82]" // Active step
+                                                : "border-gray-300 text-gray-400" // Inactive step
+                                            }`}
                                 onClick={() => handleStepClick(step.id)}
                               >
                                 {currentStep > step.id ? (
@@ -133,10 +265,11 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                               {/* Line Between Steps */}
                               {index !== steps.length - 1 && (
                                 <div
-                                  className={`w-[350px] h-1 ${currentStep > step.id
-                                    ? "bg-[#42DA82]"
-                                    : "bg-[#D1D5DB]"
-                                    }`}
+                                  className={`w-[350px] h-1 ${
+                                    currentStep > step.id
+                                      ? "bg-[#42DA82]"
+                                      : "bg-[#D1D5DB]"
+                                  }`}
                                 />
                               )}
                             </div>
@@ -148,8 +281,11 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                           {steps.map((step) => (
                             <span
                               key={step.id}
-                              className={`text-[18px] font-[500] ${currentStep >= step.id ? "text-black" : "text-gray-500"
-                                }`}
+                              className={`text-[18px] font-[500] ${
+                                currentStep >= step.id
+                                  ? "text-black"
+                                  : "text-gray-500"
+                              }`}
                             >
                               {step.label}
                             </span>
@@ -221,8 +357,10 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                         </div>
                         {/* Group Selection (Yes/No) */}
                         <div className="col-span-5 flex flex-col gap-2 mt-2">
-                          <span className="text-[#24282E] font-jakarta font-[500] text-[18px]">Group?</span>
-                          <div className='flex items-center gap-4'>
+                          <span className="text-[#24282E] font-jakarta font-[500] text-[18px]">
+                            Group?
+                          </span>
+                          <div className="flex items-center gap-4">
                             <label className="flex items-center gap-2 cursor-pointer text-[#24282E] font-jakarta font-[500] text-[18px]">
                               <input
                                 type="radio"
@@ -261,42 +399,44 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                             rows={3}
                           ></textarea>
                         </div>
-                        {/* Image Upload (Passport & Photo) */}
-                        <div className="flex items-center justify-between gap-6 my-3">
+                        {/* Image Upload Section */}
+                        <div className="grid grid-cols-2 gap-6 my-3">
                           {/* Passport Upload */}
                           <div className="w-full">
-                            <label className="text-[#24282E] font-jakarta font-[500] text-[18px]">
+                            <label className="text-[#24282E] font-jakarta font-[500] text-[18px] mb-2 block">
                               Passport
                             </label>
-                            <div
-                              className={`flex items-center justify-between gap-3 ${styles.mainDiv}`}
-                            >
-                              <CircleImageSvg className="w-[60px]" />
-                              <span className="text-[14px] font-[400] text-[#727A90]">
-                                Drag and drop image here, or click add image
-                              </span>
-                              <button className="bg-[#42DA82] text-white px-6 py-2 rounded-[12px] font-semibold">
-                                Upload
-                              </button>
-                            </div>
+                            <FileUploadBox
+                              filePreview={passportPreview}
+                              file={passportFile}
+                              onUpload={(file) =>
+                                handleFileUpload(file, "passport")
+                              }
+                              onRemove={() => {
+                                setPassportPreview(null);
+                                setPassportFile(null);
+                              }}
+                              inputId="passport-upload"
+                            />
                           </div>
 
                           {/* Photo Upload */}
                           <div className="w-full">
-                            <label className="text-[#24282E] font-jakarta font-[500] text-[18px]">
+                            <label className="text-[#24282E] font-jakarta font-[500] text-[18px] mb-2 block">
                               Photo
                             </label>
-                            <div
-                              className={`flex items-center justify-between gap-3 ${styles.mainDiv}`}
-                            >
-                              <CircleImageSvg className="w-[60px]" />
-                              <span className="text-[14px] font-[400] text-[#727A90]">
-                                Drag and drop image here, or click add image
-                              </span>
-                              <button className="bg-[#42DA82] text-white px-6 py-2 rounded-[12px] font-semibold">
-                                Upload
-                              </button>
-                            </div>
+                            <FileUploadBox
+                              filePreview={photoPreview}
+                              file={photoFile}
+                              onUpload={(file) =>
+                                handleFileUpload(file, "photo")
+                              }
+                              onRemove={() => {
+                                setPhotoPreview(null);
+                                setPhotoFile(null);
+                              }}
+                              inputId="photo-upload"
+                            />
                           </div>
                         </div>
                       </div>
@@ -329,7 +469,7 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
             </div>
           </div>
         </div>
-      </div >
+      </div>
     </>
   );
 };
