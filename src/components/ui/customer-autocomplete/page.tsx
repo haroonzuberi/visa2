@@ -15,6 +15,7 @@ interface CustomerAutocompleteProps {
   onChange: (value: string, customerId: number | null) => void;
   error?: any;
   touched?: any;
+  name?: any;
 }
 
 export default function CustomerAutocomplete({
@@ -23,6 +24,7 @@ export default function CustomerAutocomplete({
   onChange,
   error,
   touched,
+  name,
 }: CustomerAutocompleteProps) {
   const [searchTerm, setSearchTerm] = useState(value);
   const [suggestions, setSuggestions] = useState<Customer[]>([]);
@@ -94,6 +96,7 @@ export default function CustomerAutocomplete({
         <input
           type="text"
           value={searchTerm}
+          name={name}
           onChange={(e) => {
             setSearchTerm(e.target.value);
             setShowSuggestions(true);

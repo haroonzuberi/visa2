@@ -15,6 +15,9 @@ import CustomerAutocomplete from "@/components/ui/customer-autocomplete/page";
 import { toast } from "react-toastify";
 import { useDropzone } from "react-dropzone";
 import GroupAutocomplete from "@/components/ui/group-autocomplete/page";
+import { Formik, Form } from "formik";
+import * as Yup from "yup";
+import ApplicantAutocomplete from "@/components/ui/applicant-autocomplete/page";
 
 const SpecialTagInput = () => {
   const [tags, setTags] = useState(["Tag1"]);
@@ -159,6 +162,35 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [passportFile, setPassportFile] = useState<File | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
+    null
+  );
+
+  const initialValues = {
+    name: "",
+    email: "",
+    phone: "",
+    passport_number: "",
+    customer_id: null,
+    customer_name: "",
+    applicant_id: null,
+    applicant_name: "",
+    price: "",
+    priority: "",
+    visa_type: "",
+    visa_country: "",
+    is_group: false,
+    group: "",
+    group_id: null,
+    description: "",
+    // ... other fields
+  };
+
+  const validationSchema = Yup.object().shape({
+    customer_id: Yup.number().nullable().required("Customer is required"),
+    applicant_id: Yup.number().nullable().required("Applicant is required"),
+    // ... other validations
+  });
 
   const handleStepClick = (step: number) => {
     setCurrentStep(step);
@@ -312,183 +344,227 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                   </div>
 
                   {currentStep === 1 && (
-                    <div className="mt-[10px]">
-                      {/* Form Section */}
-                      <div>
-                        <div className="flex items-center justify-between gap-6">
-                          <InputField
-                            fieldName="email"
-                            placeHolder="Email"
-                            type="text"
-                            label="Email"
-                          />
-                          <InputField
-                            fieldName="name"
-                            placeHolder="Name"
-                            type="text"
-                            label="Name"
-                          />
-                        </div>
+                    <Formik
+                      initialValues={initialValues}
+                      validationSchema={validationSchema}
+                      onSubmit={handleSubmit}
+                    >
+                      {({ values, errors, touched, setFieldValue }) => (
+                        <Form>
+                          <div className="mt-[10px]">
+                            {/* Form Section */}
+                            <div>
+                              <div className="flex items-center justify-between gap-6">
+                                <InputField
+                                  fieldName="email"
+                                  placeHolder="Email"
+                                  type="text"
+                                  label="Email"
+                                />
+                                <InputField
+                                  fieldName="name"
+                                  placeHolder="Name"
+                                  type="text"
+                                  label="Name"
+                                />
+                              </div>
 
-                        <div className="flex items-center justify-between gap-6 mt-[20px]">
-                          <InputField
-                            fieldName="phone"
-                            placeHolder="+923434348432"
-                            type="text"
-                            label="Phone"
-                          />
-                          <div className="w-full flex flex-col align-start justify-start gap-3">
-                            <label className="text-[#24282E] text-[18px] font-[500] font-jakarta">
-                              Special Tag
-                            </label>
-                            <SpecialTagInput />
+                              <div className="flex items-center justify-between gap-6 mt-[20px]">
+                                <InputField
+                                  fieldName="phone"
+                                  placeHolder="+923434348432"
+                                  type="text"
+                                  label="Phone"
+                                />
+                                <div className="w-full flex flex-col align-start justify-start gap-3">
+                                  <label className="text-[#24282E] text-[18px] font-[500] font-jakarta">
+                                    Special Tag
+                                  </label>
+                                  <SpecialTagInput />
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between gap-6 mt-[20px]">
+                                <InputField
+                                  fieldName="price"
+                                  placeHolder="Price"
+                                  type="number"
+                                  label="Price"
+                                />
+                                <DropDown
+                                  label="Priority"
+                                  options={["High Priority", "Medium Priority"]}
+                                  fieldName="priority"
+                                />
+                              </div>
+
+                              <div className="flex items-center justify-between gap-6 mt-[20px]">
+                                <DropDown
+                                  label="Visa type"
+                                  options={["Business Visa", "Tourist Visa"]}
+                                  fieldName="visaType"
+                                />
+                                <DropDown
+                                  label="Visa country"
+                                  options={["India", "USA", "UK"]}
+                                  fieldName="visaCountry"
+                                />
+                              </div>
+
+                              <div className="flex items-center justify-between gap-6 mt-[20px]">
+                                <CustomerAutocomplete
+                                  name="customer"
+                                  value={""}
+                                  customerId={null}
+                                  onChange={(
+                                    name: string,
+                                    id: number | null
+                                  ) => {
+                                    setFieldValue("customer_name", name);
+                                    setFieldValue("customer_id", id);
+                                    // Reset applicant when customer changes
+                                    setFieldValue("applicant_name", "");
+                                    setFieldValue("applicant_id", null);
+                                    setSelectedCustomerId(id);
+                                  }}
+                                  error={errors.customer_id}
+                                  touched={touched.customer_id}
+                                />
+                              </div>
+
+                              {/* Applicant Selection - Only show when customer is selected */}
+                              {values.customer_id && (
+                                <div className="flex items-center justify-between gap-6 mt-[20px]">
+                                  <ApplicantAutocomplete
+                                    name="applicant"
+                                    value={values.applicant_name}
+                                    applicantId={values.applicant_id}
+                                    customerId={values.customer_id} // Pass customer_id to filter applicants
+                                    onChange={(
+                                      name: string,
+                                      id: number | null
+                                    ) => {
+                                      setFieldValue("applicant_name", name);
+                                      setFieldValue("applicant_id", id);
+                                    }}
+                                    error={errors.applicant_id}
+                                    touched={touched.applicant_id}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                            {/* Group Selection (Yes/No) */}
+                            <div className="col-span-5 flex flex-col gap-2 mt-2">
+                              <span className="text-[#24282E] font-jakarta font-[500] text-[18px]">
+                                Group?
+                              </span>
+                              <div className="flex items-center gap-4">
+                                {/* Yes Option */}
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name="is_group"
+                                    value="true"
+                                    checked={isGroup === true} // Ensure it's checked when isGroup is true
+                                    onChange={() => setIsGroup(true)}
+                                    className="hidden peer"
+                                  />
+                                  <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-gray-400 peer-checked:bg-[#42DA82] peer-checked:border-[#42DA82]">
+                                    <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
+                                  </div>
+                                  <span>Yes</span>
+                                </label>
+
+                                {/* No Option */}
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name="is_group"
+                                    value="false"
+                                    checked={isGroup === false} // Ensure it's checked when isGroup is false
+                                    onChange={() => setIsGroup(false)}
+                                    className="hidden peer"
+                                  />
+                                  <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-gray-400 peer-checked:bg-[#42DA82] peer-checked:border-[#42DA82]">
+                                    <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
+                                  </div>
+                                  <span>No</span>
+                                </label>
+                              </div>
+                            </div>
+
+                            {/* Group Autocomplete */}
+                            {isGroup && (
+                              <div className="mt-4">
+                                <GroupAutocomplete
+                                  // name="group"
+                                  value={""}
+                                  groupId={null}
+                                  onChange={(
+                                    name: string,
+                                    id: number | null
+                                  ) => {
+                                    // Handle group change
+                                  }}
+                                />
+                              </div>
+                            )}
+
+                            {/* Text Area */}
+                            <div className="mt-[20px]">
+                              <label className="text-[#24282E] font-jakarta font-[500] text-[18px]">
+                                Text Area
+                              </label>
+                              <textarea
+                                placeholder="Write Description Here"
+                                className="w-full border-2 border-[#E9EAEA] p-3 rounded-[12px] mt-1 focus:border-primary focus:outline-none"
+                                rows={3}
+                              ></textarea>
+                            </div>
+                            {/* Image Upload Section */}
+                            <div className="grid grid-cols-2 gap-6 my-3">
+                              {/* Passport Upload */}
+                              <div className="w-full">
+                                <label className="text-[#24282E] font-jakarta font-[500] text-[18px] mb-2 block">
+                                  Passport
+                                </label>
+                                <FileUploadBox
+                                  filePreview={passportPreview}
+                                  file={passportFile}
+                                  onUpload={(file) =>
+                                    handleFileUpload(file, "passport")
+                                  }
+                                  onRemove={() => {
+                                    setPassportPreview(null);
+                                    setPassportFile(null);
+                                  }}
+                                  inputId="passport-upload"
+                                />
+                              </div>
+
+                              {/* Photo Upload */}
+                              <div className="w-full">
+                                <label className="text-[#24282E] font-jakarta font-[500] text-[18px] mb-2 block">
+                                  Photo
+                                </label>
+                                <FileUploadBox
+                                  filePreview={photoPreview}
+                                  file={photoFile}
+                                  onUpload={(file) =>
+                                    handleFileUpload(file, "photo")
+                                  }
+                                  onRemove={() => {
+                                    setPhotoPreview(null);
+                                    setPhotoFile(null);
+                                  }}
+                                  inputId="photo-upload"
+                                />
+                              </div>
+                            </div>
                           </div>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-6 mt-[20px]">
-                          <InputField
-                            fieldName="price"
-                            placeHolder="Price"
-                            type="number"
-                            label="Price"
-                          />
-                          <DropDown
-                            label="Priority"
-                            options={["High Priority", "Medium Priority"]}
-                            fieldName="priority"
-                          />
-                        </div>
-
-                        <div className="flex items-center justify-between gap-6 mt-[20px]">
-                          <DropDown
-                            label="Visa type"
-                            options={["Business Visa", "Tourist Visa"]}
-                            fieldName="visaType"
-                          />
-                          <DropDown
-                            label="Visa country"
-                            options={["India", "USA", "UK"]}
-                            fieldName="visaCountry"
-                          />
-                        </div>
-
-                        <div className="flex items-center justify-between gap-6 mt-[20px]">
-                          <CustomerAutocomplete
-                            value={""}
-                            customerId={0}
-                            onChange={function (
-                              value: string,
-                              customerId: number | null
-                            ): void {
-                              throw new Error("Function not implemented.");
-                            }}
-                          />
-                        </div>
-                      </div>
-                      {/* Group Selection (Yes/No) */}
-                      <div className="col-span-5 flex flex-col gap-2 mt-2">
-                        <span className="text-[#24282E] font-jakarta font-[500] text-[18px]">
-                          Group?
-                        </span>
-                        <div className="flex items-center gap-4">
-                          {/* Yes Option */}
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="is_group"
-                              value="true"
-                              checked={isGroup === true} // Ensure it's checked when isGroup is true
-                              onChange={() => setIsGroup(true)}
-                              className="hidden peer"
-                            />
-                            <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-gray-400 peer-checked:bg-[#42DA82] peer-checked:border-[#42DA82]">
-                              <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
-                            </div>
-                            <span>Yes</span>
-                          </label>
-
-                          {/* No Option */}
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="is_group"
-                              value="false"
-                              checked={isGroup === false} // Ensure it's checked when isGroup is false
-                              onChange={() => setIsGroup(false)}
-                              className="hidden peer"
-                            />
-                            <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-gray-400 peer-checked:bg-[#42DA82] peer-checked:border-[#42DA82]">
-                              <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
-                            </div>
-                            <span>No</span>
-                          </label>
-                        </div>
-                      </div>
-
-                      {/* Group Autocomplete */}
-                      {isGroup && (
-                        <div className="mt-4">
-                          <GroupAutocomplete
-                            // name="group"
-                            value={""}
-                            groupId={null}
-                            onChange={(name: string, id: number | null) => {
-                              // Handle group change
-                            }}
-                          />
-                        </div>
+                        </Form>
                       )}
-
-                      {/* Text Area */}
-                      <div className="mt-[20px]">
-                        <label className="text-[#24282E] font-jakarta font-[500] text-[18px]">
-                          Text Area
-                        </label>
-                        <textarea
-                          placeholder="Write Description Here"
-                          className="w-full border-2 border-[#E9EAEA] p-3 rounded-[12px] mt-1 focus:border-primary focus:outline-none"
-                          rows={3}
-                        ></textarea>
-                      </div>
-                      {/* Image Upload Section */}
-                      <div className="grid grid-cols-2 gap-6 my-3">
-                        {/* Passport Upload */}
-                        <div className="w-full">
-                          <label className="text-[#24282E] font-jakarta font-[500] text-[18px] mb-2 block">
-                            Passport
-                          </label>
-                          <FileUploadBox
-                            filePreview={passportPreview}
-                            file={passportFile}
-                            onUpload={(file) =>
-                              handleFileUpload(file, "passport")
-                            }
-                            onRemove={() => {
-                              setPassportPreview(null);
-                              setPassportFile(null);
-                            }}
-                            inputId="passport-upload"
-                          />
-                        </div>
-
-                        {/* Photo Upload */}
-                        <div className="w-full">
-                          <label className="text-[#24282E] font-jakarta font-[500] text-[18px] mb-2 block">
-                            Photo
-                          </label>
-                          <FileUploadBox
-                            filePreview={photoPreview}
-                            file={photoFile}
-                            onUpload={(file) => handleFileUpload(file, "photo")}
-                            onRemove={() => {
-                              setPhotoPreview(null);
-                              setPhotoFile(null);
-                            }}
-                            inputId="photo-upload"
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    </Formik>
                   )}
 
                   {currentStep === 2 && <NewApplication2 />}
