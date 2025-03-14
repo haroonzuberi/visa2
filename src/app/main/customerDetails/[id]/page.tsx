@@ -73,8 +73,7 @@ export default function CustomerDetails() {
             onClick={handleBack}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
           >
-            <ArrowLeftIcon className="w-5 h-5" />
-            <span>Back to Customers</span>
+            <ArrowLeftIcon className="w-[30px] h-[30px]" />
           </button>
           <h1 className={styles.header}>All Customers</h1>
         </div>
