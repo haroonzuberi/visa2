@@ -15,11 +15,11 @@ import CustomerAutocomplete from "@/components/ui/customer-autocomplete/page";
 import { toast } from "react-toastify";
 import { useDropzone } from "react-dropzone";
 import GroupAutocomplete from "@/components/ui/group-autocomplete/page";
-import { Formik, Form } from "formik";
+import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import ApplicantAutocomplete from "@/components/ui/applicant-autocomplete/page";
 
-const SpecialTagInput = () => {
+const SpecialTagInput = ({ error }: { error: any }) => {
   const [tags, setTags] = useState(["Tag1"]);
   const [inputValue, setInputValue] = useState("");
 
@@ -61,6 +61,7 @@ const SpecialTagInput = () => {
           onKeyDown={handleAddTag}
         />
       </div>
+      {error && <div className="text-red-500 text-sm">{error}</div>}
     </div>
   );
 };
@@ -154,6 +155,54 @@ const FileUploadBox = ({
   );
 };
 
+const validationSchema = Yup.object().shape({
+  email: Yup.string()
+    .email("Invalid email address")
+    .required("Email is required"),
+  name: Yup.string()
+    .required("Name is required")
+    .min(2, "Name must be at least 2 characters"),
+  phone: Yup.string()
+    .required("Phone is required")
+    .matches(/^\+?[1-9]\d{1,14}$/, "Invalid phone number"),
+  special_tags: Yup.array()
+    .of(Yup.string())
+    .min(1, "At least one special tag is required"),
+  price: Yup.number()
+    .required("Price is required")
+    .min(0, "Price must be greater than or equal to 0"),
+  priority: Yup.string()
+    .required("Priority is required")
+    .oneOf(["High Priority", "Medium Priority"], "Invalid priority"),
+  visa_type: Yup.string()
+    .required("Visa type is required")
+    .oneOf(["Business Visa", "Tourist Visa"], "Invalid visa type"),
+  visa_country: Yup.string()
+    .required("Visa country is required")
+    .oneOf(["India", "USA", "UK"], "Invalid visa country"),
+  customer_id: Yup.number().nullable().required("Customer is required"),
+  applicant_id: Yup.number()
+    .nullable()
+    .when('customer_id', {
+      is: (val: number | null) => val !== null,
+      then: () => Yup.number().nullable().required("Applicant is required"),
+      otherwise: () => Yup.number().nullable()
+    }),
+  group: Yup.string().when('is_group', {
+    is: true,
+    then: () => Yup.string().required("Group is required when group is selected"),
+    otherwise: () => Yup.string()
+  }),
+  group_id: Yup.number().nullable().when('is_group', {
+    is: true,
+    then: () => Yup.number().nullable().required("Group selection is required"),
+    otherwise: () => Yup.number().nullable()
+  }),
+  internal_notes: Yup.string()
+    .min(10, "Description must be at least 10 characters")
+    .max(500, "Description must not exceed 500 characters")
+});
+
 const NewApplication = ({ setIsNewApplication, onClose }: any) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isGroup, setIsGroup] = useState(false);
@@ -165,12 +214,9 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
     null
   );
+  // const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
 
   const initialValues = {
-    name: "",
-    email: "",
-    phone: "",
-    passport_number: "",
     customer_id: null,
     customer_name: "",
     applicant_id: null,
@@ -182,15 +228,8 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
     is_group: false,
     group: "",
     group_id: null,
-    description: "",
-    // ... other fields
+    description: ""
   };
-
-  const validationSchema = Yup.object().shape({
-    customer_id: Yup.number().nullable().required("Customer is required"),
-    applicant_id: Yup.number().nullable().required("Applicant is required"),
-    // ... other validations
-  });
 
   const handleStepClick = (step: number) => {
     setCurrentStep(step);
@@ -241,18 +280,31 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
     }
   };
 
-  const handleSubmit = async (values: any, { setSubmitting }: any) => {
+  const handleSubmit = async (values: any, { setSubmitting, setErrors }: any) => {
     try {
-      console.log("Form Values:", values);
-      // Your submission logic here
+      // Validate the current step
+      await validationSchema.validate(values, { abortEarly: false });
 
       if (currentStep === 1) {
+        // Move to next step if validation passes
         setCurrentStep(2);
       } else {
         // Handle final submission
+        console.log("Form Values:", values);
+        // Your API call here
+        // await submitApplication(values);
+        // toast.success("Application created successfully");
+        // onClose();
       }
-    } catch (error) {
-      console.error("Submission error:", error);
+    } catch (err: any) {
+      if (err.inner) {
+        const errors = err.inner.reduce((acc: any, error: any) => {
+          acc[error.path] = error.message;
+          return acc;
+        }, {});
+        setErrors(errors);
+      }
+      console.error("Validation error:", err);
     } finally {
       setSubmitting(false);
     }
@@ -355,74 +407,120 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                             {/* Form Section */}
                             <div>
                               <div className="flex items-center justify-between gap-6">
-                                <InputField
-                                  fieldName="email"
-                                  placeHolder="Email"
-                                  type="text"
-                                  label="Email"
-                                />
-                                <InputField
-                                  fieldName="name"
-                                  placeHolder="Name"
-                                  type="text"
-                                  label="Name"
-                                />
+                                <Field name="email">
+                                  {({ field, meta }: any) => (
+                                    <InputField
+                                      {...field}
+                                      fieldName="email"
+                                      placeHolder="Email"
+                                      type="text"
+                                      label="Email"
+                                      error={meta.touched && meta.error}
+                                    />
+                                  )}
+                                </Field>
+                                <Field name="name">
+                                  {({ field, meta }: any) => (
+                                    <InputField
+                                      {...field}
+                                      fieldName="name"
+                                      placeHolder="Name"
+                                      type="text"
+                                      label="Name"
+                                      error={meta.touched && meta.error}
+                                    />
+                                  )}
+                                </Field>
                               </div>
 
                               <div className="flex items-center justify-between gap-6 mt-[20px]">
-                                <InputField
-                                  fieldName="phone"
-                                  placeHolder="+923434348432"
-                                  type="text"
-                                  label="Phone"
-                                />
+                                <Field name="phone">
+                                  {({ field, meta }: any) => (
+                                    <InputField
+                                      {...field}
+                                      fieldName="phone"
+                                      placeHolder="+923434348432"
+                                      type="text"
+                                      label="Phone"
+                                      error={meta.touched && meta.error}
+                                    />
+                                  )}
+                                </Field>
                                 <div className="w-full flex flex-col align-start justify-start gap-3">
                                   <label className="text-[#24282E] text-[18px] font-[500] font-jakarta">
                                     Special Tag
                                   </label>
-                                  <SpecialTagInput />
+                                  <Field name="special_tags">
+                                    {({ field, meta }: any) => (
+                                      <div>
+                                        <SpecialTagInput
+                                          error={meta.touched && meta.error}
+                                        />
+                                      </div>
+                                    )}
+                                  </Field>
                                 </div>
                               </div>
 
                               <div className="flex items-center justify-between gap-6 mt-[20px]">
-                                <InputField
-                                  fieldName="price"
-                                  placeHolder="Price"
-                                  type="number"
-                                  label="Price"
-                                />
-                                <DropDown
-                                  label="Priority"
-                                  options={["High Priority", "Medium Priority"]}
-                                  fieldName="priority"
-                                />
+                                <Field name="price">
+                                  {({ field, meta }: any) => (
+                                    <InputField
+                                      {...field}
+                                      fieldName="price"
+                                      placeHolder="Price"
+                                      type="number"
+                                      label="Price"
+                                      error={meta.touched && meta.error}
+                                    />
+                                  )}
+                                </Field>
+                                <Field name="priority">
+                                  {({ field, meta }: any) => (
+                                    <DropDown
+                                      {...field}
+                                      label="Priority"
+                                      options={["High Priority", "Medium Priority"]}
+                                      fieldName="priority"
+                                      error={meta.touched && meta.error}
+                                    />
+                                  )}
+                                </Field>
                               </div>
 
                               <div className="flex items-center justify-between gap-6 mt-[20px]">
-                                <DropDown
-                                  label="Visa type"
-                                  options={["Business Visa", "Tourist Visa"]}
-                                  fieldName="visaType"
-                                />
-                                <DropDown
-                                  label="Visa country"
-                                  options={["India", "USA", "UK"]}
-                                  fieldName="visaCountry"
-                                />
+                                <Field name="visa_type">
+                                  {({ field, meta }: any) => (
+                                    <DropDown
+                                      {...field}
+                                      label="Visa type"
+                                      options={["Business Visa", "Tourist Visa"]}
+                                      fieldName="visa_type"
+                                      error={meta.touched && meta.error}
+                                    />
+                                  )}
+                                </Field>
+                                <Field name="visa_country">
+                                  {({ field, meta }: any) => (
+                                    <DropDown
+                                      {...field}
+                                      label="Visa country"
+                                      options={["India", "USA", "UK"]}
+                                      fieldName="visa_country"
+                                      error={meta.touched && meta.error}
+                                    />
+                                  )}
+                                </Field>
                               </div>
 
                               <div className="flex items-center justify-between gap-6 mt-[20px]">
                                 <CustomerAutocomplete
                                   name="customer"
-                                  value={""}
-                                  customerId={null}
-                                  onChange={(
-                                    name: string,
-                                    id: number | null
-                                  ) => {
+                                  value={values.customer_name || ""}
+                                  customerId={values.customer_id}
+                                  onChange={(name: string, id: number | null) => {
                                     setFieldValue("customer_name", name);
                                     setFieldValue("customer_id", id);
-                                    // Reset applicant when customer changes
                                     setFieldValue("applicant_name", "");
                                     setFieldValue("applicant_id", null);
                                     setSelectedCustomerId(id);
@@ -434,40 +532,43 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
 
                               {/* Applicant Selection - Only show when customer is selected */}
                               {values.customer_id && (
-                                <div className="flex items-center justify-between gap-6 mt-[20px]">
-                                  <ApplicantAutocomplete
-                                    name="applicant"
-                                    value={values.applicant_name}
-                                    applicantId={values.applicant_id}
-                                    customerId={values.customer_id} // Pass customer_id to filter applicants
-                                    onChange={(
-                                      name: string,
-                                      id: number | null
-                                    ) => {
-                                      setFieldValue("applicant_name", name);
-                                      setFieldValue("applicant_id", id);
-                                    }}
-                                    error={errors.applicant_id}
-                                    touched={touched.applicant_id}
-                                  />
+                                <div className="flex items-center justify-between gap-6 mt-4">
+                                  <Field name="applicant">
+                                    {({ field, meta }: any) => (
+                                      <ApplicantAutocomplete
+                                        {...field}
+                                        name="applicant"
+                                        value={values.applicant_name || ""}
+                                        applicantId={values.applicant_id}
+                                        customerId={values.customer_id}
+                                        onChange={(name: string, id: number | null) => {
+                                          setFieldValue("applicant_name", name);
+                                          setFieldValue("applicant_id", id);
+                                        }}
+                                        error={errors.applicant_id}
+                                        touched={touched.applicant_id}
+                                      />
+                                    )}
+                                  </Field>
                                 </div>
                               )}
                             </div>
                             {/* Group Selection (Yes/No) */}
-                            <div className="col-span-5 flex flex-col gap-2 mt-2">
+                            <div className="col-span-5 flex flex-col gap-2 mt-4">
                               <span className="text-[#24282E] font-jakarta font-[500] text-[18px]">
                                 Group?
                               </span>
                               <div className="flex items-center gap-4">
                                 {/* Yes Option */}
                                 <label className="flex items-center gap-2 cursor-pointer">
-                                  <input
+                                  <Field
                                     type="radio"
                                     name="is_group"
                                     value="true"
-                                    checked={isGroup === true} // Ensure it's checked when isGroup is true
-                                    onChange={() => setIsGroup(true)}
                                     className="hidden peer"
+                                    onChange={() => {
+                                      setFieldValue('is_group', true);
+                                    }}
                                   />
                                   <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-gray-400 peer-checked:bg-[#42DA82] peer-checked:border-[#42DA82]">
                                     <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
@@ -477,13 +578,16 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
 
                                 {/* No Option */}
                                 <label className="flex items-center gap-2 cursor-pointer">
-                                  <input
+                                  <Field
                                     type="radio"
                                     name="is_group"
                                     value="false"
-                                    checked={isGroup === false} // Ensure it's checked when isGroup is false
-                                    onChange={() => setIsGroup(false)}
                                     className="hidden peer"
+                                    onChange={() => {
+                                      setFieldValue('is_group', false);
+                                      setFieldValue('group', '');
+                                      setFieldValue('group_id', null);
+                                    }}
                                   />
                                   <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-gray-400 peer-checked:bg-[#42DA82] peer-checked:border-[#42DA82]">
                                     <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
@@ -493,33 +597,53 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                               </div>
                             </div>
 
-                            {/* Group Autocomplete */}
-                            {isGroup && (
+                            {/* Group Autocomplete - Show when is_group is true */}
+                            {values.is_group && (
                               <div className="mt-4">
-                                <GroupAutocomplete
-                                  // name="group"
-                                  value={""}
-                                  groupId={null}
-                                  onChange={(
-                                    name: string,
-                                    id: number | null
-                                  ) => {
-                                    // Handle group change
-                                  }}
-                                />
+                                <Field name="group">
+                                  {({ field, meta }: any) => (
+                                    <GroupAutocomplete
+                                      {...field}
+                                      name="group"
+                                      value={values.group}
+                                      groupId={values.group_id}
+                                      onChange={(name: string, id: number | null) => {
+                                        setFieldValue("group", name);
+                                        setFieldValue("group_id", id);
+                                      }}
+                                      error={errors.group}
+                                      touched={touched.group}
+                                    />
+                                  )}
+                                </Field>
                               </div>
                             )}
 
                             {/* Text Area */}
-                            <div className="mt-[20px]">
-                              <label className="text-[#24282E] font-jakarta font-[500] text-[18px]">
-                                Text Area
-                              </label>
-                              <textarea
-                                placeholder="Write Description Here"
-                                className="w-full border-2 border-[#E9EAEA] p-3 rounded-[12px] mt-1 focus:border-primary focus:outline-none"
-                                rows={3}
-                              ></textarea>
+                            <div className="mt-4">
+                              <Field name="internal_notes">
+                                {({ field, meta }: any) => (
+                                  <div className="flex flex-col gap-2">
+                                    <label className="text-[#24282E] text-[18px] font-[500] font-jakarta">
+                                      Internal Notes
+                                    </label>
+                                    <textarea
+                                      {...field}
+                                      name="internal_notes"
+                                      placeholder="Write Description Here"
+                                      className={`w-full border-2 ${
+                                        meta.touched && meta.error 
+                                          ? 'border-red-500' 
+                                          : 'border-[#E9EAEA]'
+                                      } p-3 rounded-[12px] mt-1 focus:border-primary focus:outline-none min-h-[100px]`}
+                                      rows={3}
+                                    />
+                                    {meta.touched && meta.error && (
+                                      <span className="text-red-500 text-sm">{meta.error}</span>
+                                    )}
+                                  </div>
+                                )}
+                              </Field>
                             </div>
                             {/* Image Upload Section */}
                             <div className="grid grid-cols-2 gap-6 my-3">
