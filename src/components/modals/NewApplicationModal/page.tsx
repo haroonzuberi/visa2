@@ -391,14 +391,14 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                           Group?
                         </span>
                         <div className="flex items-center gap-4">
+                          {/* Yes Option */}
                           <label className="flex items-center gap-2 cursor-pointer">
                             <input
                               type="radio"
                               name="is_group"
-                              checked={isGroup}
-                              onChange={() => {
-                                setIsGroup(true);
-                              }}
+                              value="true"
+                              checked={isGroup === true} // Ensure it's checked when isGroup is true
+                              onChange={() => setIsGroup(true)}
                               className="hidden peer"
                             />
                             <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-gray-400 peer-checked:bg-[#42DA82] peer-checked:border-[#42DA82]">
@@ -407,14 +407,14 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                             <span>Yes</span>
                           </label>
 
+                          {/* No Option */}
                           <label className="flex items-center gap-2 cursor-pointer">
                             <input
                               type="radio"
                               name="is_group"
-                              checked={isGroup}
-                              onChange={() => {
-                                setIsGroup(false);
-                              }}
+                              value="false"
+                              checked={isGroup === false} // Ensure it's checked when isGroup is false
+                              onChange={() => setIsGroup(false)}
                               className="hidden peer"
                             />
                             <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-gray-400 peer-checked:bg-[#42DA82] peer-checked:border-[#42DA82]">
