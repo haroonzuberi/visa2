@@ -18,6 +18,8 @@ import GroupAutocomplete from "@/components/ui/group-autocomplete/page";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import ApplicantAutocomplete from "@/components/ui/applicant-autocomplete/page";
+import { useDispatch } from "react-redux";
+// import { addApplication } from "@/store/slices/applicationsSlice";
 
 const SpecialTagInput = ({ error }: { error: any }) => {
   const [tags, setTags] = useState(["Tag1"]);
@@ -156,83 +158,97 @@ const FileUploadBox = ({
 };
 
 const validationSchema = Yup.object().shape({
+  // Basic Info
   email: Yup.string()
     .email("Invalid email address")
     .required("Email is required"),
-  name: Yup.string()
-    .required("Name is required")
-    .min(2, "Name must be at least 2 characters"),
-  phone: Yup.string()
-    .required("Phone is required")
-    .matches(/^\+?[1-9]\d{1,14}$/, "Invalid phone number"),
-  special_tags: Yup.array()
-    .of(Yup.string())
-    .min(1, "At least one special tag is required"),
+  name: Yup.string().required("Name is required"),
+  phone: Yup.string().required("Phone is required"),
+  special_tags: Yup.array().min(0, "At least one special tag is required"),
+
+  // Required Documents
+  passport: Yup.mixed().required("Passport is required"),
+  photo: Yup.mixed().required("Photo is required"),
+
+  // Application Details
   price: Yup.number()
     .required("Price is required")
     .min(0, "Price must be greater than or equal to 0"),
-  priority: Yup.string()
-    .required("Priority is required")
-    .oneOf(["High Priority", "Medium Priority"], "Invalid priority"),
-  visa_type: Yup.string()
-    .required("Visa type is required")
-    .oneOf(["Business Visa", "Tourist Visa"], "Invalid visa type"),
-  visa_country: Yup.string()
-    .required("Visa country is required")
-    .oneOf(["India", "USA", "UK"], "Invalid visa country"),
-  customer_id: Yup.number().nullable().required("Customer is required"),
+  priority: Yup.string().required("Priority is required"),
+  visa_type: Yup.string().required("Visa type is required"),
+  visa_country: Yup.string().required("Visa country is required"),
+  internal_notes: Yup.string().required("Internal notes are required"),
+
+  // Customer and Applicant
+  customer_id: Yup.number()
+    .nullable()
+    .required("Customer selection is required"),
+  customer_name: Yup.string().required("Customer name is required"),
   applicant_id: Yup.number()
     .nullable()
-    .when('customer_id', {
-      is: (val: number | null) => val !== null,
-      then: () => Yup.number().nullable().required("Applicant is required"),
-      otherwise: () => Yup.number().nullable()
+    .required("Applicant selection is required"),
+  applicant_name: Yup.string().required("Applicant name is required"),
+
+  // Group (conditional)
+  is_group: Yup.boolean(),
+  group_id: Yup.number()
+    .nullable()
+    .when("is_group", {
+      is: true,
+      then: (schema) =>
+        schema.required("Group selection is required when group is selected"),
+      otherwise: (schema) => schema.nullable(),
     }),
-  group: Yup.string().when('is_group', {
+  group: Yup.string().when("is_group", {
     is: true,
-    then: () => Yup.string().required("Group is required when group is selected"),
-    otherwise: () => Yup.string()
+    then: (schema) =>
+      schema.required("Group name is required when group is selected"),
+    otherwise: (schema) => schema.nullable(),
   }),
-  group_id: Yup.number().nullable().when('is_group', {
-    is: true,
-    then: () => Yup.number().nullable().required("Group selection is required"),
-    otherwise: () => Yup.number().nullable()
-  }),
-  internal_notes: Yup.string()
-    .min(10, "Description must be at least 10 characters")
-    .max(500, "Description must not exceed 500 characters")
 });
 
 const NewApplication = ({ setIsNewApplication, onClose }: any) => {
+  const dispatch = useDispatch();
   const [currentStep, setCurrentStep] = useState(1);
-  const [isGroup, setIsGroup] = useState(false);
-  // Add states for file previews
-  const [passportPreview, setPassportPreview] = useState<string | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [passportFile, setPassportFile] = useState<File | null>(null);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [applications, setApplications] = useState<any[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
     null
   );
-  // const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
 
   const initialValues = {
-    customer_id: null,
-    customer_name: "",
-    applicant_id: null,
-    applicant_name: "",
+    email: "",
+    name: "",
+    phone: "",
+    special_tags: [],
+    passport: null,
+    photo: null,
     price: "",
     priority: "",
     visa_type: "",
     visa_country: "",
+    internal_notes: "",
+    customer_id: null,
+    customer_name: "",
+    applicant_id: null,
+    applicant_name: "",
     is_group: false,
     group: "",
     group_id: null,
-    description: ""
   };
 
   const handleStepClick = (step: number) => {
     setCurrentStep(step);
+  };
+
+  const handleAddApplication = (values: any, { resetForm }: any) => {
+    // Add the current application to the array
+    setApplications([...applications, values]);
+
+    // Reset form for next application
+    resetForm();
+
+    // Show success message
+    toast.success("Application added successfully!");
   };
 
   const handleNextStep = () => {
@@ -241,73 +257,15 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
     }
   };
 
-  const handleFileUpload = (file: File, fileType: "passport" | "photo") => {
-    if (file) {
-      // Validate file size
-      if (file.size > MAX_FILE_SIZE) {
-        toast.error("File size should be less than 5MB");
-        return;
-      }
-
-      // Validate file type
-      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-        toast.error("Only JPG, JPEG and PNG files are allowed");
-        return;
-      }
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (fileType === "passport") {
-          setPassportPreview(reader.result as string);
-          setPassportFile(file);
-        } else {
-          setPhotoPreview(reader.result as string);
-          setPhotoFile(file);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+  const handlePreviousStep = () => {
+    setCurrentStep(1);
   };
 
-  const removeFile = (fileType: "passport" | "photo") => {
-    if (fileType === "passport") {
-      setPassportPreview(null);
-      setPassportFile(null);
-    } else {
-      setPhotoPreview(null);
-      setPhotoFile(null);
-    }
-  };
-
-  const handleSubmit = async (values: any, { setSubmitting, setErrors }: any) => {
-    try {
-      // Validate the current step
-      await validationSchema.validate(values, { abortEarly: false });
-
-      if (currentStep === 1) {
-        // Move to next step if validation passes
-        setCurrentStep(2);
-      } else {
-        // Handle final submission
-        console.log("Form Values:", values);
-        // Your API call here
-        // await submitApplication(values);
-        // toast.success("Application created successfully");
-        // onClose();
-      }
-    } catch (err: any) {
-      if (err.inner) {
-        const errors = err.inner.reduce((acc: any, error: any) => {
-          acc[error.path] = error.message;
-          return acc;
-        }, {});
-        setErrors(errors);
-      }
-      console.error("Validation error:", err);
-    } finally {
-      setSubmitting(false);
-    }
+  const handleFinalSubmit = () => {
+    // Dispatch all applications to store
+    // dispatch(addApplication(applications));
+    onClose();
+    toast.success("All applications submitted successfully!");
   };
 
   return (
@@ -399,9 +357,15 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                     <Formik
                       initialValues={initialValues}
                       validationSchema={validationSchema}
-                      onSubmit={handleSubmit}
+                      onSubmit={handleAddApplication}
                     >
-                      {({ values, errors, touched, setFieldValue }) => (
+                      {({
+                        values,
+                        errors,
+                        touched,
+                        setFieldValue,
+                        isSubmitting,
+                      }) => (
                         <Form>
                           <div className="mt-[10px]">
                             {/* Form Section */}
@@ -480,7 +444,10 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                                     <DropDown
                                       {...field}
                                       label="Priority"
-                                      options={["High Priority", "Medium Priority"]}
+                                      options={[
+                                        "High Priority",
+                                        "Medium Priority",
+                                      ]}
                                       fieldName="priority"
                                       error={meta.touched && meta.error}
                                     />
@@ -494,7 +461,10 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                                     <DropDown
                                       {...field}
                                       label="Visa type"
-                                      options={["Business Visa", "Tourist Visa"]}
+                                      options={[
+                                        "Business Visa",
+                                        "Tourist Visa",
+                                      ]}
                                       fieldName="visa_type"
                                       error={meta.touched && meta.error}
                                     />
@@ -516,9 +486,12 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                               <div className="flex items-center justify-between gap-6 mt-[20px]">
                                 <CustomerAutocomplete
                                   name="customer"
-                                  value={values.customer_name || ""}
+                                  value={values.customer_name}
                                   customerId={values.customer_id}
-                                  onChange={(name: string, id: number | null) => {
+                                  onChange={(
+                                    name: string,
+                                    id: number | null
+                                  ) => {
                                     setFieldValue("customer_name", name);
                                     setFieldValue("customer_id", id);
                                     setFieldValue("applicant_name", "");
@@ -538,10 +511,13 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                                       <ApplicantAutocomplete
                                         {...field}
                                         name="applicant"
-                                        value={values.applicant_name || ""}
+                                        value={values.applicant_name}
                                         applicantId={values.applicant_id}
                                         customerId={values.customer_id}
-                                        onChange={(name: string, id: number | null) => {
+                                        onChange={(
+                                          name: string,
+                                          id: number | null
+                                        ) => {
                                           setFieldValue("applicant_name", name);
                                           setFieldValue("applicant_id", id);
                                         }}
@@ -554,21 +530,20 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                               )}
                             </div>
                             {/* Group Selection (Yes/No) */}
-                            <div className="col-span-5 flex flex-col gap-2 mt-4">
+                            <div className="col-span-5 flex flex-col gap-2 mt-2">
                               <span className="text-[#24282E] font-jakarta font-[500] text-[18px]">
                                 Group?
                               </span>
                               <div className="flex items-center gap-4">
-                                {/* Yes Option */}
                                 <label className="flex items-center gap-2 cursor-pointer">
                                   <Field
                                     type="radio"
                                     name="is_group"
-                                    value="true"
-                                    className="hidden peer"
+                                    checked={values.is_group === true}
                                     onChange={() => {
-                                      setFieldValue('is_group', true);
+                                      setFieldValue("is_group", true);
                                     }}
+                                    className="hidden peer"
                                   />
                                   <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-gray-400 peer-checked:bg-[#42DA82] peer-checked:border-[#42DA82]">
                                     <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
@@ -576,18 +551,17 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                                   <span>Yes</span>
                                 </label>
 
-                                {/* No Option */}
                                 <label className="flex items-center gap-2 cursor-pointer">
                                   <Field
                                     type="radio"
                                     name="is_group"
-                                    value="false"
-                                    className="hidden peer"
+                                    checked={values.is_group === false}
                                     onChange={() => {
-                                      setFieldValue('is_group', false);
-                                      setFieldValue('group', '');
-                                      setFieldValue('group_id', null);
+                                      setFieldValue("is_group", false);
+                                      setFieldValue("group", "");
+                                      setFieldValue("group_id", null);
                                     }}
+                                    className="hidden peer"
                                   />
                                   <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-gray-400 peer-checked:bg-[#42DA82] peer-checked:border-[#42DA82]">
                                     <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
@@ -597,25 +571,22 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                               </div>
                             </div>
 
-                            {/* Group Autocomplete - Show when is_group is true */}
+                            {/* Show Group Autocomplete only when is_group is true */}
                             {values.is_group && (
                               <div className="mt-4">
-                                <Field name="group">
-                                  {({ field, meta }: any) => (
-                                    <GroupAutocomplete
-                                      {...field}
-                                      name="group"
-                                      value={values.group}
-                                      groupId={values.group_id}
-                                      onChange={(name: string, id: number | null) => {
-                                        setFieldValue("group", name);
-                                        setFieldValue("group_id", id);
-                                      }}
-                                      error={errors.group}
-                                      touched={touched.group}
-                                    />
-                                  )}
-                                </Field>
+                                <GroupAutocomplete
+                                  value={values.group}
+                                  groupId={values.group_id}
+                                  onChange={(
+                                    name: string,
+                                    id: number | null
+                                  ) => {
+                                    setFieldValue("group", name);
+                                    setFieldValue("group_id", id);
+                                  }}
+                                  error={errors.group}
+                                  touched={touched.group}
+                                />
                               </div>
                             )}
 
@@ -632,14 +603,16 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                                       name="internal_notes"
                                       placeholder="Write Description Here"
                                       className={`w-full border-2 ${
-                                        meta.touched && meta.error 
-                                          ? 'border-red-500' 
-                                          : 'border-[#E9EAEA]'
+                                        meta.touched && meta.error
+                                          ? "border-red-500"
+                                          : "border-[#E9EAEA]"
                                       } p-3 rounded-[12px] mt-1 focus:border-primary focus:outline-none min-h-[100px]`}
                                       rows={3}
                                     />
                                     {meta.touched && meta.error && (
-                                      <span className="text-red-500 text-sm">{meta.error}</span>
+                                      <span className="text-red-500 text-sm">
+                                        {meta.error}
+                                      </span>
                                     )}
                                   </div>
                                 )}
@@ -653,15 +626,18 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                                   Passport
                                 </label>
                                 <FileUploadBox
-                                  filePreview={passportPreview}
-                                  file={passportFile}
-                                  onUpload={(file) =>
-                                    handleFileUpload(file, "passport")
+                                  filePreview={
+                                    values.passport
+                                      ? URL.createObjectURL(values.passport)
+                                      : null
                                   }
-                                  onRemove={() => {
-                                    setPassportPreview(null);
-                                    setPassportFile(null);
-                                  }}
+                                  file={values.passport}
+                                  onUpload={(file) =>
+                                    setFieldValue("passport", file)
+                                  }
+                                  onRemove={() =>
+                                    setFieldValue("passport", null)
+                                  }
                                   inputId="passport-upload"
                                 />
                               </div>
@@ -672,15 +648,16 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                                   Photo
                                 </label>
                                 <FileUploadBox
-                                  filePreview={photoPreview}
-                                  file={photoFile}
-                                  onUpload={(file) =>
-                                    handleFileUpload(file, "photo")
+                                  filePreview={
+                                    values.photo
+                                      ? URL.createObjectURL(values.photo)
+                                      : null
                                   }
-                                  onRemove={() => {
-                                    setPhotoPreview(null);
-                                    setPhotoFile(null);
-                                  }}
+                                  file={values.photo}
+                                  onUpload={(file) =>
+                                    setFieldValue("photo", file)
+                                  }
+                                  onRemove={() => setFieldValue("photo", null)}
                                   inputId="photo-upload"
                                 />
                               </div>
@@ -708,7 +685,8 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                     <button
                       type="submit"
                       className="bg-[#42DA82] text-white px-6 py-2 rounded-[12px] font-semibold"
-                    >
+                   onClick={handleNextStep}
+                   >
                       <span>Next Step</span>
                     </button>
                   </div>
