@@ -8,6 +8,7 @@ import {
 } from "@/utils/api";
 import { toast } from "react-toastify";
 import { PAGINATION_CONFIG } from "@/config/pagination";
+import { getCurrentUser } from "./authSlice";
 
 // Types
 
@@ -128,7 +129,7 @@ export const deleteUser = createAsyncThunk(
 
 export const updateUser = createAsyncThunk(
   "users/updateUser",
-  async ({ id, data }: { id: number; data: any }, { rejectWithValue }) => {
+  async ({ id, data }: { id: number; data: any }, { rejectWithValue, dispatch }) => {
     try {
       const response: any = await putAPIWithAuth(`users/${id}`, data);
 
@@ -136,9 +137,12 @@ export const updateUser = createAsyncThunk(
         throw new Error(response.message || "Failed to update user");
       }
 
+      await dispatch(getCurrentUser());
+
       toast.success("User updated successfully");
       return { id, ...data };
     } catch (error: any) {
+      toast.error(error.message || "Failed to update user");
       return rejectWithValue(error.message || "Failed to update user");
     }
   }

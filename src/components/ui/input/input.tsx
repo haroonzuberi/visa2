@@ -24,8 +24,8 @@ const InputField = ({
   type = "text",
   isPassword = false,
   icon,
-  value = "",
   onChange,
+  value,
   onBlur,
   error,
   disabled = false,
@@ -54,6 +54,7 @@ const InputField = ({
           disabled={disabled}
           onBlur={onBlur}
           value={value}
+       
         />
         {isPassword && (
           <button
