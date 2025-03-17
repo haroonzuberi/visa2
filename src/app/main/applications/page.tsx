@@ -52,21 +52,26 @@ const modalParams = {
   ],
 };
 
+const formatStatus = (status: string) => {
+  return status
+    .replace(/_/g, " ") // Replace underscores with spaces
+    .replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize first letter of each word
+};
 const Status = ({ status = "" }: { status: string }) => {
   const getStatusStyle = () => {
     switch (status.toLowerCase()) {
       case "new":
-      case "have issues":
-      case "need to pay gov fee":
+      case "have_issues":
+      case "need_to_pay_gov_fee":
         return "bg-[#feefec] text-[#F05D3D] text-[10px] font-[600] border-[1px] rounded-[100px] border-[#FACDC3]";
 
-      case "gov fee paid":
+      case "gov _fee_paid":
         return "bg-[#ECFBF3] text-[#42DA82] text-[10px] font-[600] border-[1px] rounded-[100px] border-[#42DA82]";
       case "cancel":
       case "approved":
         return "bg-[#E6F4F5] text-[#009499] text-[10px] font-[600] border-[1px] rounded-[100px] border-[#B0DEDF]";
 
-      case "ready to be apply":
+      case "ready_to_apply":
         return "bg-[#E6F5FE] text-[#019BF4] text-[10px] font-[600] border-[1px] rounded-[100px] border-[#B0E0FC]";
 
       case "rejected":
@@ -81,7 +86,7 @@ const Status = ({ status = "" }: { status: string }) => {
     <span
       className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusStyle()}`}
     >
-      {status}
+      {formatStatus(status)}
     </span>
   );
 };
@@ -89,11 +94,11 @@ const Status = ({ status = "" }: { status: string }) => {
 const Priority = ({ level = "" }: { level: string }) => {
   const getColor = () => {
     switch (level.toLowerCase()) {
-      case "high priority":
+      case "high":
         return "text-[#F05D3D] text-[14px] font-[500] ";
-      case "medium priority":
+      case "medium":
         return "text-[#DDCB06] text-[14px] font-[500]";
-      case "low priority":
+      case "low":
         return "text-[#42DA82] text-[14px] font-[500]";
       default:
         return "text-gray-500 text-[14px] font-[500]";
@@ -229,7 +234,7 @@ const customers: any = [
     priority: "Low Priority",
     visaType: "Business Visa",
   },
-]
+];
 
 const LoadingSkeleton = () =>
   [...Array(PAGINATION_CONFIG.DEFAULT_PAGE_SIZE)].map((_, index) => (
@@ -300,7 +305,8 @@ export default function Applications() {
   const pathname = usePathname();
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isNewApplicationModalOpen, setIsNewApplicationModalOpen] = useState(false);
+  const [isNewApplicationModalOpen, setIsNewApplicationModalOpen] =
+    useState(false);
   const { applications, isLoading, error, total, currentPage } = useSelector(
     (state: RootState) => state.applicantions
   );
@@ -348,7 +354,6 @@ export default function Applications() {
 
   return (
     <>
-
       <div className="flex justify-between mt-3">
         <h1 className={styles.header}>Manage Applications Lists</h1>
         <button
