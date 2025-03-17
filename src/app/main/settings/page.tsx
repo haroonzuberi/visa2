@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AppDispatch, RootState } from "@/store";
 import { updateUser } from "@/store/slices/usersSlice";
+import { toast } from "react-toastify";
 
 const validationSchema = Yup.object().shape({
   name: Yup.string().required("Name is required"),
@@ -54,6 +55,18 @@ export default function Settings() {
     phone: user?.phone || "",
     newPassword: "",
     confirmPassword: "",
+  };
+
+  const handleCopyToClipboard = (text) => {
+    navigator.clipboard.writeText(text).then(
+      () => {
+        toast.success("Copied to Clipboard");
+        console.log("Copied to clipboard:", text);
+      },
+      (err) => {
+        console.error("Failed to copy:", err);
+      }
+    );
   };
 
   const handleBusinessSettingsChange = (field: string, value: any) => {
@@ -108,7 +121,9 @@ export default function Settings() {
                 <div className={styles.infoItem}>
                   <div className="flex justify-between items-center w-full">
                     <p className={styles.infoLabel}>Email</p>
-                    <CopySvg />
+                    <div onClick={()=>handleCopyToClipboard(user?.email)} className="cursor-pointer">
+                      <CopySvg />
+                    </div>
                   </div>
                   <span className={styles.infoValue}>{user?.email}</span>
                 </div>
