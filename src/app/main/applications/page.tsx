@@ -57,6 +57,7 @@ const formatStatus = (status: string) => {
     .replace(/_/g, " ") // Replace underscores with spaces
     .replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize first letter of each word
 };
+
 const Status = ({ status = "" }: { status: string }) => {
   const getStatusStyle = () => {
     switch (status.toLowerCase()) {
@@ -112,129 +113,6 @@ const Priority = ({ level = "" }: { level: string }) => {
     </span>
   );
 };
-
-const customers: any = [
-  {
-    id: "#233511",
-    platform: "Whatsapp",
-    customerName: "John Bushmill",
-    email: "johnb@mail.com",
-    createdDate: "26 July 2024",
-    phone: "+3513503333",
-    lastOrderDate: "26 October 2025",
-    lastOrderTime: "12:15 am",
-    totalOrders: 24,
-    action: "All Orders",
-    status: "New",
-    priority: "High Priority",
-    visaType: "Tourist Visa",
-  },
-  {
-    id: "#445522",
-    platform: "Instagram",
-    customerName: "Jane Doe",
-    email: "janed@mail.com",
-    createdDate: "26 July 2024",
-    phone: "983429234832",
-    lastOrderDate: "26 October 2025",
-    lastOrderTime: "12:15 am",
-    totalOrders: 24,
-    action: "All Orders",
-    status: "Ready to be apply",
-    priority: "Low Priority",
-    visaType: "Business Visa",
-  },
-  {
-    id: "#445232",
-    platform: "Instagram",
-    customerName: "Jane Doe",
-    email: "janed@mail.com",
-    createdDate: "26 July 2024",
-    phone: "983429234832",
-    lastOrderDate: "26 October 2025",
-    lastOrderTime: "12:15 am",
-    totalOrders: 24,
-    action: "All Orders",
-    status: "Have issues",
-    priority: "Low Priority",
-    visaType: "Business Visa",
-  },
-  {
-    id: "#112233",
-    platform: "Twitter",
-    customerName: "Alice Johnson",
-    email: "alicej@mail.com",
-    createdDate: "26 July 2024",
-    phone: "754389573485",
-    lastOrderDate: "26 October 2025",
-    lastOrderTime: "12:15 am",
-    totalOrders: 24,
-    action: "All Orders",
-    status: "Need to pay gov fee",
-    priority: "Medium Priority",
-    visaType: "Tourist Visa",
-  },
-  {
-    id: "#783456",
-    platform: "Facebook",
-    customerName: "David Smith",
-    email: "davids@mail.com",
-    createdDate: "26 July 2024",
-    phone: "1234567890",
-    lastOrderDate: "26 October 2025",
-    lastOrderTime: "12:15 am",
-    totalOrders: 24,
-    action: "All Orders",
-    status: "Gov fee paid",
-    priority: "High Priority",
-    visaType: "Tourist Visa",
-  },
-  {
-    id: "#654321",
-    platform: "LinkedIn",
-    customerName: "Emily Brown",
-    email: "emilyb@mail.com",
-    createdDate: "26 July 2024",
-    phone: "9876543210",
-    lastOrderDate: "26 October 2025",
-    lastOrderTime: "12:15 am",
-    totalOrders: 24,
-    action: "All Orders",
-    status: "Approved",
-    priority: "Medium Priority",
-    visaType: "Tourist Visa",
-  },
-  {
-    id: "#987654",
-    platform: "Pinterest",
-    customerName: "Michael Wilson",
-    email: "michaelw@mail.com",
-    createdDate: "26 July 2024",
-    phone: "2468013579",
-    lastOrderDate: "26 October 2025",
-    lastOrderTime: "12:15 am",
-    totalOrders: 24,
-    action: "All Orders",
-    status: "Rejected",
-    priority: "Medium Priority",
-    visaType: "Business Visa",
-  },
-  {
-    id: "#345678",
-    platform: "Snapchat",
-    customerName: "Sarah Clark",
-    email: "sarahc@mail.com",
-    createdDate: "26 July 2024",
-    phone: "5555555555",
-    lastOrderDate: "26 October 2025",
-    lastOrderTime: "12:15 am",
-    totalOrders: 24,
-    action: "All Orders",
-    status: "Cancel",
-    priority: "Low Priority",
-    visaType: "Business Visa",
-  },
-];
 
 const LoadingSkeleton = () =>
   [...Array(PAGINATION_CONFIG.DEFAULT_PAGE_SIZE)].map((_, index) => (
@@ -314,6 +192,7 @@ export default function Applications() {
   useEffect(() => {
     const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
     // if (error) {
+
     //   return;
     // }
     dispatch(fetchApplications({ skip, search: searchTerm }));
@@ -438,9 +317,10 @@ export default function Applications() {
                     <TableCell>
                       <div className="flex flex-col w-[140px]">
                         <span className={styles.tags}>
-                          {applicant.tags.map((tag) => {
+                          {/* {applicant.tags.map((tag) => {
                             tag + ",";
-                          })}
+                          })} */}
+                          application tags goes here
                         </span>
                       </div>
                     </TableCell>
@@ -450,7 +330,7 @@ export default function Applications() {
                       <Priority level={applicant.priority || "N/A"} />
                     </TableCell>
                     <TableCell>
-                      <Status status={applicant.visa_status || "N/A"} />
+                      <Status status={applicant.status || "N/A"} />
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">

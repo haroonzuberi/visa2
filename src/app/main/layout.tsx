@@ -52,10 +52,10 @@ export default function MainLayout({
         <div className="flex-1 transition-all duration-300 ease-in-out pt-[7px] bg-white">
           <div
             className={`${
-              isOpen ? "" : " m-[10px]"
-            } bg-white h-[100vh]   border-l-[1px] border-t-[1px]  border-[#E9EAEA] rounded-tl-[30px]`}
+              isOpen ? "" : " mx-[10px]"
+            } bg-white h-[100vh] border-l-[1px] border-t-[1px]  border-[#E9EAEA] rounded-tl-[30px]`}
           >
-            <div className="border-b-[1px] border-[#E9EAEA]  px-[10px] flex items-center">
+            <div className="border-b-[1px] border-[#E9EAEA]  px-[10px] flex items-center h-[76.76px] sticky top-0 bg-[#fff] z-50">
               {!isOpen && (
                 <div
                   className={`mr-[20px]`}
@@ -66,7 +66,7 @@ export default function MainLayout({
                       isOpen ? "" : "rotate-180"
                     }`}
                   >
-                    <LeftIcon />
+                    <LeftIcon className="cursor-pointer" />
                   </div>
                 </div>
               )}

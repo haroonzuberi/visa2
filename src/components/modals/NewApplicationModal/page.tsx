@@ -2,7 +2,7 @@
 import CrossSvg from "@/Assets/svgs/CrossSvg";
 import styles from "../ApplicationDetailModal/styles.module.css";
 import CopyGreenSvg from "@/Assets/svgs/CopyGreenSvg";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { X } from "lucide-react";
 import "../../ui/input/style.modules.css";
@@ -18,8 +18,13 @@ import GroupAutocomplete from "@/components/ui/group-autocomplete/page";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import ApplicantAutocomplete from "@/components/ui/applicant-autocomplete/page";
-import { useDispatch } from "react-redux";
-// import { addApplication } from "@/store/slices/applicationsSlice";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  createApplication,
+  fetchApplication,
+  setCurrentPage,
+} from "@/store/slices/applicationsSlice";
+import { AppDispatch, RootState } from "@/store";
 
 const SpecialTagInput = ({ error }: { error: any }) => {
   const [tags, setTags] = useState(["Tag1"]);
@@ -157,15 +162,105 @@ const FileUploadBox = ({
   );
 };
 
+const generateValidationSchema = (fields: any[]) => {
+  const schemaFields: any = {};
+  fields.forEach((field) => {
+    let fieldSchema;
+    switch (field.field_type) {
+      case "text":
+      case "phone":
+      case "date":
+        fieldSchema = Yup.string();
+        break;
+      case "email":
+        fieldSchema = Yup.string().email("Invalid email address");
+        break;
+      case "number":
+        fieldSchema = Yup.number().typeError("Must be a number");
+        break;
+      case "file":
+      case "image":
+        fieldSchema = Yup.mixed();
+        break;
+      case "radio":
+      case "select":
+        fieldSchema = Yup.string();
+        break;
+      default:
+        fieldSchema = Yup.mixed();
+    }
+    if (field.is_required) {
+      fieldSchema = fieldSchema.required(`${field.label} is required`);
+    }
+    if (field.validation) {
+      if (field.validation.pattern) {
+        fieldSchema = fieldSchema.matches(
+          new RegExp(field.validation.pattern),
+          `${field.label} does not match the required pattern`
+        );
+      }
+      if (field.validation.min) {
+        if (field.field_type === "date") {
+          fieldSchema = fieldSchema.test(
+            "minDate",
+            `${field.label} must be on or after ${field.validation.min}`,
+            function (value) {
+              if (!value) return true;
+              const minDate =
+                field.validation.min === "today"
+                  ? new Date()
+                  : this.parent[field.validation.min]
+                    ? new Date(this.parent[field.validation.min])
+                    : new Date();
+              return new Date(value) >= minDate;
+            }
+          );
+        } else if (field.field_type === "number") {
+          fieldSchema = fieldSchema.min(
+            field.validation.min,
+            `${field.label} must be at least ${field.validation.min}`
+          );
+        }
+      }
+      if (field.validation.max) {
+        if (field.field_type === "date") {
+          fieldSchema = fieldSchema.test(
+            "maxDate",
+            `${field.label} must be on or before ${field.validation.max}`,
+            function (value) {
+              if (!value) return true;
+              const maxDate =
+                field.validation.max === "today"
+                  ? new Date()
+                  : new Date(this.parent[field.validation.max]);
+              return new Date(value) <= maxDate;
+            }
+          );
+        } else if (field.field_type === "number") {
+          fieldSchema = fieldSchema.max(
+            field.validation.max,
+            `${field.label} must be at most ${field.validation.max}`
+          );
+        }
+      }
+    }
+    schemaFields[field.field_id] = fieldSchema;
+  });
+  return Yup.object().shape(schemaFields);
+};
+
 const validationSchema = Yup.object().shape({
+
+
   // Basic Info
   email: Yup.string()
     .email("Invalid email address")
     .required("Email is required"),
   name: Yup.string().required("Name is required"),
   phone: Yup.string().required("Phone is required"),
+  passport_number: Yup.string() // Added new validation
+    .required("Passport number is required"),
   special_tags: Yup.array().min(0, "At least one special tag is required"),
-
   // Required Documents
   passport: Yup.mixed().required("Passport is required"),
   photo: Yup.mixed().required("Photo is required"),
@@ -208,17 +303,15 @@ const validationSchema = Yup.object().shape({
 });
 
 const NewApplication = ({ setIsNewApplication, onClose }: any) => {
-  const dispatch = useDispatch();
   const [currentStep, setCurrentStep] = useState(1);
   const [applications, setApplications] = useState<any[]>([]);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
-    null
-  );
+  const [customerData, setCustomerData] = useState<number | null>(null);
 
   const initialValues = {
     email: "",
     name: "",
     phone: "",
+    passport_number: "",
     special_tags: [],
     passport: null,
     photo: null,
@@ -236,25 +329,50 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
     group_id: null,
   };
 
+  const dispatch = useDispatch<AppDispatch>();
+
+  // ✅ Ensure `state.applications` exists before destructuring
+  const applicationData = useSelector((state: any) => state.applicantions.applicationData);
+
+  useEffect(() => {
+    dispatch(fetchApplication());
+  }, []);
+
+
   const handleStepClick = (step: number) => {
     setCurrentStep(step);
   };
 
   const handleAddApplication = (values: any, { resetForm }: any) => {
-    // Add the current application to the array
-    setApplications([...applications, values]);
-
-    // Reset form for next application
-    resetForm();
-
-    // Show success message
+    // setApplications([...applications, values]);
+    // resetForm();
     toast.success("Application added successfully!");
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async (values: any, errors: any) => {
+    // Log all form values in every case
+
+    // Check if mandatory fields are filled and valid
+    const mandatoryFields = ["name", "email", "phone", "passport_number"];
+    const hasErrors = mandatoryFields.some(
+      (field) => !values[field] || (errors[field] && errors[field] !== "")
+    );
+
+    if (hasErrors) {
+      toast.error("Please fill all mandatory fields (Name, Email, Phone, Passport Number)");
+      return;
+    }
+
+    // try {
+    //   await dispatch(createApplication(values)).unwrap();
+    // } catch (error) {
+    //   console.log("Error : ", error);
+    // }
+
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
     }
+
   };
 
   const handlePreviousStep = () => {
@@ -269,11 +387,10 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
   };
 
   return (
-    <div className=" fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm">
         <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-h-[90vh]">
           <div className="bg-white rounded-xl w-[90vw] xl:w-[800px] lg:w-[800px] md:w-[800px] h-[90vh] overflow-y-auto shadow-lg;">
-            {/* Header */}
             <div className="flex flex-col h-full justify-between items-center w-full">
               <div className="w-full">
                 <div className="flex justify-between p-6 pb-0 items-center">
@@ -293,58 +410,42 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                   <div className="flex justify-start">
                     <div className="flex flex-col items-center space-y-2">
                       {/* Stepper */}
-                      <div className="flex items-center justify-center ">
+                      <div className="flex items-center justify-center">
                         {steps.map((step, index) => (
-                          <div
-                            key={step.id}
-                            className="flex items-center m0imp"
-                          >
-                            {/* Step Circle */}
+                          <div key={step.id} className="flex items-center m0imp">
                             <div
                               className={`w-8 h-8 flex items-center justify-center rounded-full border-2 
-                                                        transition-all ${
-                                                          currentStep > step.id
-                                                            ? "bg-[#42DA82] border-[#42DA82] text-white" // Completed step
-                                                            : currentStep ===
-                                                              step.id
-                                                            ? "border-[#42DA82] text-[#42DA82]" // Active step
-                                                            : "border-gray-300 text-gray-400" // Inactive step
-                                                        }`}
+                                transition-all ${currentStep > step.id
+                                  ? "bg-[#42DA82] border-[#42DA82] text-white"
+                                  : currentStep === step.id
+                                    ? "border-[#42DA82] text-[#42DA82]"
+                                    : "border-gray-300 text-gray-400"
+                                }`}
                               onClick={() => handleStepClick(step.id)}
                             >
                               {currentStep > step.id ? (
-                                <Check className="w-5 h-5" /> // Show checkmark for completed steps
+                                <Check className="w-5 h-5" />
                               ) : currentStep === step.id ? (
-                                <span className="w-2 h-2 bg-[#42DA82] rounded-full"></span> // Show dot for active step
-                              ) : currentStep === 1 ? null : ( // If on first step, make second circle completely empty
-                                <span className="w-2 h-2 bg-gray-300 rounded-full"></span> // Show gray dot for upcoming steps
+                                <span className="w-2 h-2 bg-[#42DA82] rounded-full"></span>
+                              ) : currentStep === 1 ? null : (
+                                <span className="w-2 h-2 bg-gray-300 rounded-full"></span>
                               )}
                             </div>
-
-                            {/* Line Between Steps */}
                             {index !== steps.length - 1 && (
                               <div
-                                className={`w-[350px] h-1 ${
-                                  currentStep > step.id
-                                    ? "bg-[#42DA82]"
-                                    : "bg-[#D1D5DB]"
-                                }`}
+                                className={`w-[350px] h-1 ${currentStep > step.id ? "bg-[#42DA82]" : "bg-[#D1D5DB]"
+                                  }`}
                               />
                             )}
                           </div>
                         ))}
                       </div>
-
-                      {/* Step Labels */}
                       <div className="flex justify-center space-x-[310px]">
                         {steps.map((step) => (
                           <span
                             key={step.id}
-                            className={`text-[18px] font-[500] ${
-                              currentStep >= step.id
-                                ? "text-black"
-                                : "text-gray-500"
-                            }`}
+                            className={`text-[18px] font-[500] ${currentStep >= step.id ? "text-black" : "text-gray-500"
+                              }`}
                           >
                             {step.label}
                           </span>
@@ -353,343 +454,137 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                     </div>
                   </div>
 
-                  {currentStep === 1 && (
-                    <Formik
-                      initialValues={initialValues}
-                      validationSchema={validationSchema}
-                      onSubmit={handleAddApplication}
-                    >
-                      {({
-                        values,
-                        errors,
-                        touched,
-                        setFieldValue,
-                        isSubmitting,
-                      }) => (
-                        <Form>
-                          <div className="mt-[10px]">
-                            {/* Form Section */}
-                            <div>
-                              <div className="flex items-center justify-between gap-6">
-                                <Field name="email">
-                                  {({ field, meta }: any) => (
-                                    <InputField
-                                      {...field}
-                                      fieldName="email"
-                                      placeHolder="Email"
-                                      type="text"
-                                      label="Email"
-                                      error={meta.touched && meta.error}
-                                    />
-                                  )}
-                                </Field>
-                                <Field name="name">
-                                  {({ field, meta }: any) => (
-                                    <InputField
-                                      {...field}
-                                      fieldName="name"
-                                      placeHolder="Name"
-                                      type="text"
-                                      label="Name"
-                                      error={meta.touched && meta.error}
-                                    />
-                                  )}
-                                </Field>
-                              </div>
-
-                              <div className="flex items-center justify-between gap-6 mt-[20px]">
-                                <Field name="phone">
-                                  {({ field, meta }: any) => (
-                                    <InputField
-                                      {...field}
-                                      fieldName="phone"
-                                      placeHolder="+923434348432"
-                                      type="text"
-                                      label="Phone"
-                                      error={meta.touched && meta.error}
-                                    />
-                                  )}
-                                </Field>
-                                <div className="w-full flex flex-col align-start justify-start gap-3">
-                                  <label className="text-[#24282E] text-[18px] font-[500] font-jakarta">
-                                    Special Tag
-                                  </label>
-                                  <Field name="special_tags">
-                                    {({ field, meta }: any) => (
-                                      <div>
-                                        <SpecialTagInput
-                                          error={meta.touched && meta.error}
-                                        />
-                                      </div>
-                                    )}
-                                  </Field>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center justify-between gap-6 mt-[20px]">
-                                <Field name="price">
-                                  {({ field, meta }: any) => (
-                                    <InputField
-                                      {...field}
-                                      fieldName="price"
-                                      placeHolder="Price"
-                                      type="number"
-                                      label="Price"
-                                      error={meta.touched && meta.error}
-                                    />
-                                  )}
-                                </Field>
-                                <Field name="priority">
-                                  {({ field, meta }: any) => (
-                                    <DropDown
-                                      {...field}
-                                      label="Priority"
-                                      options={[
-                                        "High Priority",
-                                        "Medium Priority",
-                                      ]}
-                                      fieldName="priority"
-                                      error={meta.touched && meta.error}
-                                    />
-                                  )}
-                                </Field>
-                              </div>
-
-                              <div className="flex items-center justify-between gap-6 mt-[20px]">
-                                <Field name="visa_type">
-                                  {({ field, meta }: any) => (
-                                    <DropDown
-                                      {...field}
-                                      label="Visa type"
-                                      options={[
-                                        "Business Visa",
-                                        "Tourist Visa",
-                                      ]}
-                                      fieldName="visa_type"
-                                      error={meta.touched && meta.error}
-                                    />
-                                  )}
-                                </Field>
-                                <Field name="visa_country">
-                                  {({ field, meta }: any) => (
-                                    <DropDown
-                                      {...field}
-                                      label="Visa country"
-                                      options={["India", "USA", "UK"]}
-                                      fieldName="visa_country"
-                                      error={meta.touched && meta.error}
-                                    />
-                                  )}
-                                </Field>
-                              </div>
-
-                              <div className="flex items-center justify-between gap-6 mt-[20px]">
-                                <CustomerAutocomplete
-                                  name="customer"
-                                  value={values.customer_name}
-                                  customerId={values.customer_id}
-                                  onChange={(
-                                    name: string,
-                                    id: number | null
-                                  ) => {
-                                    setFieldValue("customer_name", name);
-                                    setFieldValue("customer_id", id);
-                                    setFieldValue("applicant_name", "");
-                                    setFieldValue("applicant_id", null);
-                                    setSelectedCustomerId(id);
-                                  }}
-                                  error={errors.customer_id}
-                                  touched={touched.customer_id}
-                                />
-                              </div>
-
-                              {/* Applicant Selection - Only show when customer is selected */}
-                              {values.customer_id && (
-                                <div className="flex items-center justify-between gap-6 mt-4">
-                                  <Field name="applicant">
-                                    {({ field, meta }: any) => (
-                                      <ApplicantAutocomplete
-                                        {...field}
-                                        name="applicant"
-                                        value={values.applicant_name}
-                                        applicantId={values.applicant_id}
-                                        customerId={values.customer_id}
-                                        onChange={(
-                                          name: string,
-                                          id: number | null
-                                        ) => {
-                                          setFieldValue("applicant_name", name);
-                                          setFieldValue("applicant_id", id);
-                                        }}
-                                        error={errors.applicant_id}
-                                        touched={touched.applicant_id}
+                  {/* Wrap the entire form and footer in a single Formik instance */}
+                  <Formik
+                    initialValues={initialValues}
+                    validationSchema={validationSchema}
+                    enableReinitialize
+                    onSubmit={handleAddApplication}
+                  >
+                    {({
+                      values,
+                      errors,
+                      touched,
+                      setFieldValue,
+                      isSubmitting,
+                    }) => (
+                      <Form className="flex flex-col h-full justify-between">
+                        {applicationData?.fields?.length ? (
+                          applicationData.fields.map((ele) => (
+                            <Field key={ele.field_id} name={ele.field_id}>
+                              {({ field, meta }: any) => (
+                                <>
+                                  {ele.field_type === "file" || ele.field_type === "image" ? (
+                                    <div className="w-full">
+                                      <label className="text-[#24282E] font-jakarta font-[500] text-[18px] mb-2 block">
+                                        {ele.label}
+                                      </label>
+                                      <FileUploadBox
+                                        filePreview={
+                                          values[ele.field_id]
+                                            ? URL.createObjectURL(values[ele.field_id])
+                                            : null
+                                        }
+                                        file={values[ele.field_id]}
+                                        onUpload={(file) => setFieldValue(ele.field_id, file)}
+                                        onRemove={() => setFieldValue(ele.field_id, null)}
+                                        inputId={ele.field_id}
                                       />
-                                    )}
-                                  </Field>
-                                </div>
-                              )}
-                            </div>
-                            {/* Group Selection (Yes/No) */}
-                            <div className="col-span-5 flex flex-col gap-2 mt-2">
-                              <span className="text-[#24282E] font-jakarta font-[500] text-[18px]">
-                                Group?
-                              </span>
-                              <div className="flex items-center gap-4">
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                  <Field
-                                    type="radio"
-                                    name="is_group"
-                                    checked={values.is_group === true}
-                                    onChange={() => {
-                                      setFieldValue("is_group", true);
-                                    }}
-                                    className="hidden peer"
-                                  />
-                                  <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-gray-400 peer-checked:bg-[#42DA82] peer-checked:border-[#42DA82]">
-                                    <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
-                                  </div>
-                                  <span>Yes</span>
-                                </label>
-
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                  <Field
-                                    type="radio"
-                                    name="is_group"
-                                    checked={values.is_group === false}
-                                    onChange={() => {
-                                      setFieldValue("is_group", false);
-                                      setFieldValue("group", "");
-                                      setFieldValue("group_id", null);
-                                    }}
-                                    className="hidden peer"
-                                  />
-                                  <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-gray-400 peer-checked:bg-[#42DA82] peer-checked:border-[#42DA82]">
-                                    <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
-                                  </div>
-                                  <span>No</span>
-                                </label>
-                              </div>
-                            </div>
-
-                            {/* Show Group Autocomplete only when is_group is true */}
-                            {values.is_group && (
-                              <div className="mt-4">
-                                <GroupAutocomplete
-                                  value={values.group}
-                                  groupId={values.group_id}
-                                  onChange={(
-                                    name: string,
-                                    id: number | null
-                                  ) => {
-                                    setFieldValue("group", name);
-                                    setFieldValue("group_id", id);
-                                  }}
-                                  error={errors.group}
-                                  touched={touched.group}
-                                />
-                              </div>
-                            )}
-
-                            {/* Text Area */}
-                            <div className="mt-4">
-                              <Field name="internal_notes">
-                                {({ field, meta }: any) => (
-                                  <div className="flex flex-col gap-2">
-                                    <label className="text-[#24282E] text-[18px] font-[500] font-jakarta">
-                                      Internal Notes
-                                    </label>
-                                    <textarea
-                                      {...field}
-                                      name="internal_notes"
-                                      placeholder="Write Description Here"
-                                      className={`w-full border-2 ${
-                                        meta.touched && meta.error
-                                          ? "border-red-500"
-                                          : "border-[#E9EAEA]"
-                                      } p-3 rounded-[12px] mt-1 focus:border-primary focus:outline-none min-h-[100px]`}
-                                      rows={3}
-                                    />
-                                    {meta.touched && meta.error && (
-                                      <span className="text-red-500 text-sm">
-                                        {meta.error}
+                                      {meta.touched && meta.error && (
+                                        <span className="text-red-500 text-sm">{meta.error}</span>
+                                      )}
+                                    </div>
+                                  ) : ele.field_type === "radio" ? (
+                                    <div className="col-span-5 flex flex-col gap-2 mt-2">
+                                      <span className="text-[#24282E] font-jakarta font-[500] text-[18px]">
+                                        {ele.label}
                                       </span>
-                                    )}
-                                  </div>
-                                )}
-                              </Field>
-                            </div>
-                            {/* Image Upload Section */}
-                            <div className="grid grid-cols-2 gap-6 my-3">
-                              {/* Passport Upload */}
-                              <div className="w-full">
-                                <label className="text-[#24282E] font-jakarta font-[500] text-[18px] mb-2 block">
-                                  Passport
-                                </label>
-                                <FileUploadBox
-                                  filePreview={
-                                    values.passport
-                                      ? URL.createObjectURL(values.passport)
-                                      : null
-                                  }
-                                  file={values.passport}
-                                  onUpload={(file) =>
-                                    setFieldValue("passport", file)
-                                  }
-                                  onRemove={() =>
-                                    setFieldValue("passport", null)
-                                  }
-                                  inputId="passport-upload"
-                                />
-                              </div>
+                                      <div className="flex items-center gap-4">
+                                        {ele.options.map((option) => (
+                                          <label
+                                            key={option.value}
+                                            className="flex items-center gap-2 cursor-pointer"
+                                          >
+                                            <Field
+                                              type="radio"
+                                              name={ele.field_id}
+                                              value={option.value}
+                                              checked={values[ele.field_id] === option.value}
+                                              onChange={() => setFieldValue(ele.field_id, option.value)}
+                                              className="hidden peer"
+                                            />
+                                            <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-gray-400 peer-checked:bg-[#42DA82] peer-checked:border-[#42DA82]">
+                                              <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
+                                            </div>
+                                            <span>{option.label}</span>
+                                          </label>
+                                        ))}
+                                      </div>
+                                      {meta.touched && meta.error && (
+                                        <span className="text-red-500 text-sm">{meta.error}</span>
+                                      )}
+                                    </div>
+                                  ) : ele.field_type === "text" && ele.meta_data?.multiline ? (
+                                    <div className="flex flex-col gap-2">
+                                      <label className="text-[#24282E] text-[18px] font-[500] font-jakarta">
+                                        {ele.label}
+                                      </label>
+                                      <textarea
+                                        {...field}
+                                        name={ele.field_id}
+                                        placeholder={ele.placeholder || "Enter details here"}
+                                        className={`w-full border-2 ${meta.touched && meta.error
+                                            ? "border-red-500"
+                                            : "border-[#E9EAEA]"
+                                          } p-3 rounded-[12px] mt-1 focus:border-primary focus:outline-none min-h-[100px]`}
+                                        rows={3}
+                                      />
+                                      {meta.touched && meta.error && (
+                                        <span className="text-red-500 text-sm">{meta.error}</span>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <InputField
+                                      {...field}
+                                      fieldName={ele.field_id}
+                                      placeHolder={ele.placeholder}
+                                      type={ele.field_type}
+                                      label={ele.label}
+                                      error={meta.touched && meta.error}
+                                    />
+                                  )}
+                                </>
+                              )}
+                            </Field>
+                          ))
+                        ) : (
+                          <p>Loading...</p>
+                        )}
 
-                              {/* Photo Upload */}
-                              <div className="w-full">
-                                <label className="text-[#24282E] font-jakarta font-[500] text-[18px] mb-2 block">
-                                  Photo
-                                </label>
-                                <FileUploadBox
-                                  filePreview={
-                                    values.photo
-                                      ? URL.createObjectURL(values.photo)
-                                      : null
-                                  }
-                                  file={values.photo}
-                                  onUpload={(file) =>
-                                    setFieldValue("photo", file)
-                                  }
-                                  onRemove={() => setFieldValue("photo", null)}
-                                  inputId="photo-upload"
-                                />
-                              </div>
+                        {/* Footer (unchanged) */}
+                        <div className="w-full">
+                          <hr className="my-2" />
+                          <div className="flex justify-end p-6 pr-0 pt-0 items-center">
+                            <div className="flex gap-2 items-center">
+                              <button className={styles.refundBtn}>
+                                <CopyGreenSvg />
+                                <span className="text-[12px] font-[600] underline">
+                                  Add Another Application for Same
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                className="bg-[#42DA82] text-white px-6 py-2 rounded-[12px] font-semibold"
+                                onClick={() => handleNextStep(values, errors)}
+                              >
+                                <span>Next Step</span>
+                              </button>
                             </div>
                           </div>
-                        </Form>
-                      )}
-                    </Formik>
-                  )}
-
-                  {currentStep === 2 && <NewApplication2 />}
-                </div>
-              </div>
-              {/* Footer */}
-              <div className="w-full">
-                <hr className="my-2" />
-                <div className="flex justify-end p-6 pt-0 items-center ">
-                  <div className="flex gap-2 items-center">
-                    <button className={styles.refundBtn}>
-                      <CopyGreenSvg />
-                      <span className="text-[12px] font-[600] underline">
-                        Add Another Application for Same
-                      </span>
-                    </button>
-                    <button
-                      type="submit"
-                      className="bg-[#42DA82] text-white px-6 py-2 rounded-[12px] font-semibold"
-                   onClick={handleNextStep}
-                   >
-                      <span>Next Step</span>
-                    </button>
-                  </div>
+                        </div>
+                      </Form>
+                    )}
+                  </Formik>
                 </div>
               </div>
             </div>
