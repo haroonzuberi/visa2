@@ -25,12 +25,15 @@ import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchCustomers, setCurrentPage } from "@/store/slices/customersSlice";
 import { PAGINATION_CONFIG } from "@/config/pagination";
 import AnalyticsComponent from "@/components/ui/AnalyticsComponent/page";
+import useTranslation from 'next-translate/useTranslation'
 
 export default function Dashboard() {
   const dispatch = useAppDispatch();
   const { customers, isLoading, error, currentPage, total } = useAppSelector(
     (state) => state.customers
   );
+
+  const { t } = useTranslation('common')
 
   useEffect(() => {
     dispatch(
@@ -128,7 +131,7 @@ export default function Dashboard() {
       <div className="w-full ">
         <div className="w-full flex flex-col items-center">
           <div className="flex justify-between w-full py-5">
-            <h1 className="text-2xl font-semibold text-gray-800">Dashboard</h1>
+            <h1 className="text-2xl font-semibold text-gray-800">{t('title')}</h1>
             <div>
               <Calendar />
             </div>
