@@ -92,55 +92,6 @@ export const fetchApplications = createAsyncThunk(
   }
 );
 
-export const createApplication = createAsyncThunk(
-  "applications/createApplication",
-  async (applicationData: any, { rejectWithValue }) => {
-    try {
-      const formData = new FormData();
-      for (const key in applicationData) {
-        if (applicationData[key] !== null && applicationData[key] !== undefined) {
-          if (key === "special_tags") {
-            formData.append(key, JSON.stringify(applicationData[key]));
-          } else if (key === "passport" || key === "photo") {
-            if (applicationData[key]) {
-              formData.append(key, applicationData[key]);
-            }
-          } else {
-            formData.append(key, applicationData[key]);
-          }
-        }
-      }
-
-      const response: any = await postAPIWithAuth("forms/", formData);
-
-      if (!response) {
-        throw new Error("No response from server");
-      }
-
-      console.log("Create Application API Response:", response);
-
-      if (!response.success) {
-        throw new Error(response.message || "Failed to create application");
-      }
-
-      return response.data; // Return the newly created application
-    } catch (error: any) {
-      console.error("Create Application API Error:", error);
-
-      if (error.status === 500) {
-        return rejectWithValue("Internal server error. Please try again later.");
-      }
-
-      if (error.status === 401) {
-        return rejectWithValue("Unauthorized. Please login again.");
-      }
-
-      return rejectWithValue(
-        error.message || "Failed to create application. Please try again."
-      );
-    }
-  }
-);
 
 export const fetchApplication = createAsyncThunk(
   "applications/fetchApplication",
@@ -174,6 +125,52 @@ export const fetchApplication = createAsyncThunk(
       return rejectWithValue(
         error.message || "Failed to fetch application data. Please try again."
       );
+    }
+  }
+);
+
+export const createApplication = createAsyncThunk(
+  "applications/createApplication",
+  async (applicationData: any, { rejectWithValue }) => {
+    try {
+      const formData = new FormData();
+      
+      // Add form metadata
+      formData.append("form_id", "1");
+      
+      // Add values as a nested object
+      const values = {
+        full_name: applicationData.full_name,
+        email: applicationData.email,
+        phone: applicationData.phone,
+        passport_number: applicationData.passport_number,
+        // Add any other form fields here
+      };
+      formData.append("values", JSON.stringify(values));
+
+      // Handle file fields
+      const fileFields = ["passport_scan", "photo", "financial_documents", "travel_insurance"];
+      fileFields.forEach(field => {
+        if (applicationData[field]) {
+          formData.append(field, applicationData[field]);
+        }
+      });
+
+      // Debug FormData
+      console.log("🚀 Sending FormData:");
+      for (const pair of formData.entries()) {
+        console.log(pair[0], pair[1] instanceof File ? `File(${pair[1].name})` : pair[1]);
+      }
+
+      const response: any = await postAPIWithAuth("form-submissions", formData);
+
+      if (!response?.success) {
+        throw new Error(response?.data?.detail || "Failed to create application");
+      }
+
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.message || "Failed to create application");
     }
   }
 );
@@ -213,23 +210,7 @@ const applicationsSlice = createSlice({
         toast.error(action.payload as string); // Show error toast
       });
 
-    // Create Application
-    builder
-      .addCase(createApplication.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(createApplication.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.applications = [action.payload, ...state.applications]; // Add new application to the list
-        state.total += 1; // Increment total count
-        toast.success("Application created successfully!"); // Show success toast
-      })
-      .addCase(createApplication.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-        toast.error(action.payload as string); // Show error toast
-      });
+    
 
     // get form data
 
@@ -243,7 +224,6 @@ const applicationsSlice = createSlice({
         console.log("SUCCESS IN API",action.payload);
         state.isLoading = false;
         state.applicationData = action.payload; // Add new application to the list
-        toast.success("Application created successfully!"); // Show success toast
       })
       .addCase(fetchApplication.rejected, (state, action) => {
         console.log("ERROR IN API");
@@ -252,6 +232,23 @@ const applicationsSlice = createSlice({
         toast.error(action.payload as string); // Show error toast
       });
 
+    // Create Application
+    builder
+      .addCase(createApplication.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(createApplication.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.applications = [action.payload, ...state.applications];
+        state.total += 1;
+        toast.success("Application created successfully!");
+      })
+      .addCase(createApplication.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+        toast.error(action.payload as string);
+      });
   },
 });
 

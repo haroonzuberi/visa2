@@ -20,9 +20,9 @@ import * as Yup from "yup";
 import ApplicantAutocomplete from "@/components/ui/applicant-autocomplete/page";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  createApplication,
   fetchApplication,
   setCurrentPage,
+  createApplication,
 } from "@/store/slices/applicationsSlice";
 import { AppDispatch, RootState } from "@/store";
 
@@ -210,8 +210,8 @@ const generateValidationSchema = (fields: any[]) => {
                 field.validation.min === "today"
                   ? new Date()
                   : this.parent[field.validation.min]
-                    ? new Date(this.parent[field.validation.min])
-                    : new Date();
+                  ? new Date(this.parent[field.validation.min])
+                  : new Date();
               return new Date(value) >= minDate;
             }
           );
@@ -250,8 +250,6 @@ const generateValidationSchema = (fields: any[]) => {
 };
 
 const validationSchema = Yup.object().shape({
-
-
   // Basic Info
   email: Yup.string()
     .email("Invalid email address")
@@ -309,35 +307,21 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
 
   const initialValues = {
     email: "",
-    name: "",
+    full_name: "",
     phone: "",
     passport_number: "",
-    special_tags: [],
-    passport: null,
-    photo: null,
-    price: "",
-    priority: "",
-    visa_type: "",
-    visa_country: "",
-    internal_notes: "",
-    customer_id: null,
-    customer_name: "",
-    applicant_id: null,
-    applicant_name: "",
-    is_group: false,
-    group: "",
-    group_id: null,
   };
 
   const dispatch = useDispatch<AppDispatch>();
 
   // ✅ Ensure `state.applications` exists before destructuring
-  const applicationData = useSelector((state: any) => state.applicantions.applicationData);
+  const applicationData = useSelector(
+    (state: any) => state.applicantions.applicationData
+  );
 
   useEffect(() => {
     dispatch(fetchApplication());
   }, []);
-
 
   const handleStepClick = (step: number) => {
     setCurrentStep(step);
@@ -349,30 +333,50 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
     toast.success("Application added successfully!");
   };
 
-  const handleNextStep = async (values: any, errors: any) => {
-    // Log all form values in every case
-
-    // Check if mandatory fields are filled and valid
-    const mandatoryFields = ["name", "email", "phone", "passport_number"];
-    const hasErrors = mandatoryFields.some(
-      (field) => !values[field] || (errors[field] && errors[field] !== "")
-    );
+  const submitApplication = async (values: any, errors: any) => {
+    const mandatoryFields = ["full_name", "email", "phone", "passport_number"];
+    const hasErrors = mandatoryFields.some((field) => !values[field] || errors[field]);
 
     if (hasErrors) {
-      toast.error("Please fill all mandatory fields (Name, Email, Phone, Passport Number)");
+      toast.error("Please fill all mandatory fields");
       return;
     }
 
-    // try {
-    //   await dispatch(createApplication(values)).unwrap();
-    // } catch (error) {
-    //   console.log("Error : ", error);
-    // }
+    try {
+      await dispatch(createApplication(values)).unwrap();
+      toast.success("Application submitted successfully!");
+      if (currentStep < steps.length) {
+        setCurrentStep(currentStep + 1);
+      }
+    } catch (error) {
+      console.error("Error submitting application:", error);
+      toast.error(error.message || "Failed to submit application");
+    }
+  };
 
+  const handleNextStep = async (values: any, errors: any) => {
+    // Check if mandatory fields are filled and valid
+    const mandatoryFields = ["full_name", "email", "phone", "passport_number"];
+    const hasErrors = mandatoryFields.some((field) => {
+      console.log(`Checking field: ${field}`);
+      console.log(`Value:`, values[field]);
+      console.log(`Error:`, errors[field]);
+
+      return !values[field] || (!!errors[field] && errors[field].trim() !== "");
+    });
+
+    console.log("FIELDS", values);
+    if (hasErrors) {
+      toast.error(
+        "Please fill all mandatory fields (Name, Email, Phone, Passport Number)"
+      );
+      return;
+    }
+
+    
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
     }
-
   };
 
   const handlePreviousStep = () => {
@@ -412,12 +416,16 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                       {/* Stepper */}
                       <div className="flex items-center justify-center">
                         {steps.map((step, index) => (
-                          <div key={step.id} className="flex items-center m0imp">
+                          <div
+                            key={step.id}
+                            className="flex items-center m0imp"
+                          >
                             <div
                               className={`w-8 h-8 flex items-center justify-center rounded-full border-2 
-                                transition-all ${currentStep > step.id
-                                  ? "bg-[#42DA82] border-[#42DA82] text-white"
-                                  : currentStep === step.id
+                                transition-all ${
+                                  currentStep > step.id
+                                    ? "bg-[#42DA82] border-[#42DA82] text-white"
+                                    : currentStep === step.id
                                     ? "border-[#42DA82] text-[#42DA82]"
                                     : "border-gray-300 text-gray-400"
                                 }`}
@@ -433,8 +441,11 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                             </div>
                             {index !== steps.length - 1 && (
                               <div
-                                className={`w-[350px] h-1 ${currentStep > step.id ? "bg-[#42DA82]" : "bg-[#D1D5DB]"
-                                  }`}
+                                className={`w-[350px] h-1 ${
+                                  currentStep > step.id
+                                    ? "bg-[#42DA82]"
+                                    : "bg-[#D1D5DB]"
+                                }`}
                               />
                             )}
                           </div>
@@ -444,8 +455,11 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                         {steps.map((step) => (
                           <span
                             key={step.id}
-                            className={`text-[18px] font-[500] ${currentStep >= step.id ? "text-black" : "text-gray-500"
-                              }`}
+                            className={`text-[18px] font-[500] ${
+                              currentStep >= step.id
+                                ? "text-black"
+                                : "text-gray-500"
+                            }`}
                           >
                             {step.label}
                           </span>
@@ -474,7 +488,8 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                             <Field key={ele.field_id} name={ele.field_id}>
                               {({ field, meta }: any) => (
                                 <>
-                                  {ele.field_type === "file" || ele.field_type === "image" ? (
+                                  {ele.field_type === "file" ||
+                                  ele.field_type === "image" ? (
                                     <div className="w-full">
                                       <label className="text-[#24282E] font-jakarta font-[500] text-[18px] mb-2 block">
                                         {ele.label}
@@ -482,16 +497,24 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                                       <FileUploadBox
                                         filePreview={
                                           values[ele.field_id]
-                                            ? URL.createObjectURL(values[ele.field_id])
+                                            ? URL.createObjectURL(
+                                                values[ele.field_id]
+                                              )
                                             : null
                                         }
                                         file={values[ele.field_id]}
-                                        onUpload={(file) => setFieldValue(ele.field_id, file)}
-                                        onRemove={() => setFieldValue(ele.field_id, null)}
+                                        onUpload={(file) =>
+                                          setFieldValue(ele.field_id, file)
+                                        }
+                                        onRemove={() =>
+                                          setFieldValue(ele.field_id, null)
+                                        }
                                         inputId={ele.field_id}
                                       />
                                       {meta.touched && meta.error && (
-                                        <span className="text-red-500 text-sm">{meta.error}</span>
+                                        <span className="text-red-500 text-sm">
+                                          {meta.error}
+                                        </span>
                                       )}
                                     </div>
                                   ) : ele.field_type === "radio" ? (
@@ -509,8 +532,16 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                                               type="radio"
                                               name={ele.field_id}
                                               value={option.value}
-                                              checked={values[ele.field_id] === option.value}
-                                              onChange={() => setFieldValue(ele.field_id, option.value)}
+                                              checked={
+                                                values[ele.field_id] ===
+                                                option.value
+                                              }
+                                              onChange={() =>
+                                                setFieldValue(
+                                                  ele.field_id,
+                                                  option.value
+                                                )
+                                              }
                                               className="hidden peer"
                                             />
                                             <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-gray-400 peer-checked:bg-[#42DA82] peer-checked:border-[#42DA82]">
@@ -521,10 +552,13 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                                         ))}
                                       </div>
                                       {meta.touched && meta.error && (
-                                        <span className="text-red-500 text-sm">{meta.error}</span>
+                                        <span className="text-red-500 text-sm">
+                                          {meta.error}
+                                        </span>
                                       )}
                                     </div>
-                                  ) : ele.field_type === "text" && ele.meta_data?.multiline ? (
+                                  ) : ele.field_type === "text" &&
+                                    ele.meta_data?.multiline ? (
                                     <div className="flex flex-col gap-2">
                                       <label className="text-[#24282E] text-[18px] font-[500] font-jakarta">
                                         {ele.label}
@@ -532,15 +566,21 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                                       <textarea
                                         {...field}
                                         name={ele.field_id}
-                                        placeholder={ele.placeholder || "Enter details here"}
-                                        className={`w-full border-2 ${meta.touched && meta.error
+                                        placeholder={
+                                          ele.placeholder ||
+                                          "Enter details here"
+                                        }
+                                        className={`w-full border-2 ${
+                                          meta.touched && meta.error
                                             ? "border-red-500"
                                             : "border-[#E9EAEA]"
-                                          } p-3 rounded-[12px] mt-1 focus:border-primary focus:outline-none min-h-[100px]`}
+                                        } p-3 rounded-[12px] mt-1 focus:border-primary focus:outline-none min-h-[100px]`}
                                         rows={3}
                                       />
                                       {meta.touched && meta.error && (
-                                        <span className="text-red-500 text-sm">{meta.error}</span>
+                                        <span className="text-red-500 text-sm">
+                                          {meta.error}
+                                        </span>
                                       )}
                                     </div>
                                   ) : (
@@ -575,7 +615,9 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                               <button
                                 type="button"
                                 className="bg-[#42DA82] text-white px-6 py-2 rounded-[12px] font-semibold"
-                                onClick={() => handleNextStep(values, errors)}
+                                onClick={() =>
+                                  submitApplication(values, errors)
+                                }
                               >
                                 <span>Next Step</span>
                               </button>
