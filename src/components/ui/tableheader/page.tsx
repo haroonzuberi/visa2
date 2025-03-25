@@ -4,6 +4,7 @@ import styles from "./styles.module.css";
 import SearchSvg from "@/Assets/svgs/SearchSvg";
 import { Button } from "@/components/ui/button";
 import FilterIconSvg from "@/Assets/svgs/FilterIconSvg";
+import { useTranslation } from "react-i18next";
 
 interface TableHeaderProps {
   header?: string;
@@ -22,6 +23,7 @@ const TableHeaderPage = ({
   showFilters = false,
   showSeeMore = false,
 }: TableHeaderProps) => {
+  const { t } = useTranslation();
   return (
     <>
       <div className="flex items-center justify-between p-4">
@@ -39,7 +41,7 @@ const TableHeaderPage = ({
               <input
                 type="text"
                 className={`input-search ${styles.inputField}`}
-                placeholder="Search..."
+                placeholder={t("searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => onSearchChange?.(e.target.value)}
               />

@@ -14,11 +14,14 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getCurrentUser, logout } from "@/store/slices/authSlice";
 import NotificationPopover from "../notificationPopover/page";
 import NotificationModal from "@/components/modals/NotificationsModal/page";
+import LanguageSelector from "../languageSelector/page";
+import { useTranslation } from "react-i18next";
 
 const Header = () => {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useTranslation();
   const isModalOpen = searchParams.get("modal") === "seeMore";
   const closeModal = () => {
     console.log("Close Modal Function Working In Header Component");
@@ -51,7 +54,7 @@ const Header = () => {
           <div className="search-icon">
             <SearchSvg />
           </div>
-          <input type="text" className="input-search" placeholder="Search..." />
+          <input type="text" className="input-search" placeholder={t("searchPlaceholder")} />
         </div>
 
         {/* Right Section */}
@@ -61,7 +64,7 @@ const Header = () => {
             <NotificationPopover />
             {isModalOpen && <NotificationModal closeModal={closeModal} />}
             {/* Other Icons */}
-            <FlagSvg />
+            <LanguageSelector />
             <div className="plus-icon">
               <PlusSvg />
             </div>

@@ -55,7 +55,7 @@
 }
 
 .menuText {
-  @apply ml-3 text-sm font-medium;
+  @apply mx-3 text-sm font-medium;
 }
 
 .overlay {

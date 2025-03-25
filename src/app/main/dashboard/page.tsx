@@ -25,7 +25,7 @@ import { useAppDispatch, useAppSelector } from "@/store";
 import { fetchCustomers, setCurrentPage } from "@/store/slices/customersSlice";
 import { PAGINATION_CONFIG } from "@/config/pagination";
 import AnalyticsComponent from "@/components/ui/AnalyticsComponent/page";
-import useTranslation from 'next-translate/useTranslation'
+import { useTranslation } from "react-i18next";
 
 export default function Dashboard() {
   const dispatch = useAppDispatch();
@@ -33,7 +33,7 @@ export default function Dashboard() {
     (state) => state.customers
   );
 
-  const { t } = useTranslation('common')
+  const { t } = useTranslation();
 
   useEffect(() => {
     dispatch(
@@ -63,7 +63,7 @@ export default function Dashboard() {
         <div className="p-5">
           <div className="flex items-center gap-2">
             <Icon />
-            <span className="font-medium text-lg text-gray-500">{title}</span>
+            <span className="font-medium text-lg text-gray-500">{t(title)}</span>
           </div>
           <div className="flex items-center justify-between mt-4">
             <div className="flex flex-col">
@@ -84,7 +84,7 @@ export default function Dashboard() {
         </div>
         <hr className="my-1" />
         <div className="flex justify-between items-center p-5">
-          <span className="text-sm font-semibold text-green-500">See More</span>
+          <span className="text-sm font-semibold text-green-500">{t("seeMore")}</span>
           <LeftIconSvg />
         </div>
       </div>
@@ -120,30 +120,28 @@ export default function Dashboard() {
 
   const NoDataRow = () => (
     <TableRow>
-      <TableCell colSpan={6} className=" py-6">
-        <p className="text-sm font-medium text-gray-400">No customers found</p>
+      <TableCell colSpan={6} className="py-6">
+        <p className="text-sm font-medium text-gray-400">{t("noCustomersFound")}</p>
       </TableCell>
     </TableRow>
   );
 
   return (
     <>
-      <div className="w-full ">
+      <div className="w-full">
         <div className="w-full flex flex-col items-center">
           <div className="flex justify-between w-full py-5">
-            <h1 className="text-2xl font-semibold text-gray-800">{t('title')}</h1>
+            <h1 className="text-2xl font-semibold text-gray-800">{t("dashboard")}</h1>
             <div>
               <Calendar />
             </div>
           </div>
         </div>
         {/* Dashboard Cards */}
-
-        {/* Dashboard Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <DashboardCard
             icon={RevenueSvg}
-            title="Total Revenue"
+            title="totalRevenue"
             amount="$75,000"
             percentage="10%"
             change="+750%"
@@ -151,7 +149,7 @@ export default function Dashboard() {
           />
           <DashboardCard
             icon={UserSvg}
-            title="Total New Customers"
+            title="totalNewCustomers"
             amount="31,300"
             percentage="5%"
             change="+156"
@@ -159,7 +157,7 @@ export default function Dashboard() {
           />
           <DashboardCard
             icon={ApplicationSvg}
-            title="Applications to Apply"
+            title="applicationsToApply"
             amount="26"
             change="+156"
             percentage="10%"
@@ -168,7 +166,7 @@ export default function Dashboard() {
         </div>
         <div className={tableStyles.mainContainer}>
           {/* Header */}
-          <GeneralData search={false} header="New Customers" />
+          <GeneralData search={false} header="newCustomers" />
           {/* User Table */}
           <div className="bg-white rounded-xl">
             <Table>
@@ -176,30 +174,25 @@ export default function Dashboard() {
                 <TableRow>
                   <TableHead className={tableStyles.tableHeaders}>
                     <span className="flex items-center gap-2">
-                      <span className={tableStyles.tableHeaders}>#id</span>
+                      <span className={tableStyles.tableHeaders}>{t("id")}</span>
                       <DropdownSVG className="w-2 h-2" />
                     </span>
                   </TableHead>
                   <TableHead className={tableStyles.tableHeaders}>
-                    <span className={tableStyles.tableHeaders}>Name</span>
+                    <span className={tableStyles.tableHeaders}>{t("name")}</span>
                   </TableHead>
                   <TableHead className={tableStyles.tableHeaders}>
-                    Phone
+                    {t("phone")}
                   </TableHead>
                   <TableHead className={tableStyles.tableHeaders}>
-                    <span className={tableStyles.tableHeaders}>Email</span>
-                  </TableHead>
-
-                  <TableHead className={tableStyles.tableHeaders}>
-                    <span className={tableStyles.tableHeaders}>
-                      Created date
-                    </span>
+                    <span className={tableStyles.tableHeaders}>{t("email")}</span>
                   </TableHead>
                   <TableHead className={tableStyles.tableHeaders}>
-                    <span className="flex items-center  gap-2">
-                      <span className={tableStyles.tableHeaders}>
-                        #total orders
-                      </span>
+                    <span className={tableStyles.tableHeaders}>{t("createdDate")}</span>
+                  </TableHead>
+                  <TableHead className={tableStyles.tableHeaders}>
+                    <span className="flex items-center gap-2">
+                      <span className={tableStyles.tableHeaders}>{t("totalOrders")}</span>
                       <DropdownSVG className="w-2 h-2" />
                     </span>
                   </TableHead>

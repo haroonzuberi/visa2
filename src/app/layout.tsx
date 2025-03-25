@@ -5,6 +5,7 @@ import { Inter } from "next/font/google";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Suspense } from "react";
+import '../i18n';
 
 const inter = Inter({ subsets: ["latin"] });
 

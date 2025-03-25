@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -27,6 +27,8 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "formik": "^2.4.6",
+    "i18next": "^24.2.3",
+    "i18next-browser-languagedetector": "^8.0.4",
     "lucide-react": "^0.476.0",
     "next": "15.1.7",
     "next-translate": "^2.6.2",
@@ -36,6 +38,7 @@
     "react-day-picker": "^8.10.1",
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.8",
+    "react-i18next": "^15.4.1",
     "react-otp-input": "^3.1.1",
     "react-phone-input-2": "^2.15.1",
     "react-redux": "^9.2.0",

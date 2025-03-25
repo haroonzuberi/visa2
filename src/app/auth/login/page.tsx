@@ -11,12 +11,15 @@ import InputField from "@/components/ui/input/input";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { loginSchema } from "@/utils/validationSchema";
 import { loginUser } from "@/store/slices/authSlice";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 
 export default function LoginPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { isLoading } = useAppSelector((state) => state.auth);
   const { token } = useAppSelector((state) => state.auth);
+  const { t } = useTranslation();
 
   const initialValues = {
     email: "",
@@ -52,7 +55,7 @@ export default function LoginPage() {
   }, [token, router]);
 
   return (
-    <div className={styles.containerauth}>
+    <div className={styles.containerauth} dir={i18n.language === "he" ? "rtl" : "ltr"}>
       <div className={styles.card}>
         <div className="flex items-center justify-center flex-col gap-7">
           <Image
@@ -62,8 +65,8 @@ export default function LoginPage() {
             height={93}
             className={styles.LoginLogo}
           />
-          <h2 className={styles.title}>Sign in/Log in</h2>
-          <span className={styles.WelcomeText}>Welcome Back👋</span>
+          <h2 className={styles.title}>{t("signInLogIn")}</h2>
+          <span className={styles.WelcomeText}>{t("welcomeBack")}</span>
         </div>
         <Formik
           initialValues={initialValues}
@@ -74,17 +77,17 @@ export default function LoginPage() {
             <Form className="flex flex-col gap-5">
               <InputField
                 fieldName="email"
-                placeHolder="Email"
+                placeHolder={t("email")}
                 type="email"
-                label="Email"
+                label={t("email")}
                 onChange={handleChange}
                 onBlur={handleBlur}
                 error={touched.email && errors.email}
               />
               <InputField
                 fieldName="password"
-                label="Enter your Password"
-                placeHolder="Password"
+                label={t("enterYourPassword")}
+                placeHolder={t("password")}
                 type="password"
                 onChange={handleChange}
                 onBlur={handleBlur}
@@ -95,21 +98,20 @@ export default function LoginPage() {
                 className="cursor-pointer"
               >
                 <p className="text-[16px] font-[500] text-primary">
-                  Forgot password?
+                  {t("forgotPassword")}
                 </p>
               </div>
               <Button
-                buttonText={isLoading ? "Logging in..." : "Login"}
+                buttonText={isLoading ? t("loggingIn") : t("login")}
                 type="submit"
                 disabled={isLoading}
               />
 
               <div>
                 <p className={styles.pageDesc}>
-                  By clicking on the &quot;Create an Account&quot; button, I
-                  consent to the processing of my personal data in accordance
-                  with the{" "}
-                  <strong className="text-black">Privacy Policy</strong>
+                  {t("privacyConsent", {
+                    privacyPolicy: t("privacyPolicy"),
+                  })}
                 </p>
               </div>
             </Form>

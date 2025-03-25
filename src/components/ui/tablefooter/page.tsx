@@ -6,6 +6,8 @@ import LeftSvg from "@/Assets/svgs/LeftSvg";
 import styles from "./styles.module.css";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { PAGINATION_CONFIG } from "@/config/pagination";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 
 const TableFooter = ({
   total = 1,
@@ -13,7 +15,7 @@ const TableFooter = ({
   onPageChange = (page) => {},
 }) => {
   const dispatch = useAppDispatch();
-  //   const { total, currentPage, limit } = useAppSelector((state) => state.users);
+  const { t } = useTranslation();
   const totalPages = Math.ceil(total / PAGINATION_CONFIG.DEFAULT_PAGE_SIZE);
 
   const handlePageChange = (page: number) => {
@@ -43,12 +45,15 @@ const TableFooter = ({
     <>
       <hr />
       {/* Pagination */}
-      <div className="flex justify-between items-center my-4 p-4">
+      <div
+        className="flex justify-between items-center my-4 p-4"
+        dir={i18n.language === "he" ? "rtl" : "ltr"}
+      >
         <span className={styles.tableHeaders}>
-          Showing {(currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE + 1}{" "}
-          to{" "}
+          {t("showing")} {(currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE + 1}{" "}
+          {t("to")}{" "}
           {Math.min(currentPage * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE, total)}{" "}
-          of {total}
+          {t("of")} {total}
         </span>
         <div className="flex space-x-1">
           <Button

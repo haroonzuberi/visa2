@@ -18,51 +18,57 @@ import SettingsSvg from "@/Assets/svgs/SettingsSvg";
 import AnalyticsSvg from "@/Assets/svgs/AnalyticsSvg";
 import RefundedSvg from "@/Assets/svgs/RefundedSvg";
 import { setSidebarOpen, toggleSidebar } from "@/store/slices/sidebarSlice";
+import { useTranslation } from "react-i18next";
+import i18n from 'i18next';
 
 const menuItems = [
   {
-    name: "Dashboard",
+    name: "dashboard",
     icon: DashboardIcon,
     path: "/main/dashboard",
   },
   {
-    name: "Manage Users",
+    name: "manageUsers",
     icon: UserIcon,
     path: "/main/users",
   },
   {
-    name: "Customers List",
+    name: "customersList",
     icon: CustomerListIcon,
     path: "/main/customers",
   },
   {
-    name: "Applicant List",
+    name: "applicantList",
     icon: CustomerListIcon,
     path: "/main/applicants",
   },
   {
-    name: "Applicantions List",
+    name: "applicationsList", // Fixed typo
     icon: ApplicationSidebar,
     path: "/main/applications",
   },
   {
-    name: "Settings",
+    name: "settings",
     icon: SettingsSvg,
     path: "/main/settings",
   },
-  { name: "Visa Forms", icon: VisaSvg, path: "/main/forms" },
   {
-    name: "Kanban Board",
+    name: "visaForms",
+    icon: VisaSvg,
+    path: "/main/forms",
+  },
+  {
+    name: "kanbanBoard",
     icon: KanbanSvg,
     path: "/main/kanban",
   },
   {
-    name: "Analytics",
+    name: "analytics",
     icon: AnalyticsSvg,
     path: "/main/analytics",
   },
   {
-    name: "Refunds Requests",
+    name: "refundsRequests",
     icon: RefundedSvg,
     path: "/main/refunds",
   },
@@ -70,11 +76,11 @@ const menuItems = [
 
 const Sidebar = () => {
   const router = useRouter();
-
   const dispatch = useAppDispatch();
   const { isOpen } = useAppSelector((state) => state.sidebar);
   const pathname = usePathname();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const { t } = useTranslation(); // Add useTranslation hook
 
   useEffect(() => {
     const handleResize = () => {
@@ -92,6 +98,7 @@ const Sidebar = () => {
         className={`${styles.sidebar} ${
           !isOpen ? styles.sidebarClosed : styles.sidebarOpen
         }`}
+        dir={i18n.language === "he" ? "rtl" : "ltr"} // Add RTL support
       >
         <div className={styles.header}>
           <Image src={VisaLogo} alt="Visa Logo" width={89} height={53} />
@@ -107,7 +114,7 @@ const Sidebar = () => {
           <ul className={styles.menuList}>
             <li>
               <div className={styles.menuHeader}>
-                <span className={styles.menuTitle}>MAIN MENU</span>
+                <span className={styles.menuTitle}>{t("mainMenu")}</span>
               </div>
             </li>
 
@@ -133,7 +140,7 @@ const Sidebar = () => {
                         color={isActive || isHovered ? "#42DA82" : "#727A90"}
                       />
                     </div>
-                    <span className={styles.menuText}>{item.name}</span>
+                    <span className={styles.menuText}>{t(item.name)}</span>
                   </a>
                 </li>
               );
