@@ -12,22 +12,40 @@
 "use client";
 
 import { useEffect } from "react";
-import { redirect } from "next/navigation";
 import { useRouter } from "next/navigation";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { getCurrentUser } from "@/store/slices/authSlice";
 
 export default function Home() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { token, user } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-    // Check for token in localStorage
-    const token = localStorage.getItem("token");
+    const validateToken = async () => {
+      if (token && token !== "undefined" && token !== "null") {
+        try {
+          // Try to get current user to validate token
+          const resultAction = await dispatch(getCurrentUser());
+          if (getCurrentUser.fulfilled.match(resultAction)) {
+            // Token is valid, redirect to dashboard
+            router.replace("/main/dashboard");
+          } else {
+            // Token is invalid or expired
+            router.replace("/auth/login");
+          }
+        } catch (error) {
+          // Error occurred during validation
+          router.replace("/auth/login");
+        }
+      } else {
+        // No token, redirect to login
+        router.replace("/auth/login");
+      }
+    };
 
-    if (token && token !== "undefined" && token !== "null") {
-      redirect("/main/dashboard");
-    } else {
-      redirect("/auth/login");
-    }
-  }, [router]);
+    validateToken();
+  }, [token, router, dispatch]);
 
   // Return null or a loading state while checking
   return null;
