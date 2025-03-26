@@ -121,7 +121,10 @@ export default function Settings() {
                 <div className={styles.infoItem}>
                   <div className="flex justify-between items-center w-full">
                     <p className={styles.infoLabel}>Email</p>
-                    <div onClick={()=>handleCopyToClipboard(user?.email)} className="cursor-pointer">
+                    <div
+                      onClick={() => handleCopyToClipboard(user?.email)}
+                      className="cursor-pointer"
+                    >
                       <CopySvg />
                     </div>
                   </div>
@@ -149,9 +152,9 @@ export default function Settings() {
                 <TabsTrigger value="personal" className={styles.tabButton}>
                   Personal Info
                 </TabsTrigger>
-                <TabsTrigger value="business" className={styles.tabButton}>
+                {/* <TabsTrigger value="business" className={styles.tabButton}>
                   Business Settings
-                </TabsTrigger>
+                </TabsTrigger> */}
               </TabsList>
 
               <TabsContent value="personal" className="mt-6">
@@ -257,9 +260,8 @@ export default function Settings() {
                 </Formik>
               </TabsContent>
 
-              <TabsContent value="business" className="mt-6">
+              {/* <TabsContent value="business" className="mt-6">
                 <form className="">
-                  {/* Send Invoices Section */}
                   <div className="">
                     <h3 className={styles.settingLabel}>
                       Send invoices to customers automatically?
@@ -292,7 +294,6 @@ export default function Settings() {
                     </RadioGroup>
                   </div>
 
-                  {/* API Key Section */}
                   <div className="mt-[20px]">
                     <InputField
                       fieldName="apiKey"
@@ -304,7 +305,6 @@ export default function Settings() {
                     />
                   </div>
 
-                  {/* Allow Cancel Section */}
                   <div className="mt-[20px]">
                     <h3 className={styles.settingLabel}>
                       Allow users to cancel?
@@ -337,7 +337,6 @@ export default function Settings() {
                     </RadioGroup>
                   </div>
 
-                  {/* Status Section */}
                   <div className="mt-[20px]">
                     <h3 className={styles.settingLabel}>In what Status</h3>
                     <div className="flex flex-row flex-wrap mt-[10px]">
@@ -382,7 +381,6 @@ export default function Settings() {
                     </div>
                   </div>
 
-                  {/* Fee Section */}
                   <div className="grid grid-cols-2 gap-6 mt-[20px]">
                     <div className="space-y-4">
                       <InputField
@@ -415,7 +413,7 @@ export default function Settings() {
                     </Button>
                   </div>
                 </form>
-              </TabsContent>
+              </TabsContent> */}
             </Tabs>
           </div>
         </div>
