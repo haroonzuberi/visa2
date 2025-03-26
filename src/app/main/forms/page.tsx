@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./styles.module.css";
 import tableStyles from "../table.styles.module.css";
 import PlusGreenSvg from "@/Assets/svgs/PlusGreenSvg";
@@ -17,45 +17,34 @@ import EditSvg from "@/Assets/svgs/EditSvg";
 import TrashSvg from "@/Assets/svgs/TrashSvg";
 import { Button } from "@/components/ui/button";
 import DropdownSVG from "@/Assets/svgs/DropdownSVG";
-
-const forms = [
-  {
-    id: "#1235",
-    name: "Visa form name here",
-    started: 86,
-    paid: 86,
-    revenue: "$200.00",
-  },
-  {
-    id: "#1234",
-    name: "Visa form name here",
-    started: 86,
-    paid: 86,
-    revenue: "$200.00",
-  },
-  {
-    id: "#1232",
-    name: "Visa form name here",
-    started: 86,
-    paid: 86,
-    revenue: "$200.00",
-  },
-  {
-    id: "#1231",
-    name: "Visa form name here",
-    started: 86,
-    paid: 86,
-    revenue: "$200.00",
-  },
-  // Add more sample data as needed
-];
+import { AppDispatch, RootState } from "@/store";
+import { useDispatch, useSelector } from "react-redux";
+import { PAGINATION_CONFIG } from "@/config/pagination";
+import {
+  fetchApplications,
+  setCurrentPage,
+} from "@/store/slices/applicationsSlice";
 
 export default function Forms() {
-  const [currentPage, setCurrentPage] = useState(1);
+  const dispatch = useDispatch<AppDispatch>();
+  const [searchTerm, setSearchTerm] = useState("");
+  const { applications, isLoading, error, total, currentPage } = useSelector(
+    (state: RootState) => state.applicantions
+  );
+
+  // const [currentPage, setCurrentPage] = useState(1);
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    dispatch(setCurrentPage(page));
   };
+  useEffect(() => {
+    const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
+    // if (error) {
+
+    //   return;
+    // }
+    dispatch(fetchApplications({ skip, search: searchTerm }));
+  }, [dispatch, currentPage, searchTerm]);
 
   return (
     <>
@@ -108,7 +97,7 @@ export default function Forms() {
             </TableHeader>
 
             <TableBody>
-              {forms.map((form) => (
+              {applications.map((form) => (
                 <TableRow key={form.id} className="hover:bg-gray-50">
                   <TableCell>
                     <div className="flex flex-col">
@@ -116,19 +105,13 @@ export default function Forms() {
                       <span className={tableStyles.userName}>{form.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className={tableStyles.userName}>
-                    {form.started}
-                  </TableCell>
-                  <TableCell className={tableStyles.userName}>
-                    {form.paid}
-                  </TableCell>
-                  <TableCell className={tableStyles.userName}>
-                    {form.revenue}
-                  </TableCell>
+                  <TableCell className={tableStyles.userName}>N/A </TableCell>
+                  <TableCell className={tableStyles.userName}>N/A </TableCell>
+                  <TableCell className={tableStyles.userName}>N/A </TableCell>
                   <TableCell>
                     <div className="flex items-center  gap-4">
-                      <EditSvg className="w-[20px] h-[20px]"/>
-                      <TrashSvg className="w-[20px] h-[20px]"/>
+                      {/* <EditSvg className="w-[20px] h-[20px]" /> */}
+                      {/* <TrashSvg className="w-[20px] h-[20px]" /> */}
                       <Button className={styles.copyBtn}>
                         Copy form iframe code
                       </Button>
@@ -142,7 +125,7 @@ export default function Forms() {
 
         {/* Footer Section */}
         <TableFooterComponent
-          total={forms.length}
+          total={total}
           currentPage={currentPage}
           onPageChange={handlePageChange}
         />
