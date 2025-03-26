@@ -151,7 +151,7 @@ export default function Settings() {
               <TabsList className="border-b border-[#E9EAEA] w-full justify-start gap-8">
                 <TabsTrigger value="personal" className={styles.tabButton}>
                   Personal Info
-                </TabsTrigger>
+              </TabsTrigger>
                 {/* <TabsTrigger value="business" className={styles.tabButton}>
                   Business Settings
                 </TabsTrigger> */}

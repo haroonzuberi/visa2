@@ -26,6 +26,7 @@ import {
   setCurrentPage,
 } from "@/store/slices/applicationsSlice";
 import PlusGreenSvg from "@/Assets/svgs/PlusGreenSvg";
+import ApplicationDetail from '@/components/modals/ApplicationDetailModal/page';
 
 const modalParams = {
   name: "Linda Blair",
@@ -188,6 +189,8 @@ export default function Applications() {
   const { applications, isLoading, error, total, currentPage } = useSelector(
     (state: RootState) => state.applicantions
   );
+  const [isApplicationDetail, setIsApplicationDetail] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState(null);
 
   useEffect(() => {
     const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
@@ -229,6 +232,16 @@ export default function Applications() {
 
   const closeModal = () => {
     router.push(pathname);
+  };
+
+  const handleOpenModal = (application) => {
+    setSelectedApplication(application);
+    setIsApplicationDetail(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsApplicationDetail(false);
+    setSelectedApplication(null);
   };
 
   return (
@@ -348,7 +361,7 @@ export default function Applications() {
                     <TableCell>
                       <div className="flex justify-center items-center gap-2">
                         <EyeIcon
-                          onClick={openModal}
+                          onClick={() => handleOpenModal(applicant)}
                           className="cursor-pointer "
                         />
                         <DropdownSVG className="cursor-pointer w-[13px] h-[8px]" />
@@ -368,8 +381,12 @@ export default function Applications() {
           onPageChange={handlePageChange}
         />
       </div>
-      {isModalOpen && (
-        <Modal onClose={closeModal} isOpen={isModalOpen} data={modalParams} />
+      {isApplicationDetail && selectedApplication && (
+        <ApplicationDetail
+          setIsApplicationDetail={setIsApplicationDetail}
+          onClose={handleCloseModal}
+          data={modalParams}
+        />
       )}
       {isNewApplicationModalOpen && (
         <NewApplicationModal
