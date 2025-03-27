@@ -21,12 +21,13 @@ import NewApplicationModal from "@/components/modals/NewApplicationModal/page";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store";
 import { PAGINATION_CONFIG } from "@/config/pagination";
+
+import PlusGreenSvg from "@/Assets/svgs/PlusGreenSvg";
+import ApplicationDetail from "@/components/modals/ApplicationDetailModal/page";
 import {
   fetchApplications,
   setCurrentPage,
-} from "@/store/slices/applicationsSlice";
-import PlusGreenSvg from "@/Assets/svgs/PlusGreenSvg";
-import ApplicationDetail from '@/components/modals/ApplicationDetailModal/page';
+} from "@/store/slices/formSubmissionSlice";
 
 const modalParams = {
   name: "Linda Blair",
@@ -186,20 +187,20 @@ export default function Applications() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isNewApplicationModalOpen, setIsNewApplicationModalOpen] =
     useState(false);
-  const { applications, isLoading, error, total, currentPage } = useSelector(
-    (state: RootState) => state.applicantions
+  const { data, isLoading, error, total, currentPage }: any = useSelector(
+    (state: RootState) => state.formSubmissions
   );
   const [isApplicationDetail, setIsApplicationDetail] = useState(false);
-  const [selectedApplication, setSelectedApplication] = useState(null);
+  const [selectedApplication, setSelectedApplication] = useState<any | null>(
+    null
+  );
 
   useEffect(() => {
     const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
-    // if (error) {
+    dispatch(fetchApplications({ skip }));
+  }, [dispatch, currentPage]);
 
-    //   return;
-    // }
-    dispatch(fetchApplications({ skip, search: searchTerm }));
-  }, [dispatch, currentPage, searchTerm]);
+
 
   useEffect(() => {
     setIsModalOpen(searchParams.get("modal") === "open");
@@ -234,7 +235,7 @@ export default function Applications() {
     router.push(pathname);
   };
 
-  const handleOpenModal = (application) => {
+  const handleOpenModal = (application: any) => {
     setSelectedApplication(application);
     setIsApplicationDetail(true);
   };
@@ -242,6 +243,10 @@ export default function Applications() {
   const handleCloseModal = () => {
     setIsApplicationDetail(false);
     setSelectedApplication(null);
+  };
+
+  const getValue = (submission: any, field: string) => {
+    return submission.values[field]?.value || "N/A";
   };
 
   return (
@@ -305,55 +310,51 @@ export default function Applications() {
             <TableBody>
               {isLoading ? (
                 <LoadingSkeleton />
-              ) : applications.length === 0 ? (
+              ) : data.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8">
                     No applications found
                   </TableCell>
                 </TableRow>
               ) : (
-                applications.map((applicant, index) => (
-                  <TableRow
-                    key={applicant.id || index}
-                    className="hover:bg-gray-50"
-                  >
+                data?.data.map((submission) => (
+                  <TableRow key={submission.id} className="hover:bg-gray-50">
                     <TableCell>
                       <div className="flex flex-col">
                         <span className={tableStyles.userEmail}>
-                          #{applicant.id}
+                          #{submission.application_id}
                         </span>
                         <span className={tableStyles.userName}>
-                          {applicant.name || "N/A"}
+                          {getValue(submission, "full_name")}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col w-[140px]">
                         <span className={styles.tags}>
-                          {/* {applicant.tags.map((tag) => {
-                            tag + ",";
-                          })} */}
-                          application tags goes here
+                          {submission.form_name || "N/A"}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell>{applicant.created_at}</TableCell>
-                    <TableCell>{applicant.flight_date}</TableCell>
+                    <TableCell>{submission.created_at}</TableCell>
                     <TableCell>
-                      <Priority level={applicant.priority || "N/A"} />
+                      {getValue(submission, "arrival_date")}
                     </TableCell>
                     <TableCell>
-                      <Status status={applicant.status || "N/A"} />
+                      <Priority level={submission.priority} />
+                    </TableCell>
+                    <TableCell>
+                      <Status status={submission.visa_status} />
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">
                         <span className={styles.visaText}>
-                          {applicant.visa_type || "N/A"}
+                          {getValue(submission, "purpose_of_visit")}
                         </span>
                         <div className="flex items-center gap-2">
                           <IndiaFlag className="w-5 h-5" />
                           <span className="text-sm">
-                            {applicant.visa_country || "N/A"}
+                            {getValue(submission, "nationality")}
                           </span>
                         </div>
                       </div>
@@ -361,7 +362,7 @@ export default function Applications() {
                     <TableCell>
                       <div className="flex justify-center items-center gap-2">
                         <EyeIcon
-                          onClick={() => handleOpenModal(applicant)}
+                          onClick={() => handleOpenModal(submission)}
                           className="cursor-pointer "
                         />
                         <DropdownSVG className="cursor-pointer w-[13px] h-[8px]" />
