@@ -106,7 +106,7 @@ export const updateApplicationStatus = createAsyncThunk(
   async (params: UpdateStatusRequest, { rejectWithValue, dispatch }) => {
     try {
       console.log("{ARAMS___", params);
-      const response = await putAPIWithAuth("update-application-status", {
+      const response:any = await putAPIWithAuth("update-application-status", {
         new_status: params.new_status,
         id: params.id,
       });

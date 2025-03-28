@@ -66,12 +66,13 @@ export const fetchApplications = createAsyncThunk(
         throw new Error(response.message || "Failed to fetch applications");
       }
 
-      if (!response || !Array.isArray(response.data)) {
-        throw new Error("Invalid data structure received");
-      }
+      // if (!response || !Array.isArray(response.data)) {
+      //   throw new Error("Invalid data structure received");
+      // }
 
+      console.log("RES__ POS", response)
       return {
-        applications: response.data,
+        applications: response.data.data,
         total: response.data.results || response.data.length,
       };
     } catch (error: any) {

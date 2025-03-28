@@ -199,7 +199,7 @@ export default function Applications() {
   useEffect(() => {
     const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
     dispatch(fetchSubmissions({ skip }));
-  }, [dispatch, currentPage]);
+  }, [dispatch, currentPage, searchTerm]);
 
   useEffect(() => {
     setIsModalOpen(searchParams.get("modal") === "open");
@@ -217,10 +217,10 @@ export default function Applications() {
     };
   }, [isModalOpen]);
 
-  const handleSearch = (value: string) => {
-    setSearchTerm(value);
-    dispatch(setCurrentPage(1));
-  };
+  // const handleSearch = (value: string) => {
+  //   setSearchTerm(value);
+  //   dispatch(setCurrentPage(1));
+  // };
 
   const handlePageChange = (page: number) => {
     dispatch(setCurrentPage(page));
@@ -269,7 +269,7 @@ export default function Applications() {
           header="Application List"
           showFilters={true}
           showSeeMore={true}
-          onSearchChange={handleSearch}
+          onSearchChange={setSearchTerm}
           searchQuery={searchTerm}
         />
 
