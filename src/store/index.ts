@@ -9,6 +9,7 @@ import applicationsSlice from "./slices/applicationsSlice";
 import customerDetailsReducer from "./slices/customerDetailsSlice";
 import groupsReducer from "./slices/groupsSlice";
 import formSubmissionReducer from "./slices/formSubmissionSlice";
+import kanbanReducer from "./slices/kanbanSlice";
 
 export const store = configureStore({
   reducer: {
@@ -21,6 +22,7 @@ export const store = configureStore({
     customerDetails: customerDetailsReducer,
     groups: groupsReducer,
     formSubmissions: formSubmissionReducer,
+    kanban: kanbanReducer,
   },
 });
 

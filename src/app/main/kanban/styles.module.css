@@ -83,3 +83,38 @@
     @apply grid-cols-1;
   }
 }
+
+/* Add these to your existing styles */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Adjust the task skeleton styles */
+.taskSkeleton {
+  background: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Adjust column skeleton styles */
+.columnSkeleton {
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  min-width: 300px;
+  height: fit-content;
+}

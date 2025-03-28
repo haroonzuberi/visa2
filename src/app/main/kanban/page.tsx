@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import styles from "./styles.module.css";
 import IndiaFlag from "@/Assets/svgs/IndiaFlag";
@@ -9,154 +9,208 @@ import CalendarSvg from "@/Assets/svgs/CalendarSvg";
 import FlightSvg from "@/Assets/svgs/FlightSvg";
 import AddButton from "@/Assets/svgs/AddBtton";
 import MoreVerticalSvg from "@/Assets/svgs/MoreVerticalSvg";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/store";
+import {
+  fetchKanbanData,
+  columnToStatusMap,
+  updateApplicationStatus,
+} from "@/store/slices/kanbanSlice";
 
-// Initial data structure
-const initialColumns = {
-  todo: {
-    id: "todo",
-    title: "To Do",
-    count: 5,
-    tasks: [
-      {
-        id: "1",
-        title: "The Name will go here",
-        applicationId: "#651856",
-        country: "India",
-        applicationDate: "21 Oct 2022",
-        flightDate: "21 Oct 2022",
-      },
-      {
-        id: "5",
-        title: "Complete Project Report",
-        applicationId: "#982741",
-        country: "USA",
-        applicationDate: "05 Mar 2023",
-        flightDate: "10 Mar 2023",
-      },
-      {
-        id: "6",
-        title: "Schedule Client Meeting",
-        applicationId: "#762839",
-        country: "UK",
-        applicationDate: "12 Apr 2023",
-        flightDate: "15 Apr 2023",
-      },
-    ],
-  },
-  haveIssues: {
-    id: "haveIssues",
-    title: "Have Issues",
-    count: 4,
-    tasks: [
-      {
-        id: "2",
-        title: "The Name will go here",
-        applicationId: "#651856",
-        country: "India",
-        applicationDate: "21 Oct 2022",
-        flightDate: "21 Oct 2022",
-      },
-      {
-        id: "7",
-        title: "Payment Pending Issue",
-        applicationId: "#198273",
-        country: "Germany",
-        applicationDate: "02 Jun 2023",
-        flightDate: "05 Jun 2023",
-      },
-      {
-        id: "8",
-        title: "Missing Documents",
-        applicationId: "#452673",
-        country: "Canada",
-        applicationDate: "15 May 2023",
-        flightDate: "20 May 2023",
-      },
-    ],
-  },
-  done: {
-    id: "done",
-    title: "Done",
-    count: 4,
-    tasks: [
-      {
-        id: "3",
-        title: "The Name will go here",
-        applicationId: "#651856",
-        country: "India",
-        applicationDate: "21 Oct 2022",
-        flightDate: "21 Oct 2022",
-      },
-      {
-        id: "9",
-        title: "Passport Renewal Completed",
-        applicationId: "#762938",
-        country: "France",
-        applicationDate: "10 Jul 2023",
-        flightDate: "12 Jul 2023",
-      },
-      {
-        id: "10",
-        title: "Visa Approved",
-        applicationId: "#923874",
-        country: "Australia",
-        applicationDate: "18 Aug 2023",
-        flightDate: "22 Aug 2023",
-      },
-    ],
-  },
-  rejected: {
-    id: "rejected",
-    title: "Rejected",
-    count: 4,
-    tasks: [
-      {
-        id: "4",
-        title: "The Name will go here",
-        applicationId: "#651856",
-        country: "India",
-        applicationDate: "21 Oct 2022",
-        flightDate: "21 Oct 2022",
-      },
-      {
-        id: "11",
-        title: "Application Denied",
-        applicationId: "#182736",
-        country: "Italy",
-        applicationDate: "25 Sep 2023",
-        flightDate: "30 Sep 2023",
-      },
-      {
-        id: "12",
-        title: "Background Check Failed",
-        applicationId: "#237849",
-        country: "Japan",
-        applicationDate: "05 Oct 2023",
-        flightDate: "08 Oct 2023",
-      },
-    ],
-  },
+// Map API statuses to UI column IDs
+
+// Add this skeleton component at the top of the file
+const KanbanSkeleton = () => {
+  return (
+    <div className={styles.container}>
+      <div className="flex justify-between items-center mb-6">
+        <div className="h-8 w-48 bg-gray-200 rounded animate-pulse"></div>
+        <div className="h-10 w-24 bg-gray-200 rounded animate-pulse"></div>
+      </div>
+
+      <div className={styles.boardContainer}>
+        {[1, 2, 3, 4].map((column) => (
+          <div key={column} className={`${styles.column} bg-white`}>
+            <div className={styles.columnHeader}>
+              <div className="flex justify-between items-center w-full">
+                <div className="h-6 w-32 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+
+            <div className={`${styles.taskList} gap-4`}>
+              {[1, 2, 3].map((task) => (
+                <div key={task} className={`${styles.task} animate-pulse`}>
+                  <div className="flex justify-between mb-3">
+                    <div className="h-5 w-24 bg-gray-200 rounded"></div>
+                    <div className="h-5 w-5 bg-gray-200 rounded"></div>
+                  </div>
+                  <div className="h-6 w-3/4 bg-gray-200 rounded mb-3"></div>
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 w-20 bg-gray-200 rounded"></div>
+                    <div className="flex gap-2">
+                      <div className="h-4 w-20 bg-gray-200 rounded"></div>
+                      <div className="h-4 w-20 bg-gray-200 rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };
 
 export default function KanbanBoard() {
-  const [columns, setColumns] = useState(initialColumns);
+  const dispatch = useDispatch<AppDispatch>();
+  const { applications_by_status, status_counts, isLoading } = useSelector(
+    (state: RootState) => state.kanban
+  );
 
-  const onDragEnd = (result: any) => {
-    const { source, destination } = result;
+  // Convert API data to match your UI structure
+  const convertApiDataToColumns = () => {
+    const columnsData = {
+      todo: {
+        id: "todo",
+        title: "To Do",
+        count: status_counts?.new || 0,
+        tasks:
+          applications_by_status?.new?.map((app) => ({
+            id: app.id.toString(),
+            title: app.applicant.name,
+            applicationId: app.application_id,
+            country: app.visa_country,
+            applicationDate: new Date(app.created_at).toLocaleDateString(
+              "en-US",
+              {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              }
+            ),
+            flightDate: new Date(app.updated_at).toLocaleDateString("en-US", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            }),
+          })) || [],
+      },
+      haveIssues: {
+        id: "haveIssues",
+        title: "Have Issues",
+        count: status_counts?.ready_to_apply || 0,
+        tasks:
+          applications_by_status?.ready_to_apply?.map((app) => ({
+            id: app.id.toString(),
+            title: app.applicant.name,
+            applicationId: app.application_id,
+            country: app.visa_country,
+            applicationDate: new Date(app.created_at).toLocaleDateString(
+              "en-US",
+              {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              }
+            ),
+            flightDate: new Date(app.updated_at).toLocaleDateString("en-US", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            }),
+          })) || [],
+      },
+      done: {
+        id: "done",
+        title: "Done",
+        count: status_counts?.need_gov_fee || 0,
+        tasks:
+          applications_by_status?.need_gov_fee?.map((app) => ({
+            id: app.id.toString(),
+            title: app.applicant.name,
+            applicationId: app.application_id,
+            country: app.visa_country,
+            applicationDate: new Date(app.created_at).toLocaleDateString(
+              "en-US",
+              {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              }
+            ),
+            flightDate: new Date(app.updated_at).toLocaleDateString("en-US", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            }),
+          })) || [],
+      },
+      rejected: {
+        // id: "rejected",
+        // title: "Rejected",
+        // count: 0, // Add if you have rejected status in API
+        // tasks: [],
 
-    // If dropped outside a droppable area
+        id: "rejected",
+        title: "Rejected",
+        count: status_counts?.rejected || 0,
+        tasks:
+          applications_by_status?.rejected?.map((app) => ({
+            id: app.id.toString(),
+            title: app.applicant.name,
+            applicationId: app.application_id,
+            country: app.visa_country,
+            applicationDate: new Date(app.created_at).toLocaleDateString(
+              "en-US",
+              {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              }
+            ),
+            flightDate: new Date(app.updated_at).toLocaleDateString("en-US", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            }),
+          })) || [],
+      },
+    };
+    return columnsData;
+  };
+
+  const [columns, setColumns] = useState(convertApiDataToColumns());
+
+  useEffect(() => {
+    dispatch(fetchKanbanData());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setColumns(convertApiDataToColumns());
+    }
+  }, [applications_by_status, status_counts, isLoading]);
+
+  const onDragEnd = async (result: any) => {
+    const { destination, source, draggableId } = result;
+
     if (!destination) return;
 
-    // If dropped in the same position
     if (
-      source.droppableId === destination.droppableId &&
-      source.index === destination.index
-    )
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
       return;
+    }
 
-    // Get source and destination columns
     const sourceColumn = columns[source.droppableId];
     const destColumn = columns[destination.droppableId];
+
+    // Get the task being moved
+    const task = sourceColumn.tasks.find((t) => t.id === draggableId);
+    if (!task) return;
 
     // If moving within the same column
     if (source.droppableId === destination.droppableId) {
@@ -178,19 +232,43 @@ export default function KanbanBoard() {
       const [removed] = sourceTasks.splice(source.index, 1);
       destTasks.splice(destination.index, 0, removed);
 
-      setColumns({
-        ...columns,
-        [source.droppableId]: {
-          ...sourceColumn,
-          tasks: sourceTasks,
-        },
-        [destination.droppableId]: {
-          ...destColumn,
-          tasks: destTasks,
-        },
-      });
+      // Get the new status from the destination column
+      const newStatus = columnToStatusMap[destination.droppableId];
+      let col = columns;
+      try {
+        // Update local state
+        setColumns({
+          ...columns,
+          [source.droppableId]: {
+            ...sourceColumn,
+            tasks: sourceTasks,
+          },
+          [destination.droppableId]: {
+            ...destColumn,
+            tasks: destTasks,
+          },
+        });
+        // Call the update API with correct parameters
+        await dispatch(
+          updateApplicationStatus({
+            id: parseInt(task.id),
+            new_status: newStatus,
+            // note: "Status updated via Kanban board", // Optional
+            // priority: task.priority // Optional
+          })
+        ).unwrap();
+      } catch (error) {
+        setColumns(col);
+        console.error("Failed to update status:", error);
+        // You might want to show an error toast here
+      }
     }
   };
+
+  // Update the return statement to show skeleton while loading
+  if (isLoading || !applications_by_status) {
+    return <KanbanSkeleton />;
+  }
 
   return (
     <div className={styles.container}>

@@ -73,7 +73,7 @@ const initialState: FormSubmissionState = {
 };
 
 // Async Actions
-export const fetchApplications = createAsyncThunk(
+export const fetchSubmissions = createAsyncThunk(
   "formSubmissions/fetchFormSubmissions",
   async (
     { skip = 0, search = "" }: { skip?: number; search?: string },
@@ -96,87 +96,6 @@ export const fetchApplications = createAsyncThunk(
       };
     } catch (error: any) {
       return rejectWithValue(error.message || "Failed to fetch applications");
-    }
-  }
-);
-
-export const fetchApplication = createAsyncThunk(
-  "applications/fetchApplication",
-  async (_, { rejectWithValue }) => {
-    try {
-      console.log("API should be called");
-      const response: any = await getApiWithAuth("forms/2");
-
-      if (!response) {
-        throw new Error("No response from server");
-      }
-
-      console.log("Fetch Application API Response:", response);
-
-      if (!response.success) {
-        throw new Error(response.message || "Failed to fetch application data");
-      }
-
-      return response.data; // Returning application data
-    } catch (error: any) {
-      console.error("Fetch Application API Error:", error);
-
-      if (error.status === 500) {
-        return rejectWithValue(
-          "Internal server error. Please try again later."
-        );
-      }
-
-      if (error.status === 401) {
-        return rejectWithValue("Unauthorized. Please login again.");
-      }
-
-      return rejectWithValue(
-        error.message || "Failed to fetch application data. Please try again."
-      );
-    }
-  }
-);
-
-export const createApplication = createAsyncThunk(
-  "formSubmission/createApplication",
-  async (applicationData: any, { rejectWithValue }) => {
-    try {
-      const formData = new FormData();
-      formData.append("form_id", "1");
-
-      const values = {
-        full_name: applicationData.full_name,
-        email: applicationData.email,
-        phone: applicationData.phone,
-        passport_number: applicationData.passport_number,
-      };
-      formData.append("values", JSON.stringify(values));
-
-      // Handle file fields
-      const fileFields = [
-        "passport_scan",
-        "photo",
-        "financial_documents",
-        "travel_insurance",
-      ];
-      fileFields.forEach((field) => {
-        if (applicationData[field]) {
-          formData.append(field, applicationData[field]);
-        }
-      });
-
-      const response: any = await postAPIWithAuth("form-submissions", formData);
-
-      if (!response?.success) {
-        throw new Error(
-          response?.data?.detail || "Failed to create application"
-        );
-      }
-
-      return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.message || "Failed to create application");
     }
   }
 );
@@ -216,50 +135,16 @@ const formSubmissionSlice = createSlice({
   extraReducers: (builder) => {
     // Fetch Applications List
     builder
-      .addCase(fetchApplications.pending, (state) => {
+      .addCase(fetchSubmissions.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchApplications.fulfilled, (state, action) => {
+      .addCase(fetchSubmissions.fulfilled, (state, action) => {
         state.isLoading = false;
         state.data = action.payload.applications;
         state.total = action.payload.total;
       })
-      .addCase(fetchApplications.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-        toast.error(action.payload as string);
-      });
-
-    // Fetch Single Form Submission
-    builder
-      .addCase(fetchFormSubmission.pending, (state) => {
-        state.isLoading = true;
-        ``;
-        state.error = null;
-      })
-      .addCase(fetchFormSubmission.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.currentSubmission = action.payload;
-      })
-      .addCase(fetchFormSubmission.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      });
-
-    // Create Application
-    builder
-      .addCase(createApplication.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(createApplication.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.data = [action.payload, ...state.data];
-        state.total += 1;
-        toast.success("Application created successfully!");
-      })
-      .addCase(createApplication.rejected, (state, action) => {
+      .addCase(fetchSubmissions.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
         toast.error(action.payload as string);

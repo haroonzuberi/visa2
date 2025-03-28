@@ -25,6 +25,62 @@ import {
   setCurrentPage,
 } from "@/store/slices/applicationsSlice";
 
+// Add this skeleton component
+const FormsSkeleton = () => {
+  return (
+    <div className={styles.tableContainer}>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className={tableStyles.tableHeaders}>
+              Visa Id & Name
+            </TableHead>
+            <TableHead className={tableStyles.tableHeaders}>
+              # of started
+            </TableHead>
+            <TableHead className={tableStyles.tableHeaders}>
+              # of paid
+            </TableHead>
+            <TableHead className={tableStyles.tableHeaders}>
+              Total Revenue
+            </TableHead>
+            <TableHead className={`w-[20px] ${tableStyles.tableHeaders}`}>
+              Actions
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+
+        <TableBody>
+          {[...Array(PAGINATION_CONFIG.DEFAULT_PAGE_SIZE)].map((_, index) => (
+            <TableRow key={index} className="hover:bg-gray-50">
+              <TableCell>
+                <div className="flex flex-col gap-1">
+                  <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-5 w-32 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="h-5 w-16 bg-gray-200 rounded animate-pulse"></div>
+              </TableCell>
+              <TableCell>
+                <div className="h-5 w-16 bg-gray-200 rounded animate-pulse"></div>
+              </TableCell>
+              <TableCell>
+                <div className="h-5 w-24 bg-gray-200 rounded animate-pulse"></div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-4">
+                  <div className="h-8 w-32 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+};
+
 export default function Forms() {
   const dispatch = useDispatch<AppDispatch>();
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,12 +95,45 @@ export default function Forms() {
   };
   useEffect(() => {
     const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
-    // if (error) {
-
-    //   return;
-    // }
     dispatch(fetchApplications({ skip, search: searchTerm }));
   }, [dispatch, currentPage, searchTerm]);
+
+  if (isLoading || !applications) {
+    return (
+      <>
+        {/* Page Header */}
+        <div className="flex justify-between mt-3">
+          <h1 className={styles.header}>Manage Visa forms</h1>
+          <button type="button" className={styles.createFormBtn}>
+            <PlusGreenSvg className={styles.btnPlusIcon} />
+            Create New Form
+          </button>
+        </div>
+
+        <div className={tableStyles.mainContainer}>
+          {/* Header */}
+          <GeneralData
+            search={true}
+            header="Visa Lists"
+            searchQuery={searchTerm}
+            onSearchChange={setSearchTerm}
+          />
+
+          {/* Forms Table with Skeleton */}
+          <div className="bg-white rounded-xl w-full">
+            <FormsSkeleton />
+          </div>
+
+          {/* Footer Section */}
+          <TableFooterComponent
+            total={0}
+            currentPage={1}
+            onPageChange={() => {}}
+          />
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -61,9 +150,11 @@ export default function Forms() {
         {/* Header */}
         <GeneralData
           search={true}
+          searchQuery={searchTerm}
+          onSearchChange={setSearchTerm}
           header="Visa Lists"
-          showFilters={true}
           showSeeMore={true}
+          showFilters={true}
         />
 
         {/* Forms Table */}

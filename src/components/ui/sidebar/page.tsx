@@ -23,52 +23,52 @@ import i18n from 'i18next';
 
 const menuItems = [
   {
-    name: "dashboard",
+    name: "Dashboard",
     icon: DashboardIcon,
     path: "/main/dashboard",
   },
   {
-    name: "manageUsers",
+    name: "Manage Users",
     icon: UserIcon,
     path: "/main/users",
   },
   {
-    name: "customersList",
+    name: "Customers List",
     icon: CustomerListIcon,
     path: "/main/customers",
   },
   {
-    name: "applicantList",
+    name: "Applicant List",
     icon: CustomerListIcon,
     path: "/main/applicants",
   },
   {
-    name: "applicationsList", // Fixed typo
+    name: "Applications List", // Fixed typo
     icon: ApplicationSidebar,
     path: "/main/applications",
   },
   {
-    name: "settings",
+    name: "Settings",
     icon: SettingsSvg,
     path: "/main/settings",
   },
   {
-    name: "visaForms",
+    name: "Visa Forms",
     icon: VisaSvg,
     path: "/main/forms",
   },
   {
-    name: "kanbanBoard",
+    name: "Kanban Board",
     icon: KanbanSvg,
     path: "/main/kanban",
   },
   {
-    name: "analytics",
+    name: "Analytics",
     icon: AnalyticsSvg,
     path: "/main/analytics",
   },
   {
-    name: "refundsRequests",
+    name: "Refunds Requests",
     icon: RefundedSvg,
     path: "/main/refunds",
   },

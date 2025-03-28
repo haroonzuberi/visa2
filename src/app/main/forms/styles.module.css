@@ -66,3 +66,48 @@
 }
 
 /* Add any additional styles you need */
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.skeletonRow {
+  @apply grid grid-cols-5 gap-4 py-4 border-b;
+}
+
+.skeletonCell {
+  @apply h-5 bg-gray-100 rounded;
+}
+
+.skeletonHeader {
+  @apply h-6 bg-gray-200 rounded;
+}
+
+.skeletonContainer {
+  @apply bg-white rounded-lg p-4;
+}
+
+.skeletonSearch {
+  @apply bg-gray-200 h-[72px] rounded-lg mb-4;
+}
+
+.skeletonFooter {
+  @apply mt-4 flex justify-between items-center;
+}
+
+.skeletonPagination {
+  @apply h-8 w-48 bg-gray-200 rounded;
+}
+
+.skeletonTotal {
+  @apply h-8 w-32 bg-gray-200 rounded;
+}

@@ -25,7 +25,8 @@ import { PAGINATION_CONFIG } from "@/config/pagination";
 import PlusGreenSvg from "@/Assets/svgs/PlusGreenSvg";
 import ApplicationDetail from "@/components/modals/ApplicationDetailModal/page";
 import {
-  fetchApplications,
+  fetchFormSubmission,
+  fetchSubmissions,
   setCurrentPage,
 } from "@/store/slices/formSubmissionSlice";
 
@@ -197,10 +198,8 @@ export default function Applications() {
 
   useEffect(() => {
     const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
-    dispatch(fetchApplications({ skip }));
+    dispatch(fetchSubmissions({ skip }));
   }, [dispatch, currentPage]);
-
-
 
   useEffect(() => {
     setIsModalOpen(searchParams.get("modal") === "open");
