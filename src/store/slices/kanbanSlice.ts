@@ -74,7 +74,7 @@ export const fetchKanbanData = createAsyncThunk(
   "kanban/fetchKanbanData",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await getApiWithAuth("applications-by-status");
+      const response:any = await getApiWithAuth("applications-by-status");
 
       if (!response?.success) {
         throw new Error(response?.message || "Failed to fetch kanban data");
@@ -138,7 +138,7 @@ const kanbanSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchKanbanData.fulfilled, (state, action) => {
+      .addCase(fetchKanbanData.fulfilled, (state, action:any) => {
         state.isLoading = false;
         state.status_counts = action.payload.status_counts;
         state.total_count = action.payload.total_count;

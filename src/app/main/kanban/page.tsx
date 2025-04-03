@@ -65,7 +65,7 @@ const KanbanSkeleton = () => {
 
 export default function KanbanBoard() {
   const dispatch = useDispatch<AppDispatch>();
-  const { applications_by_status, status_counts, isLoading } = useSelector(
+  const { applications_by_status, status_counts, isLoading }:any = useSelector(
     (state: RootState) => state.kanban
   );
 
