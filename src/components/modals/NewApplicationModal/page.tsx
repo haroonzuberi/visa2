@@ -17,7 +17,6 @@ import { useDropzone } from "react-dropzone";
 import GroupAutocomplete from "@/components/ui/group-autocomplete/page";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
-import ApplicantAutocomplete from "@/components/ui/applicant-autocomplete/page";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchApplication,
