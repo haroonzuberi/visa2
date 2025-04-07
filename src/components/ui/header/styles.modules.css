@@ -3,16 +3,16 @@
 @tailwind utilities;
 
 .header-container {
-    @apply pt-2 px-4;
+    @apply md:pt-2 md:px-4;
 }
 
 .header-content {
-    @apply flex items-center justify-between py-[13px] w-full flex-wrap;
+    @apply flex items-center justify-end md:justify-between md:py-[13px] w-full flex-wrap;
 }
 
 /* Search Input */
 .search-container {
-    @apply relative flex-1 min-w-[200px] max-w-[400px];
+    @apply relative flex-1 w-full sm:min-w-[200px] sm:max-w-[400px];
 }
 
 .search-icon {
@@ -31,11 +31,11 @@
 
 /* Icons Group */
 .icons-group {
-    @apply flex items-center gap-3;
+    @apply flex items-center md:gap-3;
 }
 
 .Notification {
-    @apply w-[22px] h-[18px] flex items-center justify-center bg-red-500 rounded-full 
+    @apply w-[18px] h-[18px] flex items-center justify-center bg-red-500 rounded-full 
            absolute top-[-8px] left-[7px];
 }
 
@@ -65,7 +65,7 @@
 }
 
 .profile-info {
-    @apply flex flex-col;
+    @apply hidden md:flex flex-col;
 }
 
 .profile-name {

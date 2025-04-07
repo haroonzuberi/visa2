@@ -26,20 +26,19 @@ const TableHeaderPage = ({
   const { t } = useTranslation();
   return (
     <>
-      <div className="flex items-center justify-between p-4">
+      <div className="flex  flex-col-reverse justify-center sm:flex-row  items-center sm:justify-between p-4">
         <div className="bg-white rounded-xl ">
           <h2 className={styles.userListText}>{header}</h2>
         </div>
 
         {/* Search & Filters */}
-        <div className="bg-white rounded-xl flex justify-between items-center space-x-2">
+        <div className="bg-white rounded-xl flex  flex-col-reverse justify-center sm:flex-row sm:justify-between items-center space-x-2 w-full sm:w-auto">
           {search && (
             <div className="search-container">
               <div className="search-icon">
                 <SearchSvg />
               </div>
               <input
-                type="text"
                 className={`input-search ${styles.inputField}`}
                 placeholder={t("searchPlaceholder")}
                 value={searchQuery}

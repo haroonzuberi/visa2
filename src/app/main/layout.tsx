@@ -15,58 +15,35 @@ export default function MainLayout({
 }) {
   const { isOpen } = useAppSelector((state) => state.sidebar);
   const dispatch = useAppDispatch();
+
   useEffect(() => {}, []);
+
   return (
     <ProtectedRoute>
       <div className="flex min-h-screen bg-gray-50">
         {/* Sidebar Section */}
-        <div className="relative">
-          <div
-            className={`transition-all duration-300 ease-in-out ${
-              isOpen ? "w-64" : "w-0"
-            }`}
-          >
+        <div className={`${isOpen ? "w-64" : "w-0"} transition-all duration-300 ease-in-out border-r border-[#E9EAEA] bg-white`}>
+          <div className={`${isOpen ? "block" : "hidden"}`}>
             <Sidebar />
           </div>
-
-          {/* Fixed Position Toggle Button */}
-          {/* {!isOpen && (
-            <div
-              className={`absolute top-4 ${
-                isOpen ? "right-4" : "left-4"
-              } cursor-pointer z-50`}
-              onClick={() => dispatch(toggleSidebar())}
-            >
-              <div
-                className={`transition-transform duration-300 ${
-                  isOpen ? "" : "rotate-180"
-                }`}
-              >
-                <LeftIcon />
-              </div>
-            </div>
-          )} */}
         </div>
 
         {/* Main Content Section */}
-        <div className="flex-1 transition-all duration-300 ease-in-out pt-[7px] bg-white">
+        <div className="flex-1 bg-white transition-all duration-300 ease-in-out w-full">
           <div
             className={`${
-              isOpen ? "" : " mx-[10px]"
-            } bg-white h-[100vh] border-l-[1px] border-t-[1px]  border-[#E9EAEA] rounded-tl-[30px]`}
+              isOpen ? "" : "mx-[10px]"
+            } bg-white h-[100vh] border-t border-[#E9EAEA] rounded-tl-[30px]`}
           >
-            <div className="border-b-[1px] border-[#E9EAEA]  px-[10px] flex items-center h-[76.76px] sticky top-0 bg-[#fff] z-50">
+            {/* Header */}
+            <div className="border-b border-[#E9EAEA] px-[10px] flex items-center h-[76.76px] sticky top-0 bg-white">
               {!isOpen && (
                 <div
-                  className={`mr-[20px]`}
+                  className="mr-[20px] cursor-pointer"
                   onClick={() => dispatch(toggleSidebar())}
                 >
-                  <div
-                    className={`transition-transform duration-300 ${
-                      isOpen ? "" : "rotate-180"
-                    }`}
-                  >
-                    <LeftIcon className="cursor-pointer" />
+                  <div className="transition-transform duration-300 rotate-180">
+                    <LeftIcon />
                   </div>
                 </div>
               )}
@@ -74,6 +51,8 @@ export default function MainLayout({
                 <Header />
               </div>
             </div>
+
+            {/* Page Content */}
             <div className="px-[20px] pt-[10px]">{children}</div>
           </div>
         </div>

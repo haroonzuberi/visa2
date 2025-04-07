@@ -50,7 +50,7 @@ const Header = () => {
     <div className="header-container">
       <div className="header-content">
         {/* Search Input */}
-        <div className="search-container">
+        <div className="search-container hidden sm:block">
           <div className="search-icon">
             <SearchSvg />
           </div>
@@ -59,13 +59,15 @@ const Header = () => {
 
         {/* Right Section */}
         <div className="right-section">
-          <div className="icons-group flex items-center space-x-4">
+          <div className="icons-group flex items-center space-x-4 pl-2">
             {/* Notification Popover */}
             <NotificationPopover />
             {isModalOpen && <NotificationModal closeModal={closeModal} />}
             {/* Other Icons */}
+            <div className="ml-[12px] mr-[12px] md:mx-0">
             <LanguageSelector />
-            <div className="plus-icon">
+            </div>
+            <div className="plus-icon ml-0">
               <PlusSvg />
             </div>
             <div className="divider hidden sm:block"></div>
@@ -77,11 +79,13 @@ const Header = () => {
               <div className="profile-image">
                 <Image src={ProfileImage} alt="Profile" />
               </div>
-              <div className="profile-info hidden sm:block">
+              <div className="profile-info">
                 <p className="profile-name">{user?.name || "Loading..."}</p>
                 <p className="profile-role">{user?.role || "User"}</p>
               </div>
+              <div className="hidden md:block">
               <DropdownSVG />
+              </div>
             </div>
 
             {isOpen && (

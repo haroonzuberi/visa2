@@ -130,7 +130,7 @@ export default function Dashboard() {
     <>
       <div className="w-full">
         <div className="w-full flex flex-col items-center">
-          <div className="flex justify-between w-full py-5">
+          <div className="flex justify-between w-full py-5 items-center">
             <h1 className="text-2xl font-semibold text-gray-800">{t("dashboard")}</h1>
             <div>
               <Calendar />

@@ -84,7 +84,7 @@ const Sidebar = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      dispatch(setSidebarOpen(window?.innerWidth >= 858));
+      dispatch(setSidebarOpen(window?.innerWidth >= 1000));
     };
 
     handleResize();
@@ -95,7 +95,7 @@ const Sidebar = () => {
   return (
     <>
       <aside
-        className={`${styles.sidebar} ${
+        className={`h-[100%] ${styles.sidebar} ${
           !isOpen ? styles.sidebarClosed : styles.sidebarOpen
         }`}
         dir={i18n.language === "he" ? "rtl" : "ltr"} // Add RTL support
