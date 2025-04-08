@@ -46,7 +46,7 @@ const TableFooter = ({
       <hr />
       {/* Pagination */}
       <div
-        className="flex justify-between items-center my-4 p-4"
+        className="flex flex-col sm:flex-row gap-2 sm:gap-0 justify-between items-center my-4 p-4"
         dir={i18n.language === "he" ? "rtl" : "ltr"}
       >
         <span className={styles.tableHeaders}>

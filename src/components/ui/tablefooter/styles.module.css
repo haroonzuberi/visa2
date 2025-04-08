@@ -1,5 +1,5 @@
 .tableHeaders {
-    @apply text-center text-[14px] font-[500] text-[#727A90];
+    @apply text-center text-[12px] sm:text-[14px] font-[500] text-[#727A90];
 }
 
 .footerBtn {
