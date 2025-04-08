@@ -47,7 +47,7 @@ const TableHeaderPage = ({
             </div>
           )}
 
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 pb-2 sm:pb-0">
             {showFilters && (
               <Button className={`${styles.filtersBtn} flex items-center gap-1`}>
                 <FilterIconSvg className="w-4 h-4" />

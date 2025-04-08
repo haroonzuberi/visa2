@@ -102,7 +102,7 @@ export default function Forms() {
     return (
       <>
         {/* Page Header */}
-        <div className="flex justify-between mt-3">
+        <div className="flex justify-between  mt-3">
           <h1 className={styles.header}>Manage Visa forms</h1>
           <button type="button" className={styles.createFormBtn}>
             <PlusGreenSvg className={styles.btnPlusIcon} />
@@ -138,7 +138,7 @@ export default function Forms() {
   return (
     <>
       {/* Page Header */}
-      <div className="flex justify-between mt-3">
+      <div className="flex justify-between items-center mt-3">
         <h1 className={styles.header}>Manage Visa forms</h1>
         <button type="button" className={styles.createFormBtn}>
           <PlusGreenSvg className={styles.btnPlusIcon} />

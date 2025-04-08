@@ -1,15 +1,13 @@
 .header {
-    font-size: 24px;
-    font-weight: 600;
-    color: #24282E;
+  @apply text-[13px] sm:text-2xl font-[600] text-[#24282E];
 }
 
 .customerBtn {
-    @apply text-[14px] font-[400] text-[#ffff] flex items-center justify-center gap-2;
+    @apply text-[10px] sm:text-sm font-[400] text-[#ffff] flex items-center justify-center gap-2 p-[5px] sm:p-[10px];
     border-radius: 12px;
     background-color: #42DA82;
     height: 40px;
-    padding: 10px;
+    
 }
 
 .btnPlusIcon {
@@ -35,10 +33,11 @@
 }
 
 .createFormBtn {
+  @apply text-[10px] sm:text-sm  p-[10px] sm:px-[24px] sm:py-[12px];
+
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 12px 24px;
     background: #42DA82;
     border-radius: 8px;
     color: white;
