@@ -35,7 +35,7 @@ const LanguageSelector = () => {
 
             {/* Dropdown menu */}
             {isOpen && (
-                <div className="absolute top-8 left-0 mt-2 w-12 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                <div className="absolute top-5 left-0 mt-2 w-12 bg-white border border-gray-200 rounded-md shadow-lg z-10">
                     <div
                         onClick={() => handleFlagSelect('usa')}
                         className="flex items-center p-2 hover:bg-gray-100 cursor-pointer"
