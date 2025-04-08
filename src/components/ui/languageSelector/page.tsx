@@ -1,29 +1,40 @@
 import FlagSvg from '@/Assets/svgs/FlagSvg';
 import IsraelFlagSvg from '@/Assets/svgs/IsraelFlagSvg';
 import i18next from 'i18next';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const LanguageSelector = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedFlag, setSelectedFlag] = useState('israel'); // Default to USA
+    const [selectedFlag, setSelectedFlag] = useState('israel'); // Default to Israel
 
     const toggleDropdown = () => {
         setIsOpen(!isOpen);
     };
 
-    console.log(selectedFlag);
-
     const { i18n } = useTranslation();
+
+    // Load language preference from localStorage (if available)
+    useEffect(() => {
+        const savedLanguage = localStorage.getItem('language');
+        if (savedLanguage) {
+            setSelectedFlag(savedLanguage);
+            i18n.changeLanguage(savedLanguage === 'usa' ? 'en' : 'he');
+        } else {
+            // Default to Hebrew if no language is saved
+            i18n.changeLanguage('he');
+        }
+    }, [i18n]);
 
     const handleFlagSelect = (flag) => {
         setSelectedFlag(flag);
         setIsOpen(false);
-        if (flag === 'usa') {
-            i18n.changeLanguage('en');
-        } else if (flag === 'israel') {
-            i18n.changeLanguage('he');
-        }
+
+        const language = flag === 'usa' ? 'en' : 'he';
+        i18n.changeLanguage(language);
+
+        // Save the selected language in localStorage
+        localStorage.setItem('language', flag);
     };
 
     return (
