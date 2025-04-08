@@ -63,11 +63,11 @@ export default function Dashboard() {
         <div className="p-5">
           <div className="flex items-center gap-2">
             <Icon />
-            <span className="font-medium text-lg text-gray-500">{t(title)}</span>
+            <span className="font-medium lg:text-[16px] sm:text-[14px] text-gray-500">{(title)}</span>
           </div>
           <div className="flex items-center justify-between mt-4">
             <div className="flex flex-col">
-              <h2 className="text-2xl font-semibold text-gray-900">{amount}</h2>
+              <h2 className="lg:text-[24px] md:text-[22px] font-semibold text-gray-900">{amount}</h2>
               <div className="flex gap-4">
                 <span className="text-sm font-bold text-teal-600">
                   {percentage}
