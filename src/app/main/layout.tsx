@@ -22,14 +22,18 @@ export default function MainLayout({
     <ProtectedRoute>
       <div className="flex min-h-screen bg-gray-50">
         {/* Sidebar Section */}
-        <div className={`${isOpen ? "w-64" : "w-0"} transition-all duration-300 ease-in-out border-r border-[#E9EAEA] bg-white`}>
+        <div
+          className={`${
+            isOpen ? "w-64" : "w-0"
+          } transition-all duration-300 ease-in-out border-r border-[#E9EAEA] bg-white`}
+        >
           <div className={`${isOpen ? "block" : "hidden"}`}>
             <Sidebar />
           </div>
         </div>
 
         {/* Main Content Section */}
-        <div className="flex-1 bg-white transition-all duration-300 ease-in-out w-full">
+        <div className="flex-1 min-w-0 bg-white transition-all duration-300 ease-in-out">
           <div
             className={`${
               isOpen ? "" : "mx-[10px]"
