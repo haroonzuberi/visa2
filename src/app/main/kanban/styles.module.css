@@ -118,3 +118,37 @@
   min-width: 300px;
   height: fit-content;
 }
+
+/* Add horizontal scroll for smaller screens */
+.boardContainer {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6;
+  overflow-x: auto; /* Allow horizontal scroll */
+  white-space: nowrap; /* Prevent wrapping of columns */
+  padding-bottom: 10px; /* Optional: adds padding at the bottom to accommodate scrolling */
+}
+
+.column {
+  display: inline-block; /* Make columns inline-blocks to allow horizontal scrolling */
+  min-width: 280px; /* Ensure each column has a reasonable minimum width */
+}
+
+@media (max-width: 768px) {
+  .boardContainer {
+    @apply grid-cols-1;
+    white-space: nowrap; /* Prevent wrapping on mobile */
+  }
+}
+
+/* Add scroll handling for horizontal scroll */
+@media (max-width: 768px) {
+  .boardContainer {
+    @apply flex; /* Display columns in a row for small screens */
+    overflow-x: scroll; /* Enable horizontal scrolling */
+  }
+
+  .column {
+    min-width: 250px; /* Set a smaller minimum width for columns on mobile */
+    margin-right: 15px; /* Add some margin between columns */
+  }
+}
+
