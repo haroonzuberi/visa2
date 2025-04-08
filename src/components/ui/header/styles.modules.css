@@ -7,12 +7,13 @@
 }
 
 .header-content {
-    @apply flex items-center justify-end md:justify-between md:py-[13px] w-full flex-wrap;
+    @apply flex items-center justify-end md:justify-between md:py-[13px] w-full flex-wrap pb-[5px] sm:pb-0;
 }
 
 /* Search Input */
+/*min-w-[200px]*/
 .search-container {
-    @apply relative flex-1 w-full sm:min-w-[200px] sm:max-w-[400px];
+    @apply relative flex-1 w-full  md:max-w-[400px];
 }
 
 .search-icon {
