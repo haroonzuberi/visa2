@@ -33,7 +33,11 @@ export default function MainLayout({
         </div>
 
         {/* Main Content Section */}
-        <div className="flex-1 w-full md:min-w-0 bg-white transition-all duration-300 ease-in-out">
+        <div
+          className={`flex-1 w-full md:min-w-0 bg-white transition-all duration-300 ease-in-out ${
+            isOpen ? "opacity-[0] sm:opacity-100" : "opacity-100"
+          }`} // Apply blur when sidebar is open
+        >
           <div
             className={`${
               isOpen ? "" : "mx-[10px]"

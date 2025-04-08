@@ -92,6 +92,33 @@ const Sidebar = () => {
     return () => window?.removeEventListener("resize", handleResize);
   }, [dispatch]);
 
+  const navigateWithSidebarToggle = (path: string) => {
+    return new Promise<void>((resolve, reject) => {
+      try {
+        // Here you can add any conditions or logic that needs to succeed before toggling the sidebar.
+        router.push(path); // Navigate to the new path
+        resolve(); // Resolve the promise successfully
+      } catch (error) {
+        reject(error); // Reject the promise in case of an error
+      }
+    })
+    .then(() => {
+      // Once the navigation is successful, toggle the sidebar
+      if (window.innerWidth < 640) {
+        dispatch(toggleSidebar()); // Close the sidebar if width < 640px
+      }
+        })
+    .catch((error) => {
+      console.error("Error navigating to path:", error);
+    });
+  };
+
+  const handleItemClick = (path: string) => {
+    // Call the promise-based function
+    navigateWithSidebarToggle(path);
+  };
+
+
   return (
     <>
       <aside
@@ -126,9 +153,7 @@ const Sidebar = () => {
               return (
                 <li key={index}>
                   <a
-                    onClick={() => {
-                      router.push(item.path);
-                    }}
+                    onClick={() => handleItemClick(item.path)} // Use the new function here
                     className={`cursor-pointer ${styles.menuItem} ${
                       isActive ? styles.menuItemActive : styles.menuItemInactive
                     }`}
