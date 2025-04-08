@@ -102,7 +102,7 @@ const NotificationPopover = () => {
                     </div>
                 </PopoverTrigger>
                 <PopoverContent
-                    className="w-[432px] h-[580px] border border-[1px] rounded-[16px] p-0 border-[#E9EAEA] shadow-none bg-white" // Added blue border and shadow
+                    className=" ml-[20px] sm:ml-0 w-[250px] md:w-[300px] lg:w-[432px] h-[580px] border border-[1px] rounded-[16px] p-0 border-[#E9EAEA] shadow-none bg-white z-[60]" // Added blue border and shadow
                     align="end"
                 >
                     {/* Header */}
@@ -155,12 +155,12 @@ const NotificationPopover = () => {
                             className={styles.underlineBtn}
                         >
                             <MarkAllSvg />
-                            <span className="text-[14px] font-[700] font-sacs underline">Mark All as Read</span>
+                            <span className="text-[12px] sm:text-[14px] font-[700] font-sacs underline">Mark All as Read</span>
                         </button>
                         <button onClick={openModal}
                             className={styles.underlineBtn}
                         >
-                            <span className="text-[14px] font-[700] font-sacs underline">See More</span>
+                            <span className="text-[12px] sm:text-[14px] font-[700] font-sacs underline">See More</span>
                             <RightArrowSvg />
                         </button>
                     </div>
