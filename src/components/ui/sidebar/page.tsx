@@ -125,7 +125,6 @@ const Sidebar = () => {
         className={`h-[100%] ${styles.sidebar} ${
           !isOpen ? styles.sidebarClosed : styles.sidebarOpen
         }`}
-        dir={i18n.language === "he" ? "rtl" : "ltr"} // Add RTL support
       >
         <div className={styles.header}>
           <Image src={VisaLogo} alt="Visa Logo" width={89} height={53} />
