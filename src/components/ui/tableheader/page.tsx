@@ -26,8 +26,8 @@ const TableHeaderPage = ({
   const { t } = useTranslation();
   return (
     <>
-      <div className="flex  flex-col-reverse justify-center sm:flex-row  items-center sm:justify-between p-4">
-        <div className="bg-white rounded-xl ">
+      <div className="flex  flex-col-reverse justify-center sm:flex-row  items-center sm:justify-between p-[10px] sm:p-4">
+        <div className="bg-white rounded-xl pt-[4px] sm:pt-0 ">
           <h2 className={styles.userListText}>{header}</h2>
         </div>
 

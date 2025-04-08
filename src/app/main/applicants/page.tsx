@@ -109,7 +109,7 @@ export default function ApplicantsTable() {
 
   return (
     <>
-      <div className="flex justify-between mt-3">
+      <div className="flex justify-between items-center mt-3">
         <h1 className={styles.header}>Manage Applicants</h1>
         <button
           type="button"

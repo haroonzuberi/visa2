@@ -3,7 +3,7 @@
 }
 
 .customerBtn {
-    @apply text-[10px] sm:text-sm font-[400] text-[#ffff] flex items-center justify-center gap-2 w-[130px] sm:w-[146px];
+    @apply text-[10px] sm:text-sm font-[400] text-[#ffff] flex items-center justify-center gap-2 w-[130px] sm:w-[182px];
     border-radius: 12px;
     background-color: #42DA82;
     height: 40px;
