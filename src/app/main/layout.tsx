@@ -25,7 +25,7 @@ export default function MainLayout({
         <div
           className={`${
             isOpen ? "w-64" : "w-0"
-          } transition-all duration-300 ease-in-out border-r border-[#E9EAEA] bg-white`}
+          } transition-all duration-300 ease-in-out border-r border-[#E9EAEA] bg-white z-[60] `}
         >
           <div className={`${isOpen ? "block" : "hidden"}`}>
             <Sidebar />
@@ -40,7 +40,7 @@ export default function MainLayout({
             } bg-white h-[100vh] border-t border-[#E9EAEA] rounded-tl-[30px]`}
           >
             {/* Header */}
-            <div className="border-b border-[#E9EAEA] px-[10px] flex items-center h-[76.76px] sticky top-0 bg-white">
+            <div className="border-b border-[#E9EAEA] px-[10px] flex items-center h-[76.76px] sticky top-0 bg-white z-50">
               {!isOpen && (
                 <div
                   className="mr-[20px] cursor-pointer"

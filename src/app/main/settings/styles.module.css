@@ -1,5 +1,5 @@
 .header {
-  @apply text-2xl font-semibold text-[#24282E];
+  @apply text-xl sm:text-2xl font-semibold text-[#24282E];
 }
 
 .profileName {
@@ -40,11 +40,11 @@
 }
 
 .settingsContainer {
-  @apply container mx-auto px-4 py-6;
+  @apply container sm:mx-auto sm:px-4 py-3 sm:py-6;
 }
 
 .mainCard {
-  @apply mt-6 bg-white rounded-[16px] pt-8;
+  @apply mt-2 sm:mt-6 bg-white rounded-[16px] sm:pt-8;
 }
 
 .gridLayout {

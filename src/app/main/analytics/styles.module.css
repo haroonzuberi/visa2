@@ -1,5 +1,5 @@
 .header {
-  @apply text-[24px] font-[600] text-[#24282E];
+  @apply text-xl sm:text-2xl font-[600] text-[#24282E];
 }
 
 .cardTitle {
