@@ -15,6 +15,7 @@ import {
   fetchKanbanData,
   columnToStatusMap,
   updateApplicationStatus,
+  updateBulkApplicationStatus
 } from "@/store/slices/kanbanSlice";
 
 // Map API statuses to UI column IDs

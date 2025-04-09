@@ -100,7 +100,14 @@ export const columnToStatusMap = {
   done: "need_gov_fee",
   rejected: "rejected",
 };
-
+interface BulkUpdateStatusRequest {
+  applications: {
+    id: number;
+    new_status: string;
+    note?: string;
+    priority?: string;
+  }[];
+}
 export const updateApplicationStatus = createAsyncThunk(
   "kanban/updateStatus",
   async (params: UpdateStatusRequest, { rejectWithValue, dispatch }) => {
@@ -117,6 +124,38 @@ export const updateApplicationStatus = createAsyncThunk(
       }
 
       toast.success("Status Changed Sucessfully");
+      // await dispatch(fetchKanbanData());
+
+      return response.data;
+    } catch (error: any) {
+      console.log("ERROR", error);
+      toast.error(error.message || "Failed to Update Status");
+      return rejectWithValue(error.message || "Failed to update status");
+    }
+  }
+);
+
+export const updateBulkApplicationStatus = createAsyncThunk(
+  "kanban/updateBulkStatus",
+  async (params: BulkUpdateStatusRequest, { rejectWithValue, dispatch }) => {
+    try {
+      console.log("PARAMS___", params);
+
+      // Constructing the request payload based on the new structure
+      const payload = {
+        applications: params.applications, // Sending the applications array directly
+      };
+
+      // Making the API call to the bulk update endpoint
+      const response: any = await putAPIWithAuth("bulk-update-application-status", payload);
+
+      if (!response?.success) {
+        console.log("RESPONSE___", response);
+        throw new Error(response?.data.message || "Failed to update bulk status");
+      }
+
+      toast.success("Statuses Changed Successfully");
+      // Optionally re-fetch data after the bulk update
       // await dispatch(fetchKanbanData());
 
       return response.data;
