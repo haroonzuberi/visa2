@@ -187,7 +187,7 @@ export default function KanbanBoard() {
 
   useEffect(() => {
     dispatch(fetchKanbanData());
-  }, [dispatch]);
+  }, []);
 
   useEffect(() => {
     if (!isLoading) {
@@ -275,7 +275,23 @@ export default function KanbanBoard() {
   if (isLoading || !applications_by_status) {
     return <KanbanSkeleton />;
   }
-
+  // If no data is found
+  if (Object.keys(applications_by_status).length === 0 || Object.keys(status_counts).length === 0) {
+    return (
+      <div className="w-full flex flex-col items-center justify-center h-full mt-10">
+        <h2 className="text-xl text-gray-500 pb-2">Data Not Found</h2>
+        <Button
+          variant="outline"
+          className={styles.filtersButton}
+          onClick={() =>
+            dispatch(fetchKanbanData())
+          }
+        >
+          Revert Data
+        </Button>
+      </div>
+    );
+  }
   return (
     <div className={styles.container}>
       <div className="flex justify-between items-center mb-6">
