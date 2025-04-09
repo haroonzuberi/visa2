@@ -15,7 +15,8 @@ import {
   fetchKanbanData,
   columnToStatusMap,
   updateApplicationStatus,
-  updateBulkApplicationStatus
+  updateBulkApplicationStatus,
+  filterKanbanData,
 } from "@/store/slices/kanbanSlice";
 
 // Map API statuses to UI column IDs
@@ -66,7 +67,7 @@ const KanbanSkeleton = () => {
 
 export default function KanbanBoard() {
   const dispatch = useDispatch<AppDispatch>();
-  const { applications_by_status, status_counts, isLoading }:any = useSelector(
+  const { applications_by_status, status_counts, isLoading }: any = useSelector(
     (state: RootState) => state.kanban
   );
 
@@ -186,7 +187,7 @@ export default function KanbanBoard() {
 
   useEffect(() => {
     dispatch(fetchKanbanData());
-  }, [dispatch]);
+  }, []);
 
   useEffect(() => {
     if (!isLoading) {
@@ -196,29 +197,29 @@ export default function KanbanBoard() {
 
   const onDragEnd = async (result: any) => {
     const { destination, source, draggableId } = result;
-  
+
     if (!destination) return;
-  
+
     if (
       destination.droppableId === source.droppableId &&
       destination.index === source.index
     ) {
       return;
     }
-  
+
     const sourceColumn = columns[source.droppableId];
     const destColumn = columns[destination.droppableId];
-  
+
     // Get the task being moved
     const task = sourceColumn.tasks.find((t) => t.id === draggableId);
     if (!task) return;
-  
+
     // If moving within the same column
     if (source.droppableId === destination.droppableId) {
       const newTasks = Array.from(sourceColumn.tasks);
       const [removed] = newTasks.splice(source.index, 1);
       newTasks.splice(destination.index, 0, removed);
-  
+
       setColumns((prevColumns) => {
         return {
           ...prevColumns,
@@ -235,10 +236,10 @@ export default function KanbanBoard() {
       const destTasks = Array.from(destColumn.tasks);
       const [removed] = sourceTasks.splice(source.index, 1);
       destTasks.splice(destination.index, 0, removed);
-  
+
       // Get the new status from the destination column
       const newStatus = columnToStatusMap[destination.droppableId];
-  
+
       try {
         // Update local state
         setColumns((prevColumns) => {
@@ -256,7 +257,7 @@ export default function KanbanBoard() {
             },
           };
         });
-  
+
         // Call the update API with the correct parameters
         await dispatch(
           updateApplicationStatus({
@@ -269,18 +270,47 @@ export default function KanbanBoard() {
       }
     }
   };
-  
 
   // Update the return statement to show skeleton while loading
   if (isLoading || !applications_by_status) {
     return <KanbanSkeleton />;
   }
-
+  // If no data is found
+  if (Object.keys(applications_by_status).length === 0 || Object.keys(status_counts).length === 0) {
+    return (
+      <div className="w-full flex flex-col items-center justify-center h-full mt-10">
+        <h2 className="text-xl text-gray-500 pb-2">Data Not Found</h2>
+        <Button
+          variant="outline"
+          className={styles.filtersButton}
+          onClick={() =>
+            dispatch(fetchKanbanData())
+          }
+        >
+          Revert Data
+        </Button>
+      </div>
+    );
+  }
   return (
     <div className={styles.container}>
       <div className="flex justify-between items-center mb-6">
         <h1 className={styles.header}>Kanban board</h1>
-        <Button variant="outline" className={styles.filtersButton}>
+        <Button
+          variant="outline"
+          className={styles.filtersButton}
+          onClick={() =>
+            dispatch(
+              filterKanbanData({
+                priority: "medium",
+                payment_status: "paid",
+                start_date: "1996-08-09",
+                end_date: "1996-08-09",
+                application_id: 87778,
+              })
+            )
+          }
+        >
           Filters
         </Button>
       </div>
