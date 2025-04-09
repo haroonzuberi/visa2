@@ -11,7 +11,7 @@
 }
 
 .boardContainer {
-  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6;
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 sm:grid-cols-1 w-full gap-6;
 }
 
 .column {
@@ -80,9 +80,19 @@
 /* Responsive styles */
 @media (max-width: 768px) {
   .boardContainer {
-    @apply grid-cols-1;
+    display: flex;  
+    overflow-x: auto; 
+    padding-bottom: 10px;
+    white-space: nowrap;
+  }
+
+  .column {
+    flex: 0 0 100%; 
+    min-width: 100%;
+    margin-right: 10px; 
   }
 }
+
 
 /* Add these to your existing styles */
 @keyframes pulse {
