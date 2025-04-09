@@ -195,35 +195,38 @@ export default function KanbanBoard() {
 
   const onDragEnd = async (result: any) => {
     const { destination, source, draggableId } = result;
-
+  
     if (!destination) return;
-
+  
     if (
       destination.droppableId === source.droppableId &&
       destination.index === source.index
     ) {
       return;
     }
-
+  
     const sourceColumn = columns[source.droppableId];
     const destColumn = columns[destination.droppableId];
-
+  
     // Get the task being moved
     const task = sourceColumn.tasks.find((t) => t.id === draggableId);
     if (!task) return;
-
+  
     // If moving within the same column
     if (source.droppableId === destination.droppableId) {
       const newTasks = Array.from(sourceColumn.tasks);
       const [removed] = newTasks.splice(source.index, 1);
       newTasks.splice(destination.index, 0, removed);
-
-      setColumns({
-        ...columns,
-        [source.droppableId]: {
-          ...sourceColumn,
-          tasks: newTasks,
-        },
+  
+      setColumns((prevColumns) => {
+        return {
+          ...prevColumns,
+          [source.droppableId]: {
+            ...sourceColumn,
+            tasks: newTasks,
+            count: newTasks.length, // Update the task count for this column
+          },
+        };
       });
     } else {
       // Moving from one column to another
@@ -231,39 +234,41 @@ export default function KanbanBoard() {
       const destTasks = Array.from(destColumn.tasks);
       const [removed] = sourceTasks.splice(source.index, 1);
       destTasks.splice(destination.index, 0, removed);
-
+  
       // Get the new status from the destination column
       const newStatus = columnToStatusMap[destination.droppableId];
-      let col = columns;
+  
       try {
         // Update local state
-        setColumns({
-          ...columns,
-          [source.droppableId]: {
-            ...sourceColumn,
-            tasks: sourceTasks,
-          },
-          [destination.droppableId]: {
-            ...destColumn,
-            tasks: destTasks,
-          },
+        setColumns((prevColumns) => {
+          return {
+            ...prevColumns,
+            [source.droppableId]: {
+              ...sourceColumn,
+              tasks: sourceTasks,
+              count: sourceTasks.length, // Update the task count for the source column
+            },
+            [destination.droppableId]: {
+              ...destColumn,
+              tasks: destTasks,
+              count: destTasks.length, // Update the task count for the destination column
+            },
+          };
         });
-        // Call the update API with correct parameters
+  
+        // Call the update API with the correct parameters
         await dispatch(
           updateApplicationStatus({
             id: parseInt(task.id),
             new_status: newStatus,
-            // note: "Status updated via Kanban board", // Optional
-            // priority: task.priority // Optional
           })
         ).unwrap();
       } catch (error) {
-        setColumns(col);
         console.error("Failed to update status:", error);
-        // You might want to show an error toast here
       }
     }
   };
+  
 
   // Update the return statement to show skeleton while loading
   if (isLoading || !applications_by_status) {
