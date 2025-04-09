@@ -9,6 +9,7 @@ import CalendarSvg from "@/Assets/svgs/CalendarSvg";
 import FlightSvg from "@/Assets/svgs/FlightSvg";
 import AddButton from "@/Assets/svgs/AddBtton";
 import MoreVerticalSvg from "@/Assets/svgs/MoreVerticalSvg";
+import "react-datepicker/dist/react-datepicker.css";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store";
 import {
@@ -18,6 +19,7 @@ import {
   updateBulkApplicationStatus,
   filterKanbanData,
 } from "@/store/slices/kanbanSlice";
+import FilterUpdateStatus from "@/components/modals/FiltersUpdateStatus/page";
 
 // Map API statuses to UI column IDs
 
@@ -67,9 +69,18 @@ const KanbanSkeleton = () => {
 
 export default function KanbanBoard() {
   const dispatch = useDispatch<AppDispatch>();
+  const [isMounted, setIsMounted] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const { applications_by_status, status_counts, isLoading }: any = useSelector(
     (state: RootState) => state.kanban
   );
+  const handleFilterButtonClick = () => {
+    setIsModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
 
   // Convert API data to match your UI structure
   const convertApiDataToColumns = () => {
@@ -186,6 +197,8 @@ export default function KanbanBoard() {
   const [columns, setColumns] = useState(convertApiDataToColumns());
 
   useEffect(() => {
+    setIsMounted(true);
+
     dispatch(fetchKanbanData());
   }, []);
 
@@ -275,17 +288,22 @@ export default function KanbanBoard() {
   if (isLoading || !applications_by_status) {
     return <KanbanSkeleton />;
   }
-  // If no data is found
-  if (Object.keys(applications_by_status).length === 0 || Object.keys(status_counts).length === 0) {
+
+  if (!isMounted) {
+    return <div>Loading...</div>;
+  }
+
+  if (
+    Object.keys(applications_by_status).length === 0 ||
+    Object.keys(status_counts).length === 0
+  ) {
     return (
       <div className="w-full flex flex-col items-center justify-center h-full mt-10">
         <h2 className="text-xl text-gray-500 pb-2">Data Not Found</h2>
         <Button
           variant="outline"
-          className={styles.filtersButton}
-          onClick={() =>
-            dispatch(fetchKanbanData())
-          }
+          className="mb-4" // Tailwind margin for spacing
+          onClick={() => dispatch(fetchKanbanData())}
         >
           Revert Data
         </Button>
@@ -299,20 +317,22 @@ export default function KanbanBoard() {
         <Button
           variant="outline"
           className={styles.filtersButton}
-          onClick={() =>
-            dispatch(
-              filterKanbanData({
-                priority: "medium",
-                payment_status: "paid",
-                start_date: "1996-08-09",
-                end_date: "1996-08-09",
-                application_id: 87778,
-              })
-            )
+          onClick={
+            () => handleFilterButtonClick()
+            // dispatch(
+            //   filterKanbanData({
+            //     priority: "medium",
+            //     payment_status: "paid",
+            //     start_date: "1996-08-09",
+            //     end_date: "1996-08-09",
+            //     application_id: 87778,
+            //   })
+            // )
           }
         >
           Filters
         </Button>
+        {isModalOpen && <FilterUpdateStatus onClose={handleCloseModal} />}
       </div>
 
       <DragDropContext onDragEnd={onDragEnd}>
