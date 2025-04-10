@@ -48,12 +48,12 @@ export default function FilterUpdateStatus({
   };
 
   return (
-    <div className="fixed inset-0 overflow-y-auto modal-main">
+    <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
       <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-h-[90vh]">
         <div className={styles.modalContainer}>
           <div className={styles.modalHeader}>
-            <h2 className={styles.modalTitle}>Update Status Filter</h2>
+            <h2 className={styles.modalTitle}>Filter Kanbans</h2>
             <button className={styles.closeButton} onClick={onClose}>
               <X size={24} />
             </button>
@@ -129,24 +129,27 @@ export default function FilterUpdateStatus({
 
                 <div className={styles.formColumn}>
                   <div className="flex flex-col">
-                    <label htmlFor="startDate" className="">Start Date</label>
+                    
+                    <label htmlFor="startDate" className="mb-1 text-[16px] font-semibold textblack dark:text-white"
+                    >Start Date</label>
                     <input
                       type="date"
                       id="startDate"
                       value={startDate || ""}
                       onChange={(e) => setStartDate(e.target.value)}
-                      className="bg-white  h-[50px] border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      className="bg-white  h-[52px] border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                     />
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="endDate">End Date</label>
+                    <label htmlFor="endDate" className="mb-1 text-[16px] font-semibold textblack dark:text-white"
+                    >End Date</label>
                     <input
                       type="date"
                       id="endDate"
                       value={endDate || ""}
                       onChange={(e) => setEndDate(e.target.value)}
-                      className="bg-white h-[50px] mt-3 border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      className="bg-white h-[52px] border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                     />
                   </div>
                 </div>
