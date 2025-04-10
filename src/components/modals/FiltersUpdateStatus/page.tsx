@@ -41,7 +41,7 @@ export default function FilterUpdateStatus({
     if (paymentStatus) filterData.payment_status = paymentStatus;
     if (startDate) filterData.start_date = startDate;
     if (endDate) filterData.end_date = endDate;
-    if (text) filterData.application_id = text;
+    if (text) filterData.applicant_id = text;
 
     dispatch(filterKanbanData(filterData));
     onClose();

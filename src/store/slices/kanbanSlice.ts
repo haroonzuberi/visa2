@@ -59,7 +59,7 @@ interface FilterParams {
   payment_status?: string;
   start_date?: string;
   end_date?: string;
-  application_id?: number;
+  applicant_id?: number;
 }
 const initialState: KanbanState = {
   status_counts: {
@@ -97,7 +97,7 @@ export const fetchKanbanData = createAsyncThunk(
 export const filterKanbanData = createAsyncThunk(
   "kanban/filterKanbanData",
   async (filters: FilterParams, { rejectWithValue }) => {
-    try {
+    try {      
       const queryString = buildQueryString(filters);
 
       const response: any = await getApiWithAuth(
@@ -134,8 +134,8 @@ const buildQueryString = (filters: FilterParams): string => {
     queryParams.append("end_date", filters.end_date);
   }
 
-  if (filters.application_id) {
-    queryParams.append("application_id", filters.application_id.toString());
+  if (filters.applicant_id) {
+    queryParams.append("applicant_id", filters.applicant_id.toString());
   }
 
   // Return the query string with leading "?" if there are any parameters, or an empty string if none
