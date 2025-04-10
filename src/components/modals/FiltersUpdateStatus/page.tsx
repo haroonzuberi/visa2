@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { AppDispatch } from "@/store";
 import { useDispatch } from "react-redux";
 import { filterKanbanData } from "@/store/slices/kanbanSlice";
+import { toast } from "react-toastify";
 import {
   Select,
   SelectContent,
@@ -59,7 +60,22 @@ export default function FilterUpdateStatus({
           </div>
 
           <div className={styles.modalBody}>
-            <form className={styles.form}>
+            <form className={styles.form} onSubmit={(e) => {
+                e.preventDefault();
+
+                if (
+                  !priority &&
+                  !paymentStatus &&
+                  !startDate &&
+                  !endDate &&
+                  !text
+                ) {
+                  toast.error("You have not selected any filter field.");
+                  return;
+                }
+
+                handleFilterApply();
+              }}>
               <div className={styles.formGrid}>
                 <div className={styles.formColumn}>
                   {/* ✅ Fixed Select Implementation */}
@@ -136,13 +152,17 @@ export default function FilterUpdateStatus({
                 </div>
               </div>
 
-              <div className="w-full mt-4">
-                <Button
-                  onClick={handleFilterApply}
-                  className={`${styles.filtersButton} bg-blue-500 text-white hover:bg-blue-600 w-full`}
+              <div className={styles.modalFooter}>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className={styles.cancelButton}
                 >
+                  Cancel
+                </button>
+                <button type="submit" className={styles.submitButton}>
                   Apply Filter
-                </Button>
+                </button>
               </div>
             </form>
           </div>
