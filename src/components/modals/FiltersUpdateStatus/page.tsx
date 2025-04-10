@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AppDispatch } from "@/store";
 import { useDispatch } from "react-redux";
 import { filterKanbanData } from "@/store/slices/kanbanSlice";
+import { toast } from "react-toastify";
 import {
   Select,
   SelectContent,
@@ -55,12 +56,14 @@ export default function FilterUpdateStatus({ onClose }: FilterUpdateStatusProps)
 
           <div className={styles.modalBody}>
             <form className={styles.form}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Left Column */}
-                <div className="flex flex-col gap-4">
-                  {/* Priority */}
-                  <div className="flex flex-col gap-1">
-                    <label htmlFor="priority" className="text-[15px] font-medium text-black dark:text-white">
+              <div className={styles.formGrid}>
+                <div className={styles.formColumn}>
+                  {/* ✅ Fixed Select Implementation */}
+                  <div className="flex flex-col mb-4">
+                    <label
+                      htmlFor="role"
+                      className="mb-1 text-[16px] font-semibold textblack dark:text-white"
+                    >
                       Priority
                     </label>
                     <Select onValueChange={(value) => setPriority(value)}>
@@ -141,13 +144,13 @@ export default function FilterUpdateStatus({ onClose }: FilterUpdateStatusProps)
                 </div>
               </div>
 
-              <div className="w-full mt-6">
+              <div className="w-full mt-4">
                 <Button
                   onClick={handleFilterApply}
-                  className={`${styles.filtersButton} bg-blue-500 text-white hover:bg-blue-600 w-full h-[50px] text-[15px]`}
+                  className={`${styles.filtersButton} bg-blue-500 text-white hover:bg-blue-600 w-full`}
                 >
                   Apply Filter
-                </Button>
+                </button>
               </div>
             </form>
           </div>
