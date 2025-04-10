@@ -33,6 +33,17 @@ export default function FilterUpdateStatus({
   const [endDate, setEndDate] = useState<string | null>(null);
   const [text, setText] = useState<string>("");
 
+  // New state for additional fields
+  const [applicantEmail, setApplicantEmail] = useState<string>("");
+  const [applicantName, setApplicantName] = useState<string>("");
+  const [applicantPassport, setApplicantPassport] = useState<string>("");
+  const [applicantPhone, setApplicantPhone] = useState<string>("");
+  const [customerEmail, setCustomerEmail] = useState<string>("");
+  const [customerName, setCustomerName] = useState<string>("");
+  const [customerPhone, setCustomerPhone] = useState<string>("");
+  const [source, setSource] = useState<string>("");
+  const [visaCountry, setVisaCountry] = useState<string>("");
+
   // Handler for form submission
   const handleFilterApply = () => {
     const filterData: any = {};
@@ -42,6 +53,17 @@ export default function FilterUpdateStatus({
     if (startDate) filterData.start_date = startDate;
     if (endDate) filterData.end_date = endDate;
     if (text) filterData.applicant_id = text;
+
+    // Add the new fields to filterData
+    if (applicantEmail) filterData.applicant_email = applicantEmail;
+    if (applicantName) filterData.applicant_name = applicantName;
+    if (applicantPassport) filterData.applicant_passport = applicantPassport;
+    if (applicantPhone) filterData.applicant_phone = applicantPhone;
+    if (customerEmail) filterData.customer_email = customerEmail;
+    if (customerName) filterData.customer_name = customerName;
+    if (customerPhone) filterData.customer_phone = customerPhone;
+    if (source) filterData.source = source;
+    if (visaCountry) filterData.visa_country = visaCountry;
 
     dispatch(filterKanbanData(filterData));
     onClose();
@@ -60,7 +82,9 @@ export default function FilterUpdateStatus({
           </div>
 
           <div className={styles.modalBody}>
-            <form className={styles.form} onSubmit={(e) => {
+            <form
+              className={styles.form}
+              onSubmit={(e) => {
                 e.preventDefault();
 
                 if (
@@ -68,21 +92,32 @@ export default function FilterUpdateStatus({
                   !paymentStatus &&
                   !startDate &&
                   !endDate &&
-                  !text
+                  !text &&
+                  !applicantEmail &&
+                  !applicantName &&
+                  !applicantPassport &&
+                  !applicantPhone &&
+                  !customerEmail &&
+                  !customerName &&
+                  !customerPhone &&
+                  !source &&
+                  !visaCountry
                 ) {
                   toast.error("You have not selected any filter field.");
                   return;
                 }
 
                 handleFilterApply();
-              }}>
+              }}
+            >
               <div className={styles.formGrid}>
                 <div className={styles.formColumn}>
-                  {/* ✅ Fixed Select Implementation */}
-                  <div className="flex flex-col mb-4">
+                  {/* Existing Select Fields */}
+
+                  <div className="flex flex-col">
                     <label
                       htmlFor="role"
-                      className="mb-1 text-[16px] font-semibold textblack dark:text-white"
+                      className="mb-1 text-[16px] font-[500] text-[#24282E] dark:text-white"
                     >
                       Priority
                     </label>
@@ -97,11 +132,11 @@ export default function FilterUpdateStatus({
                       </SelectContent>
                     </Select>
                   </div>
-                  
-                  <div className="flex flex-col mb-4">
+
+                  <div className="flex flex-col ">
                     <label
                       htmlFor="role"
-                      className="mb-1 text-[16px] font-semibold textblack dark:text-white"
+                      className="mb-1 text-[16px] font-[500]  text-[#24282E] dark:text-white"
                     >
                       Payment Status
                     </label>
@@ -117,7 +152,6 @@ export default function FilterUpdateStatus({
                       </SelectContent>
                     </Select>
                   </div>
-           
                   <InputField
                     fieldName="Text"
                     label="Applicant Id"
@@ -125,13 +159,44 @@ export default function FilterUpdateStatus({
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                   />
+                  <InputField
+                    fieldName="Name"
+                    label="Applicant Name"
+                    placeHolder="Enter name"
+                    value={applicantName}
+                    onChange={(e) => setApplicantName(e.target.value)}
+                  />
+                  <InputField
+                    fieldName="Phone"
+                    label="Applicant Phone"
+                    placeHolder="Enter phone number"
+                    value={applicantPhone}
+                    onChange={(e) => setApplicantPhone(e.target.value)}
+                  />
+                  <InputField
+                    fieldName="Email"
+                    label="Customer Email"
+                    placeHolder="Enter customer email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                  />
+                  <InputField
+                    fieldName="Phone"
+                    label="Customer Phone"
+                    placeHolder="Enter customer phone number"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                  />
                 </div>
 
                 <div className={styles.formColumn}>
                   <div className="flex flex-col">
-                    
-                    <label htmlFor="startDate" className="mb-1 text-[16px] font-semibold textblack dark:text-white"
-                    >Start Date</label>
+                    <label
+                      htmlFor="startDate"
+                      className="mb-1 text-[16px] font-[500] text-[#24282E] dark:text-white"
+                    >
+                      Start Date
+                    </label>
                     <input
                       type="date"
                       id="startDate"
@@ -142,8 +207,12 @@ export default function FilterUpdateStatus({
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="endDate" className="mb-1 text-[16px] font-semibold textblack dark:text-white"
-                    >End Date</label>
+                    <label
+                      htmlFor="endDate"
+                      className="mb-1 text-[16px] font-[500] text-[#24282E] dark:text-white"
+                    >
+                      End Date
+                    </label>
                     <input
                       type="date"
                       id="endDate"
@@ -152,6 +221,41 @@ export default function FilterUpdateStatus({
                       className="bg-white h-[52px] border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                     />
                   </div>
+                  <InputField
+                    fieldName="Email"
+                    label="Applicant Email"
+                    placeHolder="Enter email"
+                    value={applicantEmail}
+                    onChange={(e) => setApplicantEmail(e.target.value)}
+                  />
+                  <InputField
+                    fieldName="Passport"
+                    label="Applicant Passport"
+                    placeHolder="Enter passport number"
+                    value={applicantPassport}
+                    onChange={(e) => setApplicantPassport(e.target.value)}
+                  />
+                  <InputField
+                    fieldName="Name"
+                    label="Customer Name"
+                    placeHolder="Enter customer name"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                  />
+                  <InputField
+                    fieldName="Visa Country"
+                    label="Visa Country"
+                    placeHolder="Enter visa country"
+                    value={visaCountry}
+                    onChange={(e) => setVisaCountry(e.target.value)}
+                  />
+                  <InputField
+                    fieldName="Source"
+                    label="Source"
+                    placeHolder="Enter source"
+                    value={source}
+                    onChange={(e) => setSource(e.target.value)}
+                  />
                 </div>
               </div>
 
