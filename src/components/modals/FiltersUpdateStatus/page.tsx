@@ -86,14 +86,14 @@ export default function FilterUpdateStatus({
                     >
                       Priority
                     </label>
-                    <Select>
+                    <Select onValueChange={(value) => setPriority(value)}>
                       <SelectTrigger id="role" className={styles.select}>
                         <SelectValue placeholder="Select an option" />
                       </SelectTrigger>
                       <SelectContent className={styles.selectContent}>
-                        <SelectItem value="Low">Low</SelectItem>
-                        <SelectItem value="Meduim">Medium</SelectItem>
-                        <SelectItem value="High">High</SelectItem>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -105,15 +105,15 @@ export default function FilterUpdateStatus({
                     >
                       Payment Status
                     </label>
-                    <Select>
+                    <Select onValueChange={(value) => setPaymentStatus(value)}>
                       <SelectTrigger id="role" className={styles.select}>
                         <SelectValue placeholder="Select an option" />
                       </SelectTrigger>
                       <SelectContent className={styles.selectContent}>
                         <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="paid">paid</SelectItem>
-                        <SelectItem value="refunded">refunded</SelectItem>
-                        <SelectItem value="cancelled">cancelled</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                        <SelectItem value="refunded">Refunded</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
