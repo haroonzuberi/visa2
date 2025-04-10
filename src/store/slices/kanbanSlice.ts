@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { getApiWithAuth, putAPIWithAuth } from "@/utils/api";
+import { getApiWithAuth, postAPIWithAuth, putAPIWithAuth } from "@/utils/api";
 import { toast } from "react-toastify";
 
 interface Customer {
@@ -81,7 +81,7 @@ export const fetchKanbanData = createAsyncThunk(
   "kanban/fetchKanbanData",
   async (_, { rejectWithValue }) => {
     try {
-      const response: any = await getApiWithAuth("applications-by-status");
+      const response: any = await postAPIWithAuth("applications-by-status", {});
 
       if (!response?.success) {
         throw new Error(response?.message || "Failed to fetch kanban data");
@@ -97,13 +97,11 @@ export const fetchKanbanData = createAsyncThunk(
 export const filterKanbanData = createAsyncThunk(
   "kanban/filterKanbanData",
   async (filters: FilterParams, { rejectWithValue }) => {
-    try {      
-      const queryString = buildQueryString(filters);
-
-      const response: any = await getApiWithAuth(
-        `applications-by-status${queryString}`
+    try {
+      const response: any = await postAPIWithAuth(
+        `applications-by-status`,
+        filters
       );
-
       if (!response?.success) {
         throw new Error(response?.message || "Failed to fetch kanban data");
       }
@@ -113,35 +111,6 @@ export const filterKanbanData = createAsyncThunk(
     }
   }
 );
-
-// Helper function to build query string from filters
-const buildQueryString = (filters: FilterParams): string => {
-  const queryParams = new URLSearchParams();
-
-  if (filters.priority) {
-    queryParams.append("priority", filters.priority);
-  }
-
-  if (filters.payment_status) {
-    queryParams.append("payment_status", filters.payment_status);
-  }
-
-  if (filters.start_date) {
-    queryParams.append("start_date", filters.start_date);
-  }
-
-  if (filters.end_date) {
-    queryParams.append("end_date", filters.end_date);
-  }
-
-  if (filters.applicant_id) {
-    queryParams.append("applicant_id", filters.applicant_id.toString());
-  }
-
-  // Return the query string with leading "?" if there are any parameters, or an empty string if none
-  return queryParams.toString() ? `?${queryParams.toString()}` : "";
-};
-
 interface UpdateStatusRequest {
   id: number;
   new_status: string;
