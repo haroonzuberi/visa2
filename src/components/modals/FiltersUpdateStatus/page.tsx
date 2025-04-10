@@ -2,8 +2,6 @@
 import React, { useState } from "react";
 import { X } from "lucide-react";
 import styles from "./style.module.css";
-import DropDown from "@/components/ui/dropdown/page";
-import InputField from "@/components/ui/input/input";
 import { Button } from "@/components/ui/button";
 import { AppDispatch } from "@/store";
 import { useDispatch } from "react-redux";
@@ -15,24 +13,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import InputField from "@/components/ui/input/input";
 
 interface FilterUpdateStatusProps {
   onClose: () => void;
 }
 
-export default function FilterUpdateStatus({
-  onClose,
-}: FilterUpdateStatusProps) {
+export default function FilterUpdateStatus({ onClose }: FilterUpdateStatusProps) {
   const dispatch = useDispatch<AppDispatch>();
 
-  // State for the selected values
   const [priority, setPriority] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
   const [text, setText] = useState<string>("");
 
-  // Handler for form submission
   const handleFilterApply = () => {
     const filterData: any = {};
 
@@ -60,86 +55,96 @@ export default function FilterUpdateStatus({
 
           <div className={styles.modalBody}>
             <form className={styles.form}>
-              <div className={styles.formGrid}>
-                <div className={styles.formColumn}>
-                  {/* ✅ Fixed Select Implementation */}
-                  <div className="flex flex-col mb-4">
-                    <label
-                      htmlFor="role"
-                      className="mb-1 text-[16px] font-semibold textblack dark:text-white"
-                    >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left Column */}
+                <div className="flex flex-col gap-4">
+                  {/* Priority */}
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="priority" className="text-[15px] font-medium text-black dark:text-white">
                       Priority
                     </label>
-                    <Select>
-                      <SelectTrigger id="role" className={styles.select}>
+                    <Select onValueChange={(value) => setPriority(value)}>
+                      <SelectTrigger id="priority" className="h-[50px] border border-gray-300 rounded-lg px-3">
                         <SelectValue placeholder="Select an option" />
                       </SelectTrigger>
-                      <SelectContent className={styles.selectContent}>
+                      <SelectContent>
                         <SelectItem value="Low">Low</SelectItem>
-                        <SelectItem value="Meduim">Medium</SelectItem>
+                        <SelectItem value="Medium">Medium</SelectItem>
                         <SelectItem value="High">High</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  
-                  <div className="flex flex-col mb-4">
-                    <label
-                      htmlFor="role"
-                      className="mb-1 text-[16px] font-semibold textblack dark:text-white"
-                    >
+
+                  {/* Payment Status */}
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="paymentStatus" className="text-[15px] font-medium text-black dark:text-white">
                       Payment Status
                     </label>
-                    <Select>
-                      <SelectTrigger id="role" className={styles.select}>
+                    <Select onValueChange={(value) => setPaymentStatus(value)}>
+                      <SelectTrigger id="paymentStatus" className="h-[50px] border border-gray-300 rounded-lg px-3">
                         <SelectValue placeholder="Select an option" />
                       </SelectTrigger>
-                      <SelectContent className={styles.selectContent}>
+                      <SelectContent>
                         <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="paid">paid</SelectItem>
-                        <SelectItem value="refunded">refunded</SelectItem>
-                        <SelectItem value="cancelled">cancelled</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                        <SelectItem value="refunded">Refunded</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-           
-                  <InputField
-                    fieldName="Text"
-                    label="Applicant Id"
-                    placeHolder="Enter id"
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                  />
+
+                  {/* Applicant Id */}
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="applicantId" className="text-[15px] font-medium text-black dark:text-white">
+                      Applicant ID
+                    </label>
+                    <input
+                      id="applicantId"
+                      type="text"
+                      placeholder="Enter ID"
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      className="h-[50px] px-3 border border-gray-300 rounded-lg text-black text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                  </div>
                 </div>
 
-                <div className={styles.formColumn}>
-                  <div className="flex flex-col">
-                    <label htmlFor="startDate" className="">Start Date</label>
+                {/* Right Column */}
+                <div className="flex flex-col gap-4">
+                  {/* Start Date */}
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="startDate" className="text-[15px] font-medium text-black dark:text-white">
+                      Start Date
+                    </label>
                     <input
                       type="date"
                       id="startDate"
                       value={startDate || ""}
                       onChange={(e) => setStartDate(e.target.value)}
-                      className="bg-white  h-[50px] border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      className="h-[50px] px-3 border border-gray-300 rounded-lg text-black text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
                   </div>
 
-                  <div className="flex flex-col">
-                    <label htmlFor="endDate">End Date</label>
+                  {/* End Date */}
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="endDate" className="text-[15px] font-medium text-black dark:text-white">
+                      End Date
+                    </label>
                     <input
                       type="date"
                       id="endDate"
                       value={endDate || ""}
                       onChange={(e) => setEndDate(e.target.value)}
-                      className="bg-white h-[50px] mt-3 border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      className="h-[50px] px-3 border border-gray-300 rounded-lg text-black text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="w-full mt-4">
+              <div className="w-full mt-6">
                 <Button
                   onClick={handleFilterApply}
-                  className={`${styles.filtersButton} bg-blue-500 text-white hover:bg-blue-600 w-full`}
+                  className={`${styles.filtersButton} bg-blue-500 text-white hover:bg-blue-600 w-full h-[50px] text-[15px]`}
                 >
                   Apply Filter
                 </Button>
