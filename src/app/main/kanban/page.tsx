@@ -319,15 +319,6 @@ export default function KanbanBoard() {
           className={styles.filtersButton}
           onClick={
             () => handleFilterButtonClick()
-            // dispatch(
-            //   filterKanbanData({
-            //     priority: "medium",
-            //     payment_status: "paid",
-            //     start_date: "1996-08-09",
-            //     end_date: "1996-08-09",
-            //     application_id: 87778,
-            //   })
-            // )
           }
         >
           Filters
