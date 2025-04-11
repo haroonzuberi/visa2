@@ -17,18 +17,3 @@
 
 }
 
-.Multiselector .rmsc .dropdown-container {
-  border-radius: 12px !important;
-  height: 52px !important;
-  display: flex !important;
-  align-items: center !important;
-  border: 1px solid #E9EAEA !important;
-  transition: all 0.2s ease; /* Optional: smooth focus effect */
-}
-
-.Multiselector .rmsc .dropdown-container:focus-within {
-  border-color: #55de8e !important;
-  box-shadow: 0 0 0 1px rgba(85, 222, 142, 0.5) !important; /* focus ring */
-  outline: none !important;
-}
-

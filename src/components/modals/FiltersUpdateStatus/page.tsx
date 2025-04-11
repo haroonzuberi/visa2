@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MultiSelect } from "react-multi-select-component";
+import CreatableSelect from "react-select/creatable";
 
 interface FilterUpdateStatusProps {
   onClose: () => void;
@@ -44,9 +44,21 @@ export default function FilterUpdateStatus({
   const [customerPhone, setCustomerPhone] = useState<string>("");
   const [source, setSource] = useState<string>("");
   const [visaCountry, setVisaCountry] = useState<string>("");
-  const [coustmersList, setCoustmersList] = useState([]);
-  const [aplicationList, setApplicationList] = useState([]);
+  const [customersList, setCustomersList] = useState([]);
+  const [customersListSender, setCustomersListSender] = useState([]);
+  const [applicationList, setApplicationList] = useState([]);
+  const [applicationListSender, setApplicationListSender] = useState([]);
 
+  const handleChangeCustomersList = (newValue) => {
+    const valuesOnly = newValue.map((item) => item.value);
+    setCustomersListSender(valuesOnly)
+    setCustomersList(newValue);
+  };
+  const handleChangeApplicationsList = (newValue) => {
+    const valuesOnly = newValue.map((item) => item.value);
+    setApplicationListSender(valuesOnly)
+    setApplicationList(newValue);
+  };
   // Handler for form submission
   const handleFilterApply = () => {
     const filterData: any = {};
@@ -67,22 +79,49 @@ export default function FilterUpdateStatus({
     if (customerPhone) filterData.customer_phone = customerPhone;
     if (source) filterData.source = source;
     if (visaCountry) filterData.visa_country = visaCountry;
+    if (applicationList.length>0) filterData.application_tags = applicationListSender;
+    if (customersList.length>0) filterData.customer_tags = customersListSender;
 
     dispatch(filterKanbanData(filterData));
     onClose();
   };
-
-  const options = [
-    { label: "Urgent", value: "Urgent" },
-    { label: "Review", value: "Review" },
-  ];
-
-  const option = [
-    { label: "VIP", value: "Urgent" },
-    { label: "Corporate", value: "Corporate" },
-  ]
-
-
+  const customStyles = {
+    control: (provided, state) => ({
+      ...provided,
+      minHeight: '52px',
+      height: '52px',
+      border: state.isFocused ? '1px solid #55de8e' : '1px solid #E9EAEA',
+      boxShadow: state.isFocused ? '0 0 0 1px #55de8e' : 'none',
+      borderRadius: '12px',
+      '&:hover': {
+        border: '1px solid #55de8e',
+      },
+    }),
+    valueContainer: (provided) => ({
+      ...provided,
+      height: '52px',
+      padding: '0 8px',
+      display: 'flex',
+      flexWrap: 'nowrap',
+      overflowX: 'auto',
+      scrollbarWidth: 'none',  // Firefox
+      msOverflowStyle: 'none', // IE 10+
+    }),
+    multiValue: (provided) => ({
+      ...provided,
+      maxWidth: '100%',
+    }),
+    input: (provided) => ({
+      ...provided,
+      margin: '0px',
+      padding: '0',
+    }),
+    indicatorsContainer: (provided) => ({
+      ...provided,
+      height: '52px',
+    }),
+  };
+  
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
@@ -115,7 +154,9 @@ export default function FilterUpdateStatus({
                   !customerName &&
                   !customerPhone &&
                   !source &&
-                  !visaCountry
+                  !visaCountry &&
+                  applicationList.length==0 &&
+                  customersList.length==0
                 ) {
                   toast.error("You have not selected any filter field.");
                   return;
@@ -201,18 +242,19 @@ export default function FilterUpdateStatus({
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                   />
-                  <div className="flex flex-col Multiselector">
+                  <div className="flex flex-col">
                     <label
                       htmlFor="applicationTag"
                       className="mb-2 text-[16px] font-[500] text-[#24282E] dark:text-white"
                     >
                       Application Tag
                     </label>
-                    <MultiSelect
-                      options={options}
-                      value={coustmersList}
-                      onChange={setCoustmersList}
-                      labelledBy="Select"
+                    <CreatableSelect
+                      isMulti
+                      onChange={handleChangeApplicationsList}
+                      value={applicationList}
+                      placeholder="Type and write your tags"
+                      styles={customStyles}
                     />
                   </div>
                 </div>
@@ -277,6 +319,7 @@ export default function FilterUpdateStatus({
                     value={visaCountry}
                     onChange={(e) => setVisaCountry(e.target.value)}
                   />
+
                   <InputField
                     fieldName="Source"
                     label="Source"
@@ -284,18 +327,20 @@ export default function FilterUpdateStatus({
                     value={source}
                     onChange={(e) => setSource(e.target.value)}
                   />
-                    <div className="flex flex-col Multiselector">
+                  <div className="flex flex-col">
                     <label
                       htmlFor="applicationTag"
                       className="mb-2 text-[16px] font-[500] text-[#24282E] dark:text-white"
                     >
                       Customer Tags
                     </label>
-                    <MultiSelect
-                      options={option}
-                      value={aplicationList}
-                      onChange={setApplicationList}
-                      labelledBy="Select"
+                    <CreatableSelect
+                      isMulti
+                      onChange={handleChangeCustomersList}
+                      value={customersList}
+                      placeholder="Type and write your tags"
+                      styles={customStyles}
+
                     />
                   </div>
                 </div>
