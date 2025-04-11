@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MultiSelect } from "react-multi-select-component";
 
 interface FilterUpdateStatusProps {
   onClose: () => void;
@@ -43,6 +44,8 @@ export default function FilterUpdateStatus({
   const [customerPhone, setCustomerPhone] = useState<string>("");
   const [source, setSource] = useState<string>("");
   const [visaCountry, setVisaCountry] = useState<string>("");
+  const [coustmersList, setCoustmersList] = useState([]);
+  const [aplicationList, setApplicationList] = useState([]);
 
   // Handler for form submission
   const handleFilterApply = () => {
@@ -68,6 +71,17 @@ export default function FilterUpdateStatus({
     dispatch(filterKanbanData(filterData));
     onClose();
   };
+
+  const options = [
+    { label: "Urgent", value: "Urgent" },
+    { label: "Review", value: "Review" },
+  ];
+
+  const option = [
+    { label: "VIP", value: "Urgent" },
+    { label: "Corporate", value: "Corporate" },
+  ]
+
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -187,6 +201,20 @@ export default function FilterUpdateStatus({
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                   />
+                  <div className="flex flex-col Multiselector">
+                    <label
+                      htmlFor="applicationTag"
+                      className="mb-2 text-[16px] font-[500] text-[#24282E] dark:text-white"
+                    >
+                      Application Tag
+                    </label>
+                    <MultiSelect
+                      options={options}
+                      value={coustmersList}
+                      onChange={setCoustmersList}
+                      labelledBy="Select"
+                    />
+                  </div>
                 </div>
 
                 <div className={styles.formColumn}>
@@ -256,6 +284,20 @@ export default function FilterUpdateStatus({
                     value={source}
                     onChange={(e) => setSource(e.target.value)}
                   />
+                    <div className="flex flex-col Multiselector">
+                    <label
+                      htmlFor="applicationTag"
+                      className="mb-2 text-[16px] font-[500] text-[#24282E] dark:text-white"
+                    >
+                      Customer Tags
+                    </label>
+                    <MultiSelect
+                      options={option}
+                      value={aplicationList}
+                      onChange={setApplicationList}
+                      labelledBy="Select"
+                    />
+                  </div>
                 </div>
               </div>
 
