@@ -6,7 +6,7 @@ export const STATIC_URL = "";
 
 axios.defaults.baseURL = BASE_URL;
 
-// Define API response type
+// Define API response types
 interface ApiResponse<T = any> {
   data: T;
   status?: number;
