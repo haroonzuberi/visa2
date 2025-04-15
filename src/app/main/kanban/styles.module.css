@@ -54,11 +54,11 @@
 }
 
 .taskTitle {
-  @apply text-[16px] font-[600] text-[#24282E] mb-2;
+  @apply  text-[12px] xl:text-[16px] font-[600] text-[#24282E] mb-2;
 }
 
 .rejectedTitle{
-    @apply text-[16px] font-[600] text-[#EA4949] mb-2 line-through;
+    @apply text-[12px] xl:text-[16px] font-[600] text-[#EA4949] mb-2 line-through;
 }
 .id {
   @apply text-[#727A90] text-[12px] font-[500];
@@ -68,7 +68,7 @@
 }
 
 .dates {
-  @apply flex justify-between items-center mt-[15px];
+  @apply flex justify-between items-center flex-wrap  mt-[15px];
 }
 
 .dateText {
@@ -139,7 +139,7 @@
 
 .column {
   display: inline-block; /* Make columns inline-blocks to allow horizontal scrolling */
-  min-width: 280px; /* Ensure each column has a reasonable minimum width */
+  min-width: '23%'; /* Ensure each column has a reasonable minimum width */
 }
 
 @media (max-width: 768px) {
