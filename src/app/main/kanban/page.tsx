@@ -71,6 +71,13 @@ export default function KanbanBoard() {
   const dispatch = useDispatch<AppDispatch>();
   const [isMounted, setIsMounted] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [dropdownTaskId, setDropdownTaskId] = useState<string | null>(null);
+  const allStatuses = {
+    todo: "To Do",
+    haveIssues: "Have Issues",
+    done: "Done",
+    rejected: "Rejected",
+  };
 
   const { applications_by_status, status_counts, isLoading }: any = useSelector(
     (state: RootState) => state.kanban
@@ -311,15 +318,13 @@ export default function KanbanBoard() {
     );
   }
   return (
-    <div className={styles.container}>
+    <div className={styles.container} onClick={() => setDropdownTaskId(null)}>
       <div className="flex justify-between items-center mb-6">
         <h1 className={styles.header}>Kanban board</h1>
         <Button
           variant="outline"
           className={styles.filtersButton}
-          onClick={
-            () => handleFilterButtonClick()
-          }
+          onClick={() => handleFilterButtonClick()}
         >
           Filters
         </Button>
@@ -346,7 +351,7 @@ export default function KanbanBoard() {
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className={`${styles.taskList} ${
+                    className={`${styles.taskList}  ${
                       snapshot.isDraggingOver ? styles.draggingOver : ""
                     }`}
                   >
@@ -361,7 +366,7 @@ export default function KanbanBoard() {
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className={`${styles.task} ${
+                            className={`${styles.task} relative ${
                               snapshot.isDragging ? styles.dragging : ""
                             }`}
                           >
@@ -370,7 +375,81 @@ export default function KanbanBoard() {
                                 <IndiaFlag className="w-5 h-5" />
                                 <span className={styles.country}>India</span>
                               </div>
-                              <MoreVerticalSvg className="cursor-pointer" />
+                              <MoreVerticalSvg
+                                className="cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation(); // ✅ Don't let this click bubble up
+                                  setDropdownTaskId(
+                                    dropdownTaskId === task.id ? null : task.id
+                                  );
+                                }}
+                              />
+
+                              {dropdownTaskId === task.id && (
+                                <div className="absolute right-2 top-10 bg-white border rounded shadow-md z-10">
+                                  <div className="px-4 py-2 text-gray-500 text-sm border-b">
+                                    Change status
+                                  </div>
+
+                                  {Object.entries(allStatuses).map(
+                                    ([key, label]) => {
+                                      if (key === column.id) return null; // don't show current status
+                                      return (
+                                        <div
+                                          key={key}
+                                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                          onClick={async () => {
+                                            try {
+                                              await dispatch(
+                                                updateApplicationStatus({
+                                                  id: parseInt(task.id),
+                                                  new_status:
+                                                    columnToStatusMap[key],
+                                                })
+                                              ).unwrap();
+
+                                              setColumns((prevColumns) => {
+                                                const sourceTasks = prevColumns[
+                                                  column.id
+                                                ].tasks.filter(
+                                                  (t) => t.id !== task.id
+                                                );
+                                                const destTasks = [
+                                                  ...prevColumns[key].tasks,
+                                                  task,
+                                                ];
+
+                                                return {
+                                                  ...prevColumns,
+                                                  [column.id]: {
+                                                    ...prevColumns[column.id],
+                                                    tasks: sourceTasks,
+                                                    count: sourceTasks.length,
+                                                  },
+                                                  [key]: {
+                                                    ...prevColumns[key],
+                                                    tasks: destTasks,
+                                                    count: destTasks.length,
+                                                  },
+                                                };
+                                              });
+
+                                              setDropdownTaskId(null);
+                                            } catch (error) {
+                                              console.error(
+                                                "Error updating status via dropdown",
+                                                error
+                                              );
+                                            }
+                                          }}
+                                        >
+                                          {label}
+                                        </div>
+                                      );
+                                    }
+                                  )}
+                                </div>
+                              )}
                             </div>
                             <h3
                               className={
