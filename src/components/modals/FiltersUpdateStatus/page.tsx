@@ -172,7 +172,7 @@ export default function FilterUpdateStatus({
                   <div className="flex flex-col">
                     <label
                       htmlFor="role"
-                      className="mb-1 text-[16px] font-[500] text-[#24282E] dark:text-white"
+                      className="mb-2 text-[16px] font-[500] text-[#24282E] dark:text-white"
                     >
                       Priority
                     </label>
@@ -191,7 +191,7 @@ export default function FilterUpdateStatus({
                   <div className="flex flex-col ">
                     <label
                       htmlFor="role"
-                      className="mb-1 text-[16px] font-[500]  text-[#24282E] dark:text-white"
+                      className="mb-2 text-[16px] font-[500]  text-[#24282E] dark:text-white"
                     >
                       Payment Status
                     </label>
@@ -263,7 +263,7 @@ export default function FilterUpdateStatus({
                   <div className="flex flex-col">
                     <label
                       htmlFor="startDate"
-                      className="mb-1 text-[16px] font-[500] text-[#24282E] dark:text-white"
+                      className="mb-2 text-[16px] font-[500] text-[#24282E] dark:text-white"
                     >
                       Start Date
                     </label>
@@ -272,14 +272,15 @@ export default function FilterUpdateStatus({
                       id="startDate"
                       value={startDate || ""}
                       onChange={(e) => setStartDate(e.target.value)}
-                      className="bg-white  h-[52px] border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      className="bg-white h-[52px] border border-[#E9EAEA] text-black text-sm rounded-[12px] focus:ring-[#55de8e] focus:border-[#55de8e] block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-[#55de8e] dark:focus:border-[#55de8e]"
+
                     />
                   </div>
 
                   <div className="flex flex-col">
                     <label
                       htmlFor="endDate"
-                      className="mb-1 text-[16px] font-[500] text-[#24282E] dark:text-white"
+                      className="mb-2 text-[16px] font-[500] text-[#24282E] dark:text-white"
                     >
                       End Date
                     </label>
@@ -288,7 +289,7 @@ export default function FilterUpdateStatus({
                       id="endDate"
                       value={endDate || ""}
                       onChange={(e) => setEndDate(e.target.value)}
-                      className="bg-white h-[52px] border border-gray-300 text-black text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      className="bg-white h-[52px] border border-[#E9EAEA] text-black text-sm rounded-[12px]  block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 focus:ring-[#55de8e]focus:border-[#55de8e]"
                     />
                   </div>
                   <InputField
