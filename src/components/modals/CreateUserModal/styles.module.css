@@ -39,7 +39,7 @@
 }
 
 .select {
-  @apply  w-full border border-gray-300 rounded-lg h-[52px] px-4;
+  @apply  w-full border border-[#E9EAEA]  rounded-lg h-[52px] px-4;
 }
 
 .selectContent {

@@ -23,11 +23,11 @@ export default function PhoneInputField({
           country={"us"}
           value={value}
           onChange={(phone) => onChange(phone)}
-          inputClass="!w-full !h-[50px] !py-3 !pl-16  !pr-[100px] !text-gray-800  !bg-white !border !border-gray-300 !rounded-[12px] !focus:border-blue-500 !focus:ring-2 !focus:ring-blue-300 transition-all"
+          inputClass="!w-full !h-[50px] !py-3 !pl-16  !pr-[100px] !text-gray-800  !bg-white !border !border-[#E9EAEA] !rounded-[12px] !focus:border-blue-500 !focus:ring-2 !focus:ring-blue-300 transition-all"
           containerClass="!w-full"
-          buttonClass="!bg-gray-100 !border-r !border-gray-300 !py-4 !px-[10px] !rounded-l-[12px] !h-[50px]r"
+          buttonClass="!bg-gray-100 !border-r !border-[#E9EAEA] !py-4 !px-[10px] !rounded-l-[12px] !h-[50px]r"
           dropdownClass="!bg-white  !shadow-lg !rounded-lg "
-          searchClass="!bg-gray-100 !text-gray-800 !p-2 !rounded-md !border !border-gray-300 !focus:border-blue-400 !focus:ring-1 !focus:ring-blue-300 transition-all"
+          searchClass="!bg-gray-100 !text-gray-800 !p-2 !rounded-md !border !border-border-[#E9EAEA] !focus:border-blue-400 !focus:ring-1 !focus:ring-blue-300 transition-all"
           enableSearch
           searchPlaceholder="Search country..."
         />

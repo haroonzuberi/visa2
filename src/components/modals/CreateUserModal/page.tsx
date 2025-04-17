@@ -226,6 +226,7 @@ export default function CreateUserModal({
                           onValueChange={(value) => {
                             setFieldValue("role", value);
                           }}
+                          
                         >
                           <SelectTrigger className={styles.select}>
                             <SelectValue placeholder="Select role" />
