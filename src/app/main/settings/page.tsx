@@ -178,7 +178,7 @@ export default function Settings() {
                             />
                           )}
                         </Field>
-                       {/**Field disabled email */}
+                       {/**Field disabled emaill */}
                         <div className="mt-[10px]">
                           <Field name="email">
                             {({ field }: any) => (
