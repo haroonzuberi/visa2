@@ -54,7 +54,7 @@ const ApplicationDetail: React.FC<ModalProps> = ({
     console.log("DATA", data);
   }, []);
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[90]">
       <div
         className={`bg-white w-[880px] rounded-lg shadow-lg relative ${styles.modalMain}`}
       >

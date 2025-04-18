@@ -390,7 +390,7 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-[90] overflow-y-auto">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm">
         <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-h-[90vh]">
           <div className="bg-white rounded-xl w-[90vw] xl:w-[800px] lg:w-[800px] md:w-[800px] h-[90vh] overflow-y-auto shadow-lg;">
