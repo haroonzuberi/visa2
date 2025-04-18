@@ -67,22 +67,22 @@ const Status = ({ status = "" }: { status: string }) => {
       case "new":
       case "have_issues":
       case "need_to_pay_gov_fee":
-        return "bg-[#feefec] text-[#F05D3D] text-[10px] font-[600] border-[1px] rounded-[100px] border-[#FACDC3]";
+        return "bg-[#feefec] text-[#F05D3D] text-[10px] font-[600] border-[1px] rounded-[100px] text-nowrap border-[#FACDC3]";
 
       case "gov _fee_paid":
-        return "bg-[#ECFBF3] text-[#42DA82] text-[10px] font-[600] border-[1px] rounded-[100px] border-[#42DA82]";
+        return "bg-[#ECFBF3] text-[#42DA82] text-[10px] font-[600] border-[1px] rounded-[100px] text-nowrap border-[#42DA82]";
       case "cancel":
       case "approved":
-        return "bg-[#E6F4F5] text-[#009499] text-[10px] font-[600] border-[1px] rounded-[100px] border-[#B0DEDF]";
+        return "bg-[#E6F4F5] text-[#009499] text-[10px] font-[600] border-[1px] rounded-[100px] text-nowrap border-[#B0DEDF]";
 
       case "ready_to_apply":
-        return "bg-[#E6F5FE] text-[#019BF4] text-[10px] font-[600] border-[1px] rounded-[100px] border-[#B0E0FC]";
+        return "bg-[#E6F5FE] text-[#019BF4] text-[10px] font-[600] border-[1px] rounded-[100px] text-nowrap border-[#B0E0FC]";
 
       case "rejected":
-        return "bg-[#FDEDED] text-[#D32F2F] text-[10px] font-[600] border-[1px] rounded-[100px] border-[#F5C6C6]";
+        return "bg-[#FDEDED] text-[#D32F2F] text-[10px] font-[600] border-[1px] rounded-[100px] text-nowrap border-[#F5C6C6]";
 
       default:
-        return "bg-[#F3F4F6] text-[#6B7280] text-[10px] font-[600] border-[1px] rounded-[100px] border-[#D1D5DB]";
+        return "bg-[#F3F4F6] text-[#6B7280] text-[10px] font-[600] border-[1px] rounded-[100px] text-nowrap border-[#D1D5DB]";
     }
   };
 
