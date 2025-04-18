@@ -178,7 +178,7 @@ export default function Settings() {
                             />
                           )}
                         </Field>
-
+                       {/**Field disabled email */}
                         <div className="mt-[10px]">
                           <Field name="email">
                             {({ field }: any) => (
@@ -189,6 +189,7 @@ export default function Settings() {
                                 fieldName="email"
                                 type="email"
                                 placeHolder="Enter Email"
+                                disabled
                                 error={touched.email && errors.email}
                               />
                             )}
