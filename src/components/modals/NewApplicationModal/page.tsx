@@ -230,7 +230,92 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
   const handleAddApplication = (values: any, { resetForm }: any) => {
     toast.success("Application added successfully!");
   };
-
+  const generateValidationSchema = (fields: any[]) => {
+    const schemaFields: any = {};
+    fields.forEach((field) => {
+      let fieldSchema;
+      switch (field.field_type) {
+        case "text":
+        case "phone":
+        case "date":
+          fieldSchema = Yup.string();
+          break;
+        case "email":
+          fieldSchema = Yup.string().email("Invalid email address");
+          break;
+        case "number":
+          fieldSchema = Yup.number().typeError("Must be a number");
+          break;
+        case "file":
+        case "image":
+          fieldSchema = Yup.mixed();
+          break;
+        case "radio":
+        case "select":
+          fieldSchema = Yup.string();
+          break;
+        default:
+          fieldSchema = Yup.mixed();
+      }
+      if (field.is_required) {
+        fieldSchema = fieldSchema.required(`${field.label} is required`);
+      }
+      if (field.validation) {
+        if (field.validation.pattern) {
+          fieldSchema = fieldSchema.matches(
+            new RegExp(field.validation.pattern),
+            `${field.label} does not match the required pattern`
+          );
+        }
+        if (field.validation.min) {
+          if (field.field_type === "date") {
+            fieldSchema = fieldSchema.test(
+              "minDate",
+              `${field.label} must be on or after ${field.validation.min}`,
+              function (value) {
+                if (!value) return true;
+                const minDate =
+                  field.validation.min === "today"
+                    ? new Date()
+                    : this.parent[field.validation.min]
+                    ? new Date(this.parent[field.validation.min])
+                    : new Date();
+                return new Date(value) >= minDate;
+              }
+            );
+          } else if (field.field_type === "number") {
+            fieldSchema = fieldSchema.min(
+              field.validation.min,
+              `${field.label} must be at least ${field.validation.min}`
+            );
+          }
+        }
+        if (field.validation.max) {
+          if (field.field_type === "date") {
+            fieldSchema = fieldSchema.test(
+              "maxDate",
+              `${field.label} must be on or before ${field.validation.max}`,
+              function (value) {
+                if (!value) return true;
+                const maxDate =
+                  field.validation.max === "today"
+                    ? new Date()
+                    : new Date(this.parent[field.validation.max]);
+                return new Date(value) <= maxDate;
+              }
+            );
+          } else if (field.field_type === "number") {
+            fieldSchema = fieldSchema.max(
+              field.validation.max,
+              `${field.label} must be at most ${field.validation.max}`
+            );
+          }
+        }
+      }
+      schemaFields[field.field_id] = fieldSchema;
+    });
+    return Yup.object().shape(schemaFields);
+  };
   const submitApplication = async (values: any, errors: any) => {
     const mandatoryFields = [
       "full_name",
