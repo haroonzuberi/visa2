@@ -19,15 +19,21 @@ import Chip from "../../../../components/ui/chipMenu/page";
 import EditSvg from "@/Assets/svgs/EditSvg";
 import DownloadSvg from "@/Assets/svgs/DownloadSvg";
 import WhatsappSvg from "@/Assets/svgs/WhatsappSvf";
-import { DropdownMenu, DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
-import { DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+} from "@radix-ui/react-dropdown-menu";
+import {
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { ArrowLeftIcon } from "lucide-react";
 
 export default function CustomerDetails() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
-  const fromPage = searchParams.get('fromPage');
+  const fromPage = searchParams.get("fromPage");
   const dispatch = useDispatch<AppDispatch>();
   const [expandedSections, setExpandedSections] = useState<number[]>([]);
 
@@ -41,7 +47,6 @@ export default function CustomerDetails() {
     }
   }, [dispatch, params.id]);
 
-  // Toggle Expand/Collapse
   const toggleSection = (id: number) => {
     setExpandedSections((prev) =>
       prev.includes(id) ? prev.filter((sec) => sec !== id) : [...prev, id]
@@ -49,20 +54,11 @@ export default function CustomerDetails() {
   };
 
   const handleBack = () => {
-    // if (fromPage) {
-      router.push(`/main/customers?fromDetails=true&page=${fromPage}`);
-    // } else {
-    //   router.push('/main/customers');
-    // }
+    router.push(`/main/customers?fromDetails=true&page=${fromPage}`);
   };
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!customerData) {
-    return <div>No data found</div>;
-  }
+  if (isLoading) return <div>Loading...</div>;
+  if (!customerData) return <div>No data found</div>;
 
   return (
     <>
@@ -87,136 +83,116 @@ export default function CustomerDetails() {
       <div className={tableStyles.mainContainer}>
         <GeneralData search={true} header="Applicants" />
 
-        {/* Customer Table */}
-        <div className="bg-white rounded-xl">
+        {/* Table */}
+        <div className="bg-white overflow-y-auto rounded-xl">
           {customerData.map((customer) => {
             const isExpanded = expandedSections.includes(customer.id);
-
             return (
               <div key={customer.id}>
-                {/* Main Section Row */}
-                <div className="flex justify-between items-center py-3 px-4">
-                  {/* Left Section (Name & Email) */}
-                  <div>
-                    <p className="text-[14px] font-[500] text-[#24282E]">
+                {/* Customer Row */}
+                <div className="flex flex-row justify-between items-center py-2 sm:py-3 px-2 sm:px-4 gap-2 sm:gap-3">
+                  <div className="w-[210px]">
+                    <p className="text-[12px] sm:text-[14px] font-[500] text-[#24282E]">
                       {customer.name}
                     </p>
-                    <p className="text-[12px] font-[400] text-[#727A90]">
+                    <p className="text-[10px] sm:text-[12px] font-[400] text-[#727A90]">
                       {customer.email}
                     </p>
                   </div>
 
-                  {/* Middle Section (Phone) */}
-                  <p className="text-[12px] font-[400] text-[#727A90]">
+                  <p className="text-[10px] sm:text-[12px] font-[400] text-[#727A90]">
                     {customer.phone}
                   </p>
-                  <div className="flex items-center justify-center gap-3">
+
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <span className={styles.tableChip}>
                       +{customer.applications.length}
                     </span>
-                    {/* Right Section (Expand/Collapse Button) */}
                     {customer.applications.length > 0 && (
-                      <>
-                        <button onClick={() => toggleSection(customer.id)}>
-                          {isExpanded ? (
-                            <>
-                              <DropDownSvg />
-                            </>
-                          ) : (
-                            <>
-                              <RightIconSvg />
-                            </>
-                          )}
-                        </button>
-                      </>
+                      <button onClick={() => toggleSection(customer.id)}>
+                        {isExpanded ? <DropDownSvg /> : <RightIconSvg />}
+                      </button>
                     )}
                   </div>
                 </div>
 
-                {/* Sub-Section (Only Visible When Expanded) */}
+                {/* Expanded Applications */}
                 {isExpanded && (
                   <div className="border-gray-200">
                     {customer.applications.map((record, idx) => (
-                      <div
-                        key={idx}
-                        className="flex justify-between px-4 items-center py-2 border-b last:border-none"
-                      >
-                        {/* Record ID*/}
-                        <div>
-                          <p className="text-[12px] font-[400] text-[#727A90]">
+                      <div key={idx} className="overflow-x-auto">
+                        <div className="flex flex-row items-center justify-between min-w-[900px] px-2 sm:px-4 py-2 border-b last:border-none gap-2 sm:gap-3 whitespace-nowrap">
+                          <p className="text-[10px] sm:text-[12px] font-[400] text-[#727A90]">
                             {record.application_id}
                           </p>
-                        </div>
 
-                        {/* Tags */}
-                        <div>
-                          <p className="text-[12px] font-[400] text-[#727A90]">
-                            {/* {record.tags.join(", ")} */}
+                          <p className="text-[10px] sm:text-[12px] font-[400] text-[#727A90]"></p>
+
+                          <p className="text-[12px] sm:text-[14px] font-[500] text-[#24282E]">
+                            {record.created_at}
                           </p>
-                        </div>
-
-                        {/* Dates */}
-                        <p className="text-[14px] font-[500] text-[#24282E]">
-                          {record.created_at}
-                        </p>
-                        <p className="text-[14px] font-[500] text-[#24282E]">
-                          {record.flight_date}
-                        </p>
-
-                        {/* Priority */}
-                        <p className="text-[14px] font-[500] text-[#F05D3D]">
-                          • {record.payment_status}
-                        </p>
-
-                        <div className="flex flex-col">
-                          {/* Visa Type */}
-                          <p className="text-[12px] font-[400] text-[#727A90]">
-                            {record.visa_type}
+                          <p className="text-[12px] sm:text-[14px] font-[500] text-[#24282E]">
+                            {record.flight_date}
                           </p>
 
-                          {/* Country */}
-                          <p className="flex items-center gap-2">
-                            <Image src={FlagImage} alt="Flag Image" />
-                            <span className="text-[14px] font-[500] text-[#24282E]">
-                              {record.visa_country}
-                            </span>
+                          <p className="text-[12px] sm:text-[14px] font-[500] text-[#F05D3D]">
+                            • {record.payment_status}
                           </p>
+
+                          <div className="flex flex-col">
+                            <p className="text-[10px] sm:text-[12px] font-[400] text-[#727A90]">
+                              {record.visa_type}
+                            </p>
+                            <p className="flex items-center gap-2">
+                              <Image
+                                src={FlagImage}
+                                alt="Flag"
+                                className="w-4 h-4"
+                              />
+                              <span className="text-[12px] sm:text-[14px] font-[500] text-[#24282E]">
+                                {record.visa_country}
+                              </span>
+                            </p>
+                          </div>
+
+                          <Chip status={record.visa_status} />
+
+                          <span className="flex items-center justify-end gap-2 relative">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button type="button">
+                                  <DropdownSVG className="cursor-pointer" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                className={`${styles.dropdownItem} absolute right-0 w-52 top-full z-[50] mt-1 shadow-md bg-white rounded-md border`}
+                                sideOffset={5}
+                              >
+                                <DropdownMenuItem className="flex items-center p-4 gap-2 hover:bg-gray-100 cursor-pointer">
+                                  <EditSvg className="w-4 h-4" />
+                                  <span className={styles.dropdownText}>
+                                    Edit
+                                  </span>
+                                </DropdownMenuItem>
+                                <hr />
+                                <DropdownMenuItem className="flex items-center p-4 gap-2 hover:bg-gray-100 cursor-pointer">
+                                  <DownloadSvg className="w-4 h-4" />
+                                  <span className={styles.dropdownText}>
+                                    Send Email
+                                  </span>
+                                </DropdownMenuItem>
+                                <hr />
+                                <DropdownMenuItem className="flex items-center p-4 gap-2 hover:bg-gray-100 cursor-pointer">
+                                  <WhatsappSvg className="w-4 h-4" />
+                                  <span className={styles.dropdownText}>
+                                    Send Whatsapp
+                                  </span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                            <EyeSvg className="cursor-pointer" />
+                          </span>
                         </div>
-                        {/* Chip Component Called */}
-                        <Chip status={record.visa_status} />
-                        {/* Actions */}
-                        <span className="flex items-center justify-end gap-2">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger>
-                              <DropdownSVG className="cursor-pointer" />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              className={styles.dropdownItem}
-                            >
-                              <DropdownMenuItem className="flex items-center p-4">
-                                <EditSvg className="w-4 h-4" />
-                                <span className={styles.dropdownText}>
-                                  Edit
-                                </span>
-                              </DropdownMenuItem>
-                              <hr />
-                              <DropdownMenuItem className="flex items-center p-4">
-                                <DownloadSvg className="w-4 h-4" />
-                                <span className={styles.dropdownText}>
-                                  Send Email
-                                </span>
-                              </DropdownMenuItem>
-                              <hr />
-                              <DropdownMenuItem className="flex items-center p-4">
-                                <WhatsappSvg className="w-4 h-4" />
-                                <span className={styles.dropdownText}>
-                                  Send Whatsapp
-                                </span>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                          <EyeSvg className="cursor-pointer" />
-                        </span>
                       </div>
                     ))}
                   </div>
@@ -226,7 +202,7 @@ export default function CustomerDetails() {
           })}
         </div>
 
-        {/* Footer Section */}
+        {/* Table Footer */}
         <TableFooter />
       </div>
     </>

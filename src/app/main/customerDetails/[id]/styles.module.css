@@ -1,5 +1,5 @@
 .header {
-    @apply text-[24px] font-[600] text-[#24282E]
+    @apply lg:text-[24px] sm:text-[16px] font-[600] text-[#24282E]
 }
 
 .customerBtn {
@@ -19,6 +19,7 @@
     border: 1px solid #FACDC3;
     background: #FEEFEC;
 }
+
 
 .dropdownItem {
     @apply rounded-[16px] p-0;
