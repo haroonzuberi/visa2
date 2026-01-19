@@ -1,0 +1,22 @@
+.header {
+    @apply text-[13px] sm:text-2xl font-[600] text-[#24282E]
+}
+
+.visaText{
+    @apply text-[12px] font-[400] text-[#727A90]
+}
+
+.tags{
+    @apply text-[12px] font-[400] text-[#727A90];
+}
+
+.customerBtn {
+    @apply text-[10px] sm:text-sm font-[400] text-[#ffff] flex items-center justify-center gap-2 p-[5px] sm:p-[10px];
+    border-radius: 12px ;
+    background-color: #42DA82;
+    height: 40px;
+}
+
+.btnPlusIcon {
+    @apply w-[16px] h-[16px] text-[#ffff]
+}

@@ -1,0 +1,64 @@
+.header {
+    @apply text-[16px] sm:text-2xl font-[600] text-[#24282E]
+}
+
+.userBtn {
+    @apply text-[12px] sm:text-sm font-[400] text-[#ffff] flex items-center justify-center gap-2 w-[120px] sm:w-[146px];
+    border-radius: 12px;
+    background-color: #42DA82;
+    height: 40px;
+}
+
+.btnPlusIcon {
+    @apply w-[16px] h-[16px] text-[#ffff]
+}
+
+.searchContainer {
+    @apply relative flex-1 min-w-[200px] max-w-[400px];
+}
+
+.inputSearchIcon {
+    @apply absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none;
+}
+
+.dropdownItem {
+    @apply rounded-[16px] p-0;
+    box-shadow: none;
+    background-color: #ffff;
+    border: 1px solid #E9EAEA;
+}
+
+.dropdownText {
+    @apply text-[14px] font-[500] text-[#727A90];
+}
+
+.mainContainer {
+    border: 1px solid #E9EAEA;
+    border-radius: 20px;
+    margin: 20px;
+}
+
+.userListText {
+    @apply text-[20px] font-[600] text-[#24282E]
+}
+
+.roleBtnRed {
+    @apply text-[12px] font-[600] text-[#F05D3D];
+    padding: 2px 8px;
+    background-color: #FEEFEC;
+    border: 1px solid #FACDC3
+}
+
+.roleBtnBlue {
+    @apply text-[12px] font-[600] text-[#019BF4];
+    padding: 2px 8px;
+    background-color: #E6F5FE;
+    border: 1px solid #B0E0FC
+}
+
+.roleBtnGreen {
+    @apply text-[12px] font-[600] text-[#009499];
+    padding: 2px 8px;
+    background-color: #E6F4F5;
+    border: 1px solid #B0DEDF
+}

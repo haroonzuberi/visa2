@@ -1,0 +1,19 @@
+.userListText {
+    @apply text-lg  sm:text-xl font-[600] text-[#24282E]
+}
+
+.inputField {
+    @apply rounded-[12px] font-[700] text-[14px] w-[100%] sm:w-[260px] lg:w-[320px] h-[40px] text-[#727A90];
+    border: 1px solid #E9EAEA;
+    outline: none;
+}
+
+.filtersBtn {
+    @apply rounded-[12px];
+    border: 1px solid #E9EAEA;
+    background: white !important;
+}
+
+.filterBtnText {
+    @apply text-[14px] font-[500] text-[#727A90];
+}

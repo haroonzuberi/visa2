@@ -1,0 +1,37 @@
+.mainDiv {
+    border-radius: 20px;
+    border: 1px solid #E9EAEA;
+    padding: 24px;
+}
+
+.infoBtn {
+    @apply text-[14px] font-[500] text-[#42DA82] text-start;
+    text-decoration: underline;
+}
+
+.tableChip {
+    @apply text-[12px] font-[600] text-[#F05D3D] px-3 rounded-full flex items-center gap-2 cursor-pointer;
+    border: 1px solid #FACDC3;
+    background: #FEEFEC;
+}
+
+.textArenaStyles {
+    @apply w-full border rounded-[12px] text-[14px] h-[80px] font-[400] p-2;
+}
+
+.textarea-class::placeholder {
+    color: #24282E;
+}
+
+.refundBtn {
+    @apply flex h-[36px] items-center gap-2 bg-[#42DA82]/10 text-[#42DA82] px-2 py-2 rounded-[8px] border border-transparent hover:border-[#42DA82] transition;
+}
+
+.modalMain {
+    height: 90%;
+    overflow-y: scroll;
+}
+
+.underlineBtn {
+    @apply flex h-[20px] items-center gap-2 text-[#42DA82] py-2 hover:border-[#42DA82] transition;
+}

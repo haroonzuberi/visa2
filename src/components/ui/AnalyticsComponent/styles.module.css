@@ -1,0 +1,11 @@
+.containerdashboard {
+  border: 1px solid #e9eaea;
+  width: 100%;
+  height: 208px;
+  border-radius: 20px;
+  background-color: #ffff;
+}
+
+.cardHeader {
+  @apply font-[500] text-[16px] text-[#727A90];
+}

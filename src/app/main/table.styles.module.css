@@ -1,0 +1,22 @@
+.tableHeaders {
+  @apply text-[12px] font-medium text-[#727A90] text-nowrap
+         sm:text-[13px] 
+         lg:text-[14px] 
+         /* xl:text-[18px]; */
+}
+
+
+.userName {
+  @apply text-[14px] font-[500] text-[#24282E];
+}
+
+.userEmail {
+  @apply text-[12px] font-[400] text-[#727A90];
+}
+.id {
+  @apply text-[12px] font-[400] text-[#727A90];
+}
+
+.mainContainer {
+  @apply border-[1px] border-[#E9EAEA] rounded-[20px] mt-[20px];
+}

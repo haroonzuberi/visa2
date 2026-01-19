@@ -1,0 +1,12 @@
+.custom-day {
+    @apply text-[14px] font-[400] text-[#727A90];
+}
+
+.custom-head {
+    @apply text-[14px] font-[500] text-[#727A90];
+}
+
+.selected-date {
+    @apply text-[14px] font-[600] text-[#ffff] rounded-[14px] w-[24px] h-[24px] bg-[#42DA82];
+    border-radius: 8px;
+}

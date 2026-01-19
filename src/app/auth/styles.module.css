@@ -1,0 +1,80 @@
+/* styles.module.css */
+.pageDesc {
+  @apply  text-[14px] font-[500] text-center m-0 text-[#8E95A6] font-jakarta w-full;
+}
+.containerauth {
+  @apply flex min-h-screen items-center justify-center bg-gray-100;
+  background: linear-gradient(164deg, #42da82 -140%, #fff 50%);
+  padding: 1rem;
+}
+
+.card {
+  width: min(550px, 100%) !important;
+  /* @apply bg-white rounded-xl shadow-md p-6; */
+}
+
+.LoginLogo {
+  @apply flex items-center justify-center;
+  width: min(156px, 100%);
+  height: auto;
+}
+
+.title {
+  @apply font-[700] text-center text-[40px] font-jakarta;
+  font-family: var(--font-plus-jakarta);
+}
+
+.WelcomeText {
+  @apply font-[400] text-center text-[20px] text-[#8E95A6] font-jakarta mb-[20px];
+  /* font-family: var(--font-plus-jakarta); */
+  /* color: var(--text-color); */
+}
+
+/* otp screen style */
+.otpContainer {
+  @apply flex-col mt-10 mb-[0px];
+  width: 100%;
+}
+
+.otpLabel {
+  @apply font-[500] text-[14px] text-[#24282E];
+}
+
+/* Style for individual OTP input boxes */
+.otpInput {
+  @apply font-bold rounded-[18px] border-2 border-[##BEC2CC] 
+  focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+  width: clamp(50px, 15vw, 80px) !important;
+  height: clamp(50px, 15vw, 80px) !important;
+  font-size: clamp(24px, 5vw, 48px);
+}
+
+.otpCheckMailText {
+  @apply text-[14px] font-[500] text-[#24282E] mb-[5px];
+}
+
+.resendText {
+  @apply text-[14px] font-[400] text-[#727A90];
+}
+
+
+/* Media queries for better responsiveness */
+@media screen and (max-width: 480px) {
+  .card {
+    @apply p-4;
+  }
+
+  .otpInput {
+    margin: 0 4px !important;
+  }
+}
+
+@media screen and (min-width: 481px) {
+  .card {
+    @apply p-6;
+  }
+
+  .otpInput {
+    margin: 0 8px !important;
+  }
+}

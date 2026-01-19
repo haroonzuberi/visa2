@@ -1,0 +1,98 @@
+.header {
+  @apply text-xl sm:text-2xl font-[600] text-[#24282E];
+}
+
+.cardTitle {
+  @apply font-[600] text-[18px] font-jakarta text-[#24282E];
+}
+
+.cardAmount {
+  @apply font-jakarta font-[600] text-[28px];
+}
+.cardPercentage {
+  @apply font-jakarta text-[14px] text-[#009499] font-[700];
+}
+.cardChange {
+  @apply font-[400] text-[14px] text-[#727A90];
+}
+.otherCardsHeadRad {
+  @apply mt-[20px]  rounded-[20px];
+}
+.otherCardsHeadContainer {
+  @apply flex items-center justify-between py-[10px]  px-[20px] border-b mb-[20px];
+}
+.otherCardsHead {
+  @apply text-[20px] font-[600] text-[#24282E];
+}
+.otherCardsSubHead {
+  @apply text-[14px] font-[500] text-[#727A90] mt-[5px] mb-[5px] w-full;
+}
+
+.analyticsContainer {
+  @apply pb-[20px];
+}
+
+.customTooltipValue {
+  @apply font-[700] text-[#24282E] text-[12px];
+}
+.customTooltipLabel {
+  @apply text-[#727A90] text-[12px] font-[400];
+}
+.circularProgressInsideHead {
+  @apply text-[28px] font-[600] font-jakarta text-[#24282E];
+}
+.statsGrid {
+  @apply grid grid-cols-1 md:grid-cols-3 gap-6;
+}
+
+.statCard {
+  @apply p-6 rounded-xl border bg-white dark:bg-gray-800 shadow-sm;
+}
+
+.statHeader {
+  @apply flex items-center justify-between;
+}
+
+.statTitle {
+  @apply text-sm font-medium text-gray-600 dark:text-gray-300;
+}
+
+.statValue {
+  @apply text-2xl font-bold text-gray-900 dark:text-white;
+}
+
+.statChange {
+  @apply flex items-center text-sm text-gray-500 dark:text-gray-400;
+}
+
+.chartContainer {
+  @apply mt-6 p-6 rounded-lg border bg-white dark:bg-gray-800;
+}
+
+.chartHeader {
+  @apply flex items-center justify-between mb-4;
+}
+
+.sourceContainer {
+  @apply mt-6 p-6 rounded-lg border bg-white dark:bg-gray-800;
+}
+
+.sourceList {
+  @apply space-y-4 mt-4;
+}
+
+.sourceItem {
+  @apply space-y-2;
+}
+
+.sourceItemHeader {
+  @apply flex items-center justify-between;
+}
+
+.progressLabel {
+  @apply flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300;
+}
+
+.progressValue {
+  @apply text-sm font-medium text-gray-900 dark:text-white;
+}

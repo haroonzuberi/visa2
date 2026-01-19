@@ -1,0 +1,100 @@
+.header {
+  @apply text-xl sm:text-2xl font-semibold text-[#24282E];
+}
+
+.profileName {
+  @apply text-[20px] font-[600] text-[#24282E];
+}
+
+.profileRole {
+  @apply text-[14px] text-[#727A90] font-[500];
+}
+
+.infoItem {
+  @apply flex flex-col gap-1;
+}
+
+.infoLabel {
+  @apply text-[14px] font-[500] text-[#727A90];
+}
+
+.infoValue {
+  @apply text-[14px] font-[500] text-[#24282E];
+}
+
+.tabButton {
+  @apply text-[14px] font-[500] text-[#727A90] py-5 border-none bg-transparent relative;
+}
+
+.tabButton[data-state="active"] {
+  @apply text-primary font-[700] text-[14px]   shadow-none;
+}
+
+.tabButton[data-state="active"]::after {
+  content: '';
+  @apply absolute bottom-[10px] left-0 w-full h-[2px] bg-primary;
+}
+
+.saveButton {
+  @apply bg-primary text-white font-medium px-6 py-3 rounded-lg transition-colors hover:bg-[#3bc574];
+}
+
+.settingsContainer {
+  @apply container sm:mx-auto sm:px-4 py-3 sm:py-6;
+}
+
+.mainCard {
+  @apply mt-2 sm:mt-6 bg-white rounded-[16px] sm:pt-8;
+}
+
+.gridLayout {
+  @apply grid grid-cols-1 md:grid-cols-12 gap-8;
+}
+
+.profileCard {
+  @apply md:col-span-4 lg:col-span-3;
+}
+
+.profileCardInner {
+  @apply flex flex-col items-center p-6 bg-white rounded-[16px] border border-[#E9EAEA];
+}
+
+.profileImageContainer {
+  @apply relative w-32 h-32 rounded-full overflow-hidden mb-4;
+}
+
+.formSection {
+  @apply md:col-span-8 lg:col-span-9;
+}
+
+.formGrid {
+  @apply grid grid-cols-1 sm:grid-cols-2 gap-6;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .header {
+    @apply text-xl;
+  }
+
+  .profileName {
+    @apply text-[12px] font-[600] text-[#24282E];
+  }
+
+  .formGrid {
+    @apply grid-cols-1;
+  }
+}
+
+/* Add these new styles */
+.settingLabel {
+  @apply text-[18px] font-[400] text-[#24282E];
+}
+
+.radioGroup {
+  @apply flex gap-4;
+}
+
+.radioCheckLabel {
+  @apply text-[18px] font-[600] text-[#24282E] cursor-pointer;
+} 

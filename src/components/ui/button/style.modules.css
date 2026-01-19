@@ -1,0 +1,4 @@
+.btn-primary {
+    @apply bg-primary text-white text-[16px] font-bold leading-[20px] 
+           rounded-[12px] h-[54px] w-full gap-[4px];
+}

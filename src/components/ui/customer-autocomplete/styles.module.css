@@ -1,0 +1,43 @@
+.autocompleteWrapper {
+  @apply relative w-full;
+}
+
+.label {
+  @apply text-[18px] font-[500] text-[#24282E] block mb-2;
+}
+
+.inputWrapper {
+  @apply relative;
+}
+
+.input {
+  @apply w-full h-[50px] px-4 border border-[#E9EAEA] rounded-xl focus:outline-none focus:border-primary transition-colors;
+}
+
+.suggestionsList {
+  @apply absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto;
+}
+
+.suggestionItem {
+  @apply px-4 py-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0;
+}
+
+.customerInfo {
+  @apply flex flex-col;
+}
+
+.customerName {
+  @apply text-sm font-medium text-gray-900;
+}
+
+.customerEmail {
+  @apply text-xs text-gray-500;
+}
+
+.loader {
+  @apply absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 border-2 border-gray-300 border-t-primary rounded-full animate-spin;
+}
+
+.error {
+  @apply text-danger text-sm mt-1 block;
+} 
