@@ -94,26 +94,28 @@ export const fetchApplications = createAsyncThunk(
 );
 
 
-export const fetchApplication = createAsyncThunk(
-  "applications/fetchApplication",
-  async (_, { rejectWithValue }) => {
+export const fetchFormsList = createAsyncThunk(
+  "applications/fetchFormsList",
+  async (
+    { skip = 0, limit = 10 }: { skip?: number; limit?: number },
+    { rejectWithValue }
+  ) => {
     try {
-      console.log("API should be called");
-      const response: any = await getApiWithAuth("forms/2");
+      const response: any = await getApiWithAuth(
+        `forms?skip=${skip}&limit=${limit}`
+      );
 
       if (!response) {
         throw new Error("No response from server");
       }
 
-      console.log("Fetch Application API Response:", response);
-
       if (!response.success) {
-        throw new Error(response.message || "Failed to fetch application data");
+        throw new Error(response.message || "Failed to fetch forms list");
       }
 
-      return response.data; // Returning application data
+      return response.data; // Returning forms list data
     } catch (error: any) {
-      console.error("Fetch Application API Error:", error);
+      console.error("Fetch Forms List API Error:", error);
 
       if (error.status === 500) {
         return rejectWithValue("Internal server error. Please try again later.");
@@ -124,7 +126,7 @@ export const fetchApplication = createAsyncThunk(
       }
 
       return rejectWithValue(
-        error.message || "Failed to fetch application data. Please try again."
+        error.message || "Failed to fetch forms list. Please try again."
       );
     }
   }
@@ -211,26 +213,21 @@ const applicationsSlice = createSlice({
         toast.error(action.payload as string); // Show error toast
       });
 
-    
-
-    // get form data
-
+    // Fetch Forms List
     builder
-      .addCase(fetchApplication.pending, (state) => {
-        console.log("PENDING IN API");
+      .addCase(fetchFormsList.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchApplication.fulfilled, (state, action) => {
-        console.log("SUCCESS IN API",action.payload);
+      .addCase(fetchFormsList.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.applicationData = action.payload; // Add new application to the list
+        // Store forms list in applicationData for now (can be refactored later)
+        state.applicationData = action.payload;
       })
-      .addCase(fetchApplication.rejected, (state, action) => {
-        console.log("ERROR IN API");
+      .addCase(fetchFormsList.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
-        toast.error(action.payload as string); // Show error toast
+        toast.error(action.payload as string);
       });
 
     // Create Application
