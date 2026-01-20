@@ -6,6 +6,7 @@ import "@/styles/globals.css";
 import { useDispatch } from "react-redux";
 import { fetchFormsList } from "@/store/slices/applicationsSlice";
 import { AppDispatch } from "@/store";
+import { getAccessToken } from "@/utils/asyncStorage";
 
 const NewApplication = ({ setIsNewApplication, onClose }: any) => {
   const [selectedFormId, setSelectedFormId] = useState<number | null>(null);
@@ -60,16 +61,42 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
           <div className="bg-white rounded-xl w-[90vw] xl:w-[800px] lg:w-[800px] md:w-[800px] h-[90vh] shadow-lg flex flex-col">
             {/* Header */}
             <div className="flex justify-between p-6 pb-0 items-center flex-shrink-0">
-              <h2 className="text-lg font-semibold">Add New Application</h2>
-              <button
-                className="border-[#E9EAEA] border-[1px] p-2 rounded-[10px]"
-                onClick={() => {
-                  console.log("SET APP---");
-                  onClose();
-                }}
-              >
-                <CrossSvg size={24} />
-              </button>
+              {!showIframe ? (
+                <>
+                  <h2 className="text-lg font-semibold">Add New Application</h2>
+                  <button
+                    className="border-[#E9EAEA] border-[1px] p-2 rounded-[10px]"
+                    onClick={() => {
+                      console.log("SET APP---");
+                      onClose();
+                    }}
+                  >
+                    <CrossSvg size={24} />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="flex items-center gap-2 text-[#24282E] hover:text-[#42DA82] transition-colors"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                    <span className="text-[24px] font-bold">
+                      {formsList.find((form) => form.id === selectedFormId)?.name || "Back"}
+                    </span>
+                  </button>
+                  <button
+                    className="border-[#E9EAEA] border-[1px] p-2 rounded-[10px]"
+                    onClick={() => {
+                      console.log("SET APP---");
+                      onClose();
+                    }}
+                  >
+                    <CrossSvg size={24} />
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Content Area */}
@@ -101,11 +128,10 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                             key={form.id}
                             type="button"
                             onClick={() => handleFormSelect(form.id)}
-                            className={`relative w-full p-5 rounded-[16px] border-2 transition-all duration-200 text-left hover:shadow-md ${
-                              selectedFormId === form.id
+                            className={`relative w-full p-5 rounded-[16px] border-2 transition-all duration-200 text-left hover:shadow-md ${selectedFormId === form.id
                                 ? "border-[#42DA82] bg-[#42DA8210] shadow-sm"
                                 : "border-[#E9EAEA] bg-white hover:border-[#42DA8250]"
-                            }`}
+                              }`}
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
@@ -135,11 +161,10 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                                 </div>
                               </div>
                               <div
-                                className={`ml-4 flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                                  selectedFormId === form.id
+                                className={`ml-4 flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selectedFormId === form.id
                                     ? "border-[#42DA82] bg-[#42DA82]"
                                     : "border-[#D1D5DB] bg-white"
-                                }`}
+                                  }`}
                               >
                                 {selectedFormId === form.id && (
                                   <Check className="w-4 h-4 text-white" />
@@ -165,17 +190,7 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                   )}
                 </div>
               ) : (
-                <div className="flex flex-col h-full">
-                  <div className="px-8 py-4 border-b border-[#E9EAEA] flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={handleBack}
-                      className="flex items-center gap-2 text-[#24282E] hover:text-[#42DA82] transition-colors"
-                    >
-                      <ArrowLeft className="w-5 h-5" />
-                      <span className="text-[14px] font-medium">Back to Form Selection</span>
-                    </button>
-                  </div>
+                <div className="flex flex-col h-full px-4 py-4">
                   <div className="flex-1 relative min-h-0">
                     {isIframeLoading && (
                       <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
@@ -186,7 +201,7 @@ const NewApplication = ({ setIsNewApplication, onClose }: any) => {
                       </div>
                     )}
                     <iframe
-                      src={`https://api.visa2.pro/form/${selectedFormId}`}
+                      src={`https://api.visa2.pro/form-embed/${selectedFormId}?token=${getAccessToken() || ''}`}
                       width="100%"
                       height="100%"
                       frameBorder="0"
