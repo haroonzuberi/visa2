@@ -3,7 +3,13 @@ import CrossSvg from '@/Assets/svgs/CrossSvg';
 import EditSvg from '@/Assets/svgs/EditSvg';
 import LeftArrowSvg from '@/Assets/svgs/LeftArrow';
 
-const ViewInfo = ({ setIsViewInfo }: any) => {
+interface ViewInfoProps {
+  setIsViewInfo: (value: boolean) => void;
+  onClose?: () => void;
+  fields?: Array<{ label: string; value: string | number }>;
+}
+
+const ViewInfo = ({ setIsViewInfo, onClose, fields = [] }: ViewInfoProps) => {
     return (
         <>
             {/* Header */}
@@ -22,44 +28,26 @@ const ViewInfo = ({ setIsViewInfo }: any) => {
                     </div>
                     <hr className='my-3' />
                     {/* Main Content */}
-                    <div className="bg-white rounded-lg p-6 w-full relative">
+                    <div className="bg-white rounded-lg p-6 w-full relative max-h-[60vh] overflow-y-auto">
                         <button className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition">
                             <EditSvg size={20} />
                         </button>
-                        <div className="grid grid-cols-2 gap-x-10 gap-y-4">
-                            <div>
-                                <p className="text-[14px] font-[500] text-[#727A90]">Name</p>
-                                <p className="text-[14px] font-[500] text-[#24282E]">Name goes here</p>
+                        {fields.length === 0 ? (
+                            <div className="text-center py-8 text-[#727A90]">
+                                No additional information available
                             </div>
-                            <div>
-                                <p className="text-[14px] font-[500] text-[#727A90]">Passport Number</p>
-                                <p className="text-[14px] font-[500] text-[#24282E]">050 414 8788</p>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-x-10 gap-y-4">
+                                {fields.map((field, index) => (
+                                    <div key={index}>
+                                        <p className="text-[14px] font-[500] text-[#727A90]">{field.label}</p>
+                                        <p className="text-[14px] font-[500] text-[#24282E]">
+                                            {field.value === "N/A" || field.value === "" ? "N/A" : String(field.value)}
+                                        </p>
+                                    </div>
+                                ))}
                             </div>
-                            <div>
-                                <p className="text-[14px] font-[500] text-[#727A90]">Date of Birth</p>
-                                <p className="text-[14px] font-[500] text-[#24282E]">26 October 2024</p>
-                            </div>
-                            <div>
-                                <p className="text-[14px] font-[500] text-[#727A90]">Gender</p>
-                                <p className="text-[14px] font-[500] text-[#24282E]">Male</p>
-                            </div>
-                            <div>
-                                <p className="text-[14px] font-[500] text-[#727A90]">Marital Status</p>
-                                <p className="text-[14px] font-[500] text-[#24282E]">Married</p>
-                            </div>
-                            <div>
-                                <p className="text-[14px] font-[500] text-[#727A90]">Spouse Name</p>
-                                <p className="text-[14px] font-[500] text-[#24282E]">Mrs. Bhaarti</p>
-                            </div>
-                            <div>
-                                <p className="text-[14px] font-[500] text-[#727A90]">Spouse Country of Birth</p>
-                                <p className="text-[14px] font-[500] text-[#24282E]">India</p>
-                            </div>
-                            <div>
-                                <p className="text-[14px] font-[500] text-[#727A90]">Have you Visited India Before?</p>
-                                <p className="text-[14px] font-[500] text-[#24282E]">Yes</p>
-                            </div>
-                        </div>
+                        )}
                     </div>
                 </div>
                 {/* Footer */}

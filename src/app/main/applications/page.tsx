@@ -30,31 +30,6 @@ import {
   setCurrentPage,
 } from "@/store/slices/formSubmissionSlice";
 
-const modalParams = {
-  name: "Linda Blair",
-  photoUrl:
-    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRTgD14vQ6I-UBiHTcwxZYnpSfLFJ2fclwS2A&s", // Replace with actual image path
-  email: "abc@gmail.com",
-  phone: "050 414 8788",
-  visaType: "Business Visa",
-  country: "India",
-  flightDate: "26 October 2024",
-  passportPhotoUrl:
-    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRTgD14vQ6I-UBiHTcwxZYnpSfLFJ2fclwS2A&s", // Replace with actual image path
-  applicationId: "ID0121",
-  passportNumber: "050 414 8788",
-  status: "Cancel",
-  cancellationReason:
-    "Cancellation Reason: The applicant has decided to postpone their travel plans due to unforeseen personal circumstances. As a result, the visa application is no longer required at this time",
-  internalNotes: "",
-  paidAmount: "$2000",
-  paymentDate: "20 Oct 2024",
-  invoiceFiles: [
-    { name: "Invoice name here", url: "/path-to-invoice.pdf" }, // Replace with actual paths
-    { name: "Visa Invoice name here", url: "/path-to-visa-invoice.pdf" },
-  ],
-};
-
 const formatStatus = (status: string) => {
   return status
     .replace(/_/g, " ") // Replace underscores with spaces
@@ -385,7 +360,7 @@ export default function Applications() {
         <ApplicationDetail
           setIsApplicationDetail={setIsApplicationDetail}
           onClose={handleCloseModal}
-          data={modalParams}
+          data={selectedApplication}
         />
       )}
       {isNewApplicationModalOpen && (
