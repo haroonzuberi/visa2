@@ -6,7 +6,7 @@ import enTranslations from './locales/en/common.json';
 import heTranslations from './locales/he/common.json';
 
 i18n.use(I18nextBrowserLanguageDetector).use(initReactI18next).init({
-  debug: true,
+  debug: false,
   fallbackLng: "en",
   returnObjects: true,
   resources: {

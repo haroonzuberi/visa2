@@ -85,14 +85,20 @@ export const fetchSubmissions = createAsyncThunk(
           PAGINATION_CONFIG.DEFAULT_PAGE_SIZE
         }${search ? `&search=${search}` : ""}`
       );
-      console.log("RESPONSE___", response);
+      
       if (!response?.success) {
         throw new Error(response?.message || "Failed to fetch applications");
       }
 
+      // Handle new API response structure: { total, skip, limit, data: [...] }
+      // response.data from getApiWithAuth contains the API response body
+      const responseData = response.data;
+      const applicationsData = responseData?.data || (Array.isArray(responseData) ? responseData : []);
+      const totalCount = responseData?.total || responseData?.results || (Array.isArray(responseData) ? responseData.length : 0);
+
       return {
-        applications: response.data,
-        total: response.data.results || response.data.length,
+        applications: applicationsData,
+        total: totalCount,
       };
     } catch (error: any) {
       return rejectWithValue(error.message || "Failed to fetch applications");
