@@ -1,7 +1,7 @@
 "use client";
 import CrossSvg from "@/Assets/svgs/CrossSvg";
 import styles from "./styles.module.css";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, JSX } from "react";
 import PdfSvg from "@/Assets/svgs/PdfSvg";
 import EyeSvg from "@/Assets/svgs/EyeSvg";
 import DropDownSvg from "@/Assets/svgs/DropDown";
@@ -88,6 +88,22 @@ interface ApplicationData {
   extracted_visa_data?: Record<string, any>;
   customer?: Customer;
   applicant?: Applicant;
+  background_processing_status?: {
+    status: string;
+    error: string | null;
+    started_at: string;
+    completed_at: string;
+    steps: Record<string, { status: string; error: string | null }>;
+  };
+  internal_notes?: string;
+}
+
+interface BackgroundProcessingStatus {
+  status: string;
+  error: string | null;
+  started_at: string;
+  completed_at: string;
+  steps: Record<string, { status: string; error: string | null }>;
 }
 
 interface ModalProps {
@@ -96,39 +112,70 @@ interface ModalProps {
   data: { id: number } | ApplicationData; // Can receive either just id or full data
 }
 
+const pollApplicationDetails = async (
+  applicationData: ApplicationData | null,
+  setApplicationData: React.Dispatch<React.SetStateAction<ApplicationData | null>>,
+  pollingInterval: React.MutableRefObject<NodeJS.Timeout | null>
+) => {
+  if (applicationData?.id && applicationData.background_processing_status?.status === "in_progress") {
+    try {
+      const response: any = await getApiWithAuth(`form-submissions/${applicationData.id}`);
+      if (response.success && response.data) {
+        setApplicationData(response.data);
+
+        // Stop polling if status is no longer 'in_progress'
+        if (response.data.background_processing_status?.status !== "in_progress") {
+          if (pollingInterval.current) {
+            clearInterval(pollingInterval.current);
+            pollingInterval.current = null;
+          }
+        }
+      } else {
+        toast.error("Failed to refresh application details");
+      }
+    } catch (error) {
+      console.error("Error polling application details:", error);
+      toast.error("Error while polling application details");
+    }
+  }
+};
+
 const ApplicationDetail: React.FC<ModalProps> = ({
-  //   setIsApplicationDetail,
   onClose,
   data,
 }) => {
-  const [isEdit, setIsEdit] = useState<boolean>(false);
   const [isRefund, setIsRefund] = useState<boolean>(false);
   const [isPersonalEdit, setIsPersonalEdit] = useState<boolean>(false);
   const [isNewApplication, setIsNewApplication] = useState<boolean>(false);
+  const [isEdit, setIsEdit] = useState<boolean>(false);
   const [accordionState, setAccordionState] = useState<Record<string, boolean>>({});
   const [applicationData, setApplicationData] = useState<ApplicationData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const profileImageRef = useRef<HTMLImageElement>(null);
   const passportImageRef = useRef<HTMLImageElement>(null);
+  const pollingInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch application details from API
   useEffect(() => {
     const fetchApplicationDetails = async () => {
-      // If data already has full application data, use it
       if (data && 'application_id' in data) {
         setApplicationData(data as ApplicationData);
         return;
       }
 
-      // Otherwise, fetch from API using the id
       if (data && 'id' in data) {
         setIsLoading(true);
         try {
           const response: any = await getApiWithAuth(`form-submissions/${data.id}`);
           if (response.success && response.data) {
             setApplicationData(response.data);
+
+            // Stop polling if status is no longer 'in_progress'
+            if (response.data.background_processing_status?.status !== "in_progress") {
+              if (pollingInterval.current) {
+                clearInterval(pollingInterval.current);
+                pollingInterval.current = null;
+              }
+            }
           } else {
             toast.error("Failed to load application details");
             onClose();
@@ -144,180 +191,79 @@ const ApplicationDetail: React.FC<ModalProps> = ({
     };
 
     fetchApplicationDetails();
-  }, [data, onClose]);
+  }, [data]);
 
   useEffect(() => {
-    if (applicationData?.extracted_visa_data) {
-      const initialState = Object.keys(applicationData.extracted_visa_data).reduce(
-        (acc, key) => {
-          acc[key] = false;
-          return acc;
-        },
-        {} as Record<string, boolean>
+    if (applicationData?.background_processing_status?.status === "in_progress") {
+      pollingInterval.current = setInterval(
+        () => pollApplicationDetails(applicationData, setApplicationData, pollingInterval),
+        5000
       );
-      setAccordionState(initialState);
-    } else {
-      setAccordionState({});
     }
-  }, [applicationData?.extracted_visa_data]);
 
-  // Helper function to get value from values object (for legacy support)
-  const getValue = (field: string): string | number => {
-    if (!applicationData || !applicationData.values) return "N/A";
-    const fieldData = applicationData.values[field];
-    if (!fieldData) return "N/A";
-    if (typeof fieldData === "object" && fieldData !== null && 'value' in fieldData) {
-      const docValue = fieldData.value as any;
-      if (typeof docValue === "object" && docValue !== null && 'filename' in docValue) {
-        return docValue.filename || "N/A";
+    return () => {
+      if (pollingInterval.current) {
+        clearInterval(pollingInterval.current);
       }
-      if (typeof docValue === "string" || typeof docValue === "number") {
-        return docValue || "N/A";
-      }
-    }
-    if (typeof fieldData === "string" || typeof fieldData === "number") {
-      return fieldData || "N/A";
-    }
-    return "N/A";
-  };
+    };
+  }, [applicationData?.background_processing_status?.status]);
 
-  // Helper function to get image URL from documents object
-  const getImageUrl = (documentType: string): string | null => {
-    if (!applicationData || !applicationData.documents) {
-      return null;
-    }
-    const docEntry = applicationData.documents[documentType];
-    if (!docEntry) {
-      return null;
-    }
-    if (Array.isArray(docEntry)) {
-      const firstDoc = docEntry.find((item) => Boolean(item?.file_path));
-      return firstDoc?.file_path || null;
-    }
-    return docEntry.file_path || null;
-  };
-
-  // Helper function to format status
-  const formatStatus = (status: string): string => {
-    return status
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
-  };
-
-  const formatLabel = (label: string): string => {
-    return label
-      .replace(/_/g, " ")
-      .replace(/\s+/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
-  };
-
-  const formatSectionTitle = (key: string): string => {
-    const match = key.match(/^step_(\d+)_([\w\d_]+)$/i);
-    if (match) {
-      const [, stepNumber, rest] = match;
-      return `Step ${stepNumber} ${formatLabel(rest)}`;
-    }
-    return formatLabel(key);
-  };
-
-  const formatDisplayValue = (value: any): string => {
-    if (value === null || value === undefined) {
-      return "N/A";
-    }
-    if (typeof value === "boolean") {
-      return value ? "Yes" : "No";
-    }
-    if (typeof value === "string") {
-      const trimmed = value.trim();
-      return trimmed.length > 0 ? trimmed : "N/A";
-    }
-    if (Array.isArray(value)) {
-      return value.length > 0 ? value.map((item) => formatDisplayValue(item)).join(", ") : "N/A";
-    }
-    return String(value);
-  };
-
-  const isPlainObject = (value: any): value is Record<string, any> => {
-    return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-  };
-
-  const renderObjectContent = (data: any, level = 0): JSX.Element => {
-    if (Array.isArray(data)) {
+  const renderExtractedVisaData = () => {
+    if (applicationData?.background_processing_status?.status === "in_progress") {
       return (
-        <div className="flex flex-col gap-3">
-          {data.length > 0 ? (
-            data.map((item, index) => (
-              <div
-                key={`array-item-${level}-${index}`}
-                className="border border-[#E9EAEA] rounded-[10px] p-4 bg-white"
-              >
-                {isPlainObject(item)
-                  ? renderObjectContent(item, level + 1)
-                  : (
-                    <p className="text-[14px] font-[500] text-[#24282E]">
-                      {formatDisplayValue(item)}
-                    </p>
-                  )}
-              </div>
-            ))
-          ) : (
-            <p className="text-[14px] font-[500] text-[#727A90]">N/A</p>
-          )}
+        <div className={`flex flex-col gap-4 ${styles.mainDiv}`}>
+          <h1 className="text-[20px] font-[600] text-[#24288E]">Extracted Visa Data</h1>
+          <p className="text-[14px] font-[500] text-[#727A90]">Under processing...</p>
         </div>
       );
     }
 
-    if (!isPlainObject(data)) {
+    if (
+      applicationData?.extracted_visa_data &&
+      Object.keys(applicationData.extracted_visa_data).length > 0
+    ) {
       return (
-        <p className="text-[14px] font-[500] text-[#24282E]">
-          {formatDisplayValue(data)}
-        </p>
+        <div className={`flex flex-col gap-4 ${styles.mainDiv}`}>
+          <h1 className="text-[20px] font-[600] text-[#24482E]">Extracted Visa Data</h1>
+          <div className="flex flex-col gap-3">
+            {Object.entries(applicationData.extracted_visa_data).map(([sectionKey, sectionValue]) => {
+              const isOpen = accordionState[sectionKey] ?? false;
+              return (
+                <div
+                  key={sectionKey}
+                  className="border border-[#E9EAEA] rounded-[12px] overflow-hidden bg-white"
+                >
+                  <button
+                    type="button"
+                    onClick={() => toggleAccordion(sectionKey)}
+                    className="w-full flex items-center justify-between px-5 py-3 hover:bg-[#42DA8210] transition-colors"
+                  >
+                    <span className="text-[16px] font-[600] text-[#24282E]">
+                      {formatSectionTitle(sectionKey)}
+                    </span>
+                    {isOpen ? (
+                      <ChevronUp className="w-5 h-5 text-[#24282E]" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-[#24282E]" />
+                    )}
+                  </button>
+                  {isOpen && (
+                    <div className="px-5 py-4 flex flex-col gap-4">
+                      {renderObjectContent(sectionValue)}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       );
     }
 
-    const entries = Object.entries(data);
-
-    if (entries.length === 0) {
-      return <p className="text-[14px] font-[500] text-[#727A90]">No data available.</p>;
-    }
-
     return (
-      <div className={`flex flex-col gap-4 ${level > 0 ? "border border-[#E9EAEA] rounded-[10px] p-4 bg-[#F9FAFB]" : ""}`}>
-        {entries.map(([key, value]) => {
-          const label = formatLabel(key);
-          const entryKey = `${key}-${level}`;
-
-          if (isPlainObject(value)) {
-            return (
-              <div key={entryKey} className="flex flex-col gap-3">
-                <p className="text-[14px] font-[600] text-[#24282E]">{label}</p>
-                {renderObjectContent(value, level + 1)}
-              </div>
-            );
-          }
-
-          if (Array.isArray(value)) {
-            return (
-              <div key={entryKey} className="flex flex-col gap-3">
-                <p className="text-[14px] font-[500] text-[#727A90]">{label}</p>
-                {renderObjectContent(value, level + 1)}
-              </div>
-            );
-          }
-
-          return (
-            <div key={entryKey} className="grid grid-cols-12 gap-4">
-              <div className="col-span-5 md:col-span-4">
-                <p className="text-[14px] font-[500] text-[#727A90]">{label}</p>
-              </div>
-              <div className="col-span-7 md:col-span-8">
-                <p className="text-[14px] font-[500] text-[#24282E]">
-                  {formatDisplayValue(value)}
-                </p>
-              </div>
-            </div>
-          );
-        })}
+      <div className={`flex flex-col gap-4 ${styles.mainDiv}`}>
+        <h1 className="text-[20px] font-[600] text-[#24282E]">Extracted Visa Data</h1>
+        <p className="text-[14px] font-[550] text-[#727A90]">No extracted visa data available.</p>
       </div>
     );
   };
@@ -330,25 +276,25 @@ const ApplicationDetail: React.FC<ModalProps> = ({
   };
 
   // Get dynamic field values from customer/applicant or values
-  const name = applicationData?.applicant?.name || applicationData?.customer?.name || getValue("full_name") || getValue("name") || "N/A";
-  const email = applicationData?.applicant?.email || applicationData?.customer?.email || getValue("email") || "N/A";
-  const phone = applicationData?.applicant?.phone || applicationData?.customer?.phone || getValue("phone") || getValue("phone_number") || "N/A";
-  const passportNumber = applicationData?.applicant?.passport_number || getValue("passport_number") || "N/A";
-  const visaType = getValue("visa_type") || getValue("purpose_of_visit") || "N/A";
-  const country = getValue("nationality") || getValue("birth_country") || "India";
-  const arrivalDate = getValue("arrival_date") || getValue("flight_date") || "N/A";
-  const departureDate = getValue("departure_date") || "N/A";
-  const purposeOfVisit = getValue("purpose_of_visit") || "N/A";
-  const accommodationDetails = getValue("accommodation_details") || "N/A";
-  const travelHistory = getValue("travel_history") || "N/A";
-  const birthDate = getValue("birth_date") || getValue("date_of_birth") || "N/A";
-  const gender = getValue("gender") || "N/A";
+  const name = applicationData?.applicant?.name || applicationData?.customer?.name || getValue(applicationData, "full_name") || getValue(applicationData, "name") || "N/A";
+  const email = applicationData?.applicant?.email || applicationData?.customer?.email || getValue(applicationData, "email") || "N/A";
+  const phone = applicationData?.applicant?.phone || applicationData?.customer?.phone || getValue(applicationData, "phone") || getValue(applicationData, "phone_number") || "N/A";
+  const passportNumber = applicationData?.applicant?.passport_number || getValue(applicationData, "passport_number") || "N/A";
+  const visaType = getValue(applicationData, "visa_type") || getValue(applicationData, "purpose_of_visit") || "N/A";
+  const country = getValue(applicationData, " nationality") || getValue(applicationData, "birth_country") || "India";
+  const arrivalDate = getValue(applicationData, "arrival_date") || getValue(applicationData, "flight_date") || "N/A";
+  const departureDate = getValue(applicationData, "departure_date") || "N/A";
+  const purposeOfVisit = getValue(applicationData, "purpose_of_visit") || "N/A";
+  const accommodationDetails = getValue(applicationData, "accommodation_details") || "N/A";
+  const travelHistory = getValue(applicationData, "travel_history") || "N/A";
+  const birthDate = getValue(applicationData, " birth_date") || getValue(applicationData, "date_of_birth") || "N/A";
+  const gender = getValue(applicationData, "gender") || "N/A";
   
   // Get images from documents object
-  const photoUrl = getImageUrl("user_photo") || getImageUrl("passport_photo");
-  const passportPhotoUrl = getImageUrl("passport_photo") || getImageUrl("national_id_card_photo") || photoUrl;
-  const nationalIdCardPhotoUrl = getImageUrl("national_id_card_photo");
-  const otherDocumentsUrl = getImageUrl("other_documents");
+  const photoUrl = getImageUrl(applicationData, "user_photo") || getImageUrl(applicationData, "passport_photo");
+  const passportPhotoUrl = getImageUrl(applicationData, "passport_photo") || getImageUrl(applicationData, "national_id_card_photo") || photoUrl;
+  const nationalIdCardPhotoUrl = getImageUrl(applicationData, "national_id_card_photo");
+  const otherDocumentsUrl = getImageUrl(applicationData, "other_documents");
   
   // Use local asset as fallback
   const displayPhotoUrl = photoUrl || GenericProfileImage.src;
@@ -499,7 +445,7 @@ const ApplicationDetail: React.FC<ModalProps> = ({
     }
   };
 
-  // Handle profile photo download
+  // Handle profile profile download
   const handleDownloadProfilePhoto = () => {
     if (photoUrl && hasProfilePhoto && profileImageRef.current) {
       const filename = `profile_photo_${applicationData?.application_id || "photo"}.png`;
@@ -554,7 +500,6 @@ const ApplicationDetail: React.FC<ModalProps> = ({
       downloadImage(otherDocumentsUrl, filename);
     }
   };
-
   // Handle Other Documents PDF download
   const handleDownloadOtherDocumentsPDF = () => {
     if (otherDocumentsUrl && hasOtherDocuments) {
@@ -581,9 +526,7 @@ const ApplicationDetail: React.FC<ModalProps> = ({
       <div
         className={`bg-white w-[880px] rounded-lg shadow-lg relative ${styles.modalMain}`}
       >
-        {isEdit ? (
-          <EditInfo setIsEdit={setIsEdit} onClose={onClose} />
-        ) : isRefund ? (
+        {isRefund ? (
           <RefundAmount setIsRefund={setIsRefund} onClose={onClose} />
         ) : isNewApplication ? (
           <NewApplication
@@ -633,13 +576,6 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                       >
                         Download Image
                       </button>
-                      <button
-                        onClick={handleDownloadProfilePhotoPDF}
-                        className="bg-[#42DA82] text-white px-3 py-1.5 rounded-[12px] font-semibold text-[12px] whitespace-nowrap"
-                        title="Download Profile Photo as PDF"
-                      >
-                        Download PDF
-                      </button>
                     </div>
                   )}
                 </div>
@@ -676,12 +612,21 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                     </div>
                   )}
                 </div>
-                {hasNationalIdCardPhoto && (
-                  <div
-                    className={`flex flex-col items-center mb-2 ${styles.mainDiv}`}
-                  >
-                    <p className="text-sm text-gray-500 mb-3">National ID Card</p>
-                    <div className="flex gap-2 justify-center">
+                <div
+                  className={`flex flex-col items-center mb-2 ${styles.mainDiv}`}
+                >
+                  <img
+                    src={displayNationalIdCardPhotoUrl}
+                    alt="National ID Card"
+                    className="w-[120px] h-[120px] rounded-lg object-cover"
+                    crossOrigin="anonymous"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = GenericProfileImage.src;
+                    }}
+                  />
+                  <p className="mt-2 text-sm text-gray-500">National ID Card</p>
+                  {hasNationalIdCardPhoto && (
+                    <div className="flex gap-2 mt-3 justify-center">
                       <button
                         onClick={handleDownloadNationalIdCardPhoto}
                         className="bg-[#42DA82] text-white px-3 py-1.5 rounded-[12px] font-semibold text-[12px] whitespace-nowrap"
@@ -689,22 +634,24 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                       >
                         Download Image
                       </button>
-                      <button
-                        onClick={handleDownloadNationalIdCardPhotoPDF}
-                        className="bg-[#42DA82] text-white px-3 py-1.5 rounded-[12px] font-semibold text-[12px] whitespace-nowrap"
-                        title="Download National ID Card Photo as PDF"
-                      >
-                        Download PDF
-                      </button>
                     </div>
-                  </div>
-                )}
-                {hasOtherDocuments && (
-                  <div
-                    className={`flex flex-col items-center mb-2 ${styles.mainDiv}`}
-                  >
-                    <p className="text-sm text-gray-500 mb-3">Other Documents</p>
-                    <div className="flex gap-2 justify-center">
+                  )}
+                </div>
+                <div
+                  className={`flex flex-col items-center mb-2 ${styles.mainDiv}`}
+                >
+                  <img
+                    src={displayOtherDocumentsUrl}
+                    alt="Other Documents"
+                    className="w-[120px] h-[120px] rounded-lg object-cover"
+                    crossOrigin="anonymous"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = GenericProfileImage.src;
+                    }}
+                  />
+                  <p className="mt-2 text-sm text-gray-500">Other Documents</p>
+                  {hasOtherDocuments && (
+                    <div className="flex gap-2 mt-3 justify-center">
                       <button
                         onClick={handleDownloadOtherDocuments}
                         className="bg-[#42DA82] text-white px-3 py-1.5 rounded-[12px] font-semibold text-[12px] whitespace-nowrap"
@@ -712,16 +659,9 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                       >
                         Download Image
                       </button>
-                      <button
-                        onClick={handleDownloadOtherDocumentsPDF}
-                        className="bg-[#42DA82] text-white px-3 py-1.5 rounded-[12px] font-semibold text-[12px] whitespace-nowrap"
-                        title="Download Other Documents as PDF"
-                      >
-                        Download PDF
-                      </button>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
                 <div
                   className={`flex flex-col items-center mb-2 ${styles.mainDiv}`}
                 >
@@ -758,7 +698,7 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                     <CopySvg />
                   </div>
                 </div>
-                <div className={`${styles.mainDiv}`}>
+                {/* <div className={`${styles.mainDiv}`}>
                   <div className="flex items-center justify-between">
                     <PdfSvg className="w-[58px] h-[58px]" />
                     <span className="text-[20px] font-[600] text-[#24282E]">
@@ -766,7 +706,7 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                     </span>
                     <EditSvg />
                   </div>
-                </div>
+                </div> */}
               </div>
 
               <div className="col-span-7">
@@ -808,19 +748,57 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                 ) : (
                   <div className={`flex flex-col gap-4 ${styles.mainDiv}`}>
                     <h1 className="text-[20px] font-[600] text-[#24282E]">Extracted Visa Data</h1>
-                    <p className="text-[14px] font-[500] text-[#727A90]">No extracted visa data available.</p>
+                    <div className="flex flex-col items-center justify-center py-8 gap-4">
+                      <div className="relative">
+                        {/* Outer spinning ring */}
+                        <div className="w-12 h-12 border-4 border-[#E9EAEA] border-t-[#42DA82] rounded-full animate-spin"></div>
+                        {/* Inner pulsing dot */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-3 h-3 bg-[#42DA82] rounded-full animate-pulse"></div>
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[16px] font-[600] text-[#24282E] mb-1">Processing Visa Data</p>
+                        <p className="text-[14px] font-[500] text-[#727A90]">Extracting information from uploaded documents...</p>
+                      </div>
+                      {/* Progress dots animation */}
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-[#42DA82] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-[#42DA82] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-[#42DA82] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
+                    </div>
                   </div>
                 )}
                 <div className={`mt-2 ${styles.mainDiv}`}>
                   <h1 className="text-[20px] font-[600] text-[#24282E] mb-3">
                     Actions
                   </h1>
-                  <div className="flex justify-between items-center mb-4">
+                  {/* <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center">
                       <PdfSvg />
                       <div className="flex flex-col gap-1">
                         <span className="text-[14px] font-[500] text-[#24282E]">
                           Invoice
+                        </span>
+                        <span className="text-[12px] font-[400] text-[#722A90]">
+                          Invoice name here
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button className={styles.infoBtn}>Resend</button>
+                      <EyeSvg />
+                    </div>
+                  </div> */}
+                  {/* <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <PdfSvg />
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[14px] font-[500] text-[#24282E]">
+                          {
+                            applicationData?.extracted_visa_data?.["visa_type"]?.name || applicationData.form_name || "N/A"
+                          }
                         </span>
                         <span className="text-[12px] font-[400] text-[#727A90]">
                           Invoice name here
@@ -831,27 +809,10 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                       <button className={styles.infoBtn}>Resend</button>
                       <EyeSvg />
                     </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <PdfSvg />
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[14px] font-[500] text-[#24282E]">
-                          Invoice
-                        </span>
-                        <span className="text-[12px] font-[400] text-[#727A90]">
-                          Invoice name here
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button className={styles.infoBtn}>Resend</button>
-                      <EyeSvg />
-                    </div>
-                  </div>
+                  </div> */}
 
                   <div className="flex items-center justify-between mt-6">
-                    <h3 className="text-[14px] font-[500] text-[#24282E]">
+                    <h3 className="text-[14px] font-[500] text-[#24222E]">
                       Status
                     </h3>
                     <span className={styles.tableChip}>
@@ -866,7 +827,7 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                         Cancellation Reason :{" "}
                       </p>
                       <p className="text-[12px] font-[400] text-[#24282E]">
-                        {getValue("cancellation_reason") || "No reason provided"}
+                        {getValue(applicationData, "cancellation_reason") || "No reason provided"}
                       </p>
                     </>
                   ) : null}
@@ -874,11 +835,13 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                     <h3 className="text-[14px] font-[500] text-[#24282E] mb-1">
                       Internal Notes
                     </h3>
-                    <textarea
-                      className={styles.textArenaStyles}
-                      placeholder="Write Description Here"
-                      defaultValue={getValue("internal_notes") || ""}
-                    ></textarea>
+                    {applicationData?.internal_notes && (
+                      <textarea
+                        className={styles.textArenaStyles}
+                        placeholder=" write Description Here"
+                        defaultValue={applicationData?.internal_notes}
+                      ></textarea>
+                    )}
                   </div>
                 </div>
               </div>
@@ -925,3 +888,89 @@ const ApplicationDetail: React.FC<ModalProps> = ({
 };
 
 export default ApplicationDetail;
+
+// Ensure helper functions are defined or imported
+const getValue = (applicationData: ApplicationData | null, field: string): string | number => {
+  if (!applicationData || !applicationData.values) return "N/A";
+  const fieldData = applicationData.values[field];
+  if (!fieldData) return "N/A";
+  if (typeof fieldData === "object" && fieldData !== null && "value" in fieldData) {
+    const docValue = fieldData.value as any;
+    if (typeof docValue === "object" && docValue !== null && "filename" in docValue) {
+      return docValue.filename || "N/A";
+    }
+    if (typeof docValue === "string" || typeof docValue === "number") {
+      return docValue || "N/A";
+    }
+  }
+  if (typeof fieldData === "string" || typeof fieldData === "number") {
+    return fieldData || "N/A";
+  }
+  return "N/A";
+};
+
+const getImageUrl = (applicationData: ApplicationData | null, documentType: string): string | null => {
+  if (!applicationData || !applicationData.documents) {
+    return null;
+  }
+  const docEntry = applicationData.documents[documentType];
+  if (!docEntry) {
+    return null;
+  }
+  if (Array.isArray(docEntry)) {
+    const firstDoc = docEntry.find((item) => Boolean(item?.file_path));
+    return firstDoc?.file_path || null;
+  }
+  return docEntry.file_path || null;
+};
+
+const formatSectionTitle = (key: string): string => {
+  const match = key.match(/^step_(\d+)_([\w\d_]+)$/i);
+  if (match) {
+    const [, stepNumber, rest] = match;
+    return `Step ${stepNumber} ${rest.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())}`;
+  }
+  return key.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const renderObjectContent = (data: any, level = 0): JSX.Element => {
+  if (Array.isArray(data)) {
+    return (
+      <div className="flex flex-col gap-3">
+        {data.length > 0 ? (
+          data.map((item, index) => (
+            <div
+              key={`array-item-${level}-${index}`}
+              className="border border-[#E9EAEA] rounded-[10px] p-4 bg-white"
+            >
+              {typeof item === "object" ? renderObjectContent(item, level + 1) : <p>{item}</p>}
+            </div>
+          ))
+        ) : (
+          <p className="text-[14px] font-[500] text-[#727A90]">N/A</p>
+        )}
+      </div>
+    );
+  }
+
+  if (typeof data !== "object" || data === null) {
+    return <p>{data}</p>;
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {Object.entries(data).map(([key, value]) => (
+        <div key={key} className="flex flex-col">
+          <p className="font-bold">{key}</p>
+          {renderObjectContent(value, level + 1)}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const formatStatus = (status: string): string => {
+  return status
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
