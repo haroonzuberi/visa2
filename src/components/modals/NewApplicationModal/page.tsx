@@ -50,6 +50,7 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [internalNotes, setInternalNotes] = useState("");
+  const [passportNumber, setPassportNumber] = useState("");
   const [nationalIdCardPhoto, setNationalIdCardPhoto] = useState<File | null>(null);
   const [passportPhoto, setPassportPhoto] = useState<File | null>(null);
   const [userPhoto, setUserPhoto] = useState<File | null>(null);
@@ -90,12 +91,14 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
       const visaTypeName = editData.values?.visa_type?.value || editData.values?.visa_type || editData.form_name || "";
       const emailValue = editData.customer?.email || editData.applicant?.email || editData.values?.email?.value || editData.values?.email || "";
       const phoneValue = editData.customer?.phone || editData.applicant?.phone || editData.values?.phone?.value || editData.values?.phone || editData.values?.phone_number?.value || editData.values?.phone_number || "";
+      const passportNumberValue = editData.applicant?.passport_number || editData.values?.passport_number?.value || editData.values?.passport_number || "";
       const internalNotesValue = editData.values?.internal_notes?.value || editData.values?.internal_notes || "";
 
       // Set email and phone
       if (emailValue) setEmail(emailValue);
       if (phoneValue) setPhone(phoneValue);
       if (internalNotesValue) setInternalNotes(internalNotesValue);
+      if (passportNumberValue) setPassportNumber(passportNumberValue);
 
       // Find and set country
       if (countryName) {
@@ -177,33 +180,13 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
       toast.error("Please select a visa type");
       return;
     }
-    if (!phone.trim()) {
-      toast.error("Please enter phone number");
+    const trimmedPassportNumber = passportNumber.trim();
+    if (!trimmedPassportNumber) {
+      toast.error("Please enter passport number");
       return;
     }
-    if (!email.trim()) {
-      toast.error("Please enter email address");
-      return;
-    }
-    // File uploads are required only when creating new application
-    if (!isEditMode) {
-      if (!nationalIdCardPhoto) {
-        toast.error("Please upload National ID Card Photo");
-        return;
-      }
-      if (!passportPhoto) {
-        toast.error("Please upload Passport Photo");
-        return;
-      }
-      if (!userPhoto) {
-        toast.error("Please upload User Photo");
-        return;
-      }
-      if (!otherDocuments) {
-        toast.error("Please upload Other Documents");
-        return;
-      }
-    }
+    const trimmedPhone = phone.trim();
+    const trimmedEmail = email.trim();
 
     setIsSubmitting(true);
     try {
@@ -211,8 +194,13 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
       formData.append("visa_type_id", selectedVisaTypeId.toString());
       formData.append("country", selectedCountry.name);
       formData.append("country_id", selectedCountry.id.toString());
-      formData.append("phone", phone);
-      formData.append("email", email);
+      if (trimmedPhone) {
+        formData.append("phone", trimmedPhone);
+      }
+      formData.append("passport_number", trimmedPassportNumber);
+      if (trimmedEmail) {
+        formData.append("email", trimmedEmail);
+      }
       if (internalNotes.trim()) {
         formData.append("internal_notes", internalNotes);
       }
@@ -259,6 +247,7 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
         setPhone("");
         setEmail("");
         setInternalNotes("");
+        setPassportNumber("");
         setNationalIdCardPhoto(null);
         setPassportPhoto(null);
         setUserPhoto(null);
@@ -424,12 +413,12 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                       </div>
                     </div>
 
-                    {/* Phone and Email in one row */}
+                    {/* Phone, Passport Number, and Email */}
                     <div className="grid grid-cols-2 gap-4">
                       {/* Phone Number */}
                       <div>
                         <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
-                          Phone <span className="text-red-500">*</span>
+                          Phone
                         </label>
                         <input
                           type="tel"
@@ -440,10 +429,24 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                         />
                       </div>
 
-                      {/* Email */}
+                      {/* Passport Number */}
                       <div>
                         <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
-                          Email <span className="text-red-500">*</span>
+                          Passport Number <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={passportNumber}
+                          onChange={(e) => setPassportNumber(e.target.value)}
+                          className="w-full px-4 py-3 border border-[#E9EAEA] rounded-[10px] focus:outline-none focus:border-[#42DA82]"
+                          placeholder="Enter passport number"
+                        />
+                      </div>
+
+                      {/* Email */}
+                      <div className="col-span-2">
+                        <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
+                          Email
                         </label>
                         <input
                           type="email"
@@ -474,7 +477,7 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                       {/* National ID Card Photo */}
                       <div>
                         <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
-                          National ID Card Photo <span className="text-red-500">*</span>
+                          National ID Card Photo
                         </label>
                         <div className="border border-[#E9EAEA] rounded-[10px] p-4">
                           <input
@@ -497,7 +500,7 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                       {/* Passport Photo */}
                       <div>
                         <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
-                          Passport Photo <span className="text-red-500">*</span>
+                          Passport Photo
                         </label>
                         <div className="border border-[#E9EAEA] rounded-[10px] p-4">
                           <input
@@ -520,7 +523,7 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                       {/* User Photo */}
                       <div>
                         <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
-                          User Photo <span className="text-red-500">*</span>
+                          User Photo
                         </label>
                         <div className="border border-[#E9EAEA] rounded-[10px] p-4">
                           <input
@@ -543,7 +546,7 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                       {/* Other Documents */}
                       <div>
                         <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
-                          Other Documents <span className="text-red-500">*</span>
+                          Other Documents
                         </label>
                         <div className="border border-[#E9EAEA] rounded-[10px] p-4">
                           <input
