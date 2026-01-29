@@ -18,7 +18,7 @@ import EyeIcon from "@/Assets/svgs/EyeIcon";
 import GeneralData from "../../../components/ui/tableheader/page";
 import TableFooterComponent from "@/components/ui/tablefooter/page";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useLayoutEffect } from "react";
 import Modal from "@/components/modals/ApplicationDetailModal/page";
 import NewApplicationModal from "@/components/modals/NewApplicationModal/page";
 import { useDispatch, useSelector } from "react-redux";
@@ -63,6 +63,21 @@ const STATUS_OPTIONS = [
 const Status = ({ status = "", applicationId, onStatusChange }: { status: string; applicationId: number; onStatusChange?: (newStatus: string) => void }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, openUpward: false });
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useLayoutEffect(() => {
+    if (!isOpen || !buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const dropdownHeight = 240;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUpward = spaceBelow < dropdownHeight && rect.top > spaceBelow;
+    setDropdownPosition({
+      top: openUpward ? rect.top : rect.bottom,
+      left: rect.left,
+      openUpward,
+    });
+  }, [isOpen]);
 
   const getStatusStyle = () => {
     switch (status.toLowerCase()) {
@@ -126,6 +141,7 @@ const Status = ({ status = "", applicationId, onStatusChange }: { status: string
   return (
     <div className="relative">
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         disabled={isUpdating}
         className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${getStatusStyle()} ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
@@ -137,10 +153,17 @@ const Status = ({ status = "", applicationId, onStatusChange }: { status: string
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-10"
+            className="fixed inset-0 z-[100]"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute z-20 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[220px] max-h-60 overflow-y-auto">
+          <div
+            className="fixed z-[101] bg-white border border-gray-200 rounded-lg shadow-lg w-max min-w-[140px] max-w-[180px] max-h-60 overflow-y-auto"
+            style={{
+              left: dropdownPosition.left,
+              top: dropdownPosition.openUpward ? "auto" : dropdownPosition.top + 4,
+              bottom: dropdownPosition.openUpward ? window.innerHeight - dropdownPosition.top + 4 : "auto",
+            }}
+          >
             {STATUS_OPTIONS.map((option) => (
               <button
                 key={option}
@@ -367,7 +390,7 @@ export default function Applications() {
                 <TableHead className={tableStyles.tableHeaders}>
                   Application ID
                 </TableHead>
-                <TableHead className={tableStyles.tableHeaders}>Tags</TableHead>
+                {/* <TableHead className={tableStyles.tableHeaders}>Tags</TableHead> */}
                 <TableHead className={tableStyles.tableHeaders}>
                   Application Date
                 </TableHead>
@@ -414,13 +437,13 @@ export default function Applications() {
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       <div className="flex flex-col w-[140px]">
                         <span className={styles.tags}>
                           {getFieldValue(submission.form_name)}
                         </span>
                       </div>
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell>
                       {submission.created_at 
                         ? (() => {
