@@ -429,22 +429,8 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                         />
                       </div>
 
-                      {/* Passport Number */}
-                      <div>
-                        <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
-                          Passport Number <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={passportNumber}
-                          onChange={(e) => setPassportNumber(e.target.value)}
-                          className="w-full px-4 py-3 border border-[#E9EAEA] rounded-[10px] focus:outline-none focus:border-[#42DA82]"
-                          placeholder="Enter passport number"
-                        />
-                      </div>
-
                       {/* Email */}
-                      <div className="col-span-2">
+                      <div>
                         <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
                           Email
                         </label>
@@ -456,19 +442,33 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                           placeholder="Enter email address"
                         />
                       </div>
+
+                      {/* Passport Number */}
+                      <div className="col-span-2">
+                        <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
+                          Passport Number <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={passportNumber}
+                          onChange={(e) => setPassportNumber(e.target.value)}
+                          className="w-full px-4 py-3 border border-[#E9EAEA] rounded-[10px] focus:outline-none focus:border-[#42DA82]"
+                          placeholder="Enter passport number"
+                        />
+                      </div>
                     </div>
 
                     {/* Internal Notes */}
                     <div>
                       <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
-                        Internal Notes
+                        Raw Data
                       </label>
                       <textarea
                         value={internalNotes}
                         onChange={(e) => setInternalNotes(e.target.value)}
                         rows={4}
                         className="w-full px-4 py-3 border border-[#E9EAEA] rounded-[10px] focus:outline-none focus:border-[#42DA82] resize-none"
-                        placeholder="Enter internal notes..."
+                        placeholder="Enter raw data..."
                       />
                     </div>
 

@@ -20,6 +20,7 @@ import GenericProfileImage from "@/Assets/Images/generic-profile.png";
 import { getApiWithAuth, putAPIWithAuth } from "@/utils/api";
 import { toast } from "react-toastify";
 import jsPDF from "jspdf";
+import React from "react";
 
 interface Document {
   id: number;
@@ -66,12 +67,25 @@ interface ApplicationData {
   created_at: string;
   updated_at: string;
   values: Record<string, any>;
-  documents?: {
-    national_id_card_photo?: Document;
-    passport_photo?: Document;
-    user_photo?: Document;
-    other_documents?: Document;
+  documents?: Record<string, Document | Document[]>;
+  visa_type?: {
+    id: number;
+    name: string;
+    code: string;
+    description: string;
+    is_active: boolean;
+    price: number;
+    duration: number;
+    currency: string;
+    meta_data?: Record<string, any>;
+    country?: {
+      id: number;
+      name: string;
+      code: string;
+      flag_emoji: string;
+    };
   };
+  extracted_visa_data?: Record<string, any>;
   customer?: Customer;
   applicant?: Applicant;
 }
@@ -91,7 +105,7 @@ const ApplicationDetail: React.FC<ModalProps> = ({
   const [isRefund, setIsRefund] = useState<boolean>(false);
   const [isPersonalEdit, setIsPersonalEdit] = useState<boolean>(false);
   const [isNewApplication, setIsNewApplication] = useState<boolean>(false);
-  const [showMoreDetails, setShowMoreDetails] = useState<boolean>(false);
+  const [accordionState, setAccordionState] = useState<Record<string, boolean>>({});
   const [applicationData, setApplicationData] = useState<ApplicationData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
@@ -132,6 +146,21 @@ const ApplicationDetail: React.FC<ModalProps> = ({
     fetchApplicationDetails();
   }, [data, onClose]);
 
+  useEffect(() => {
+    if (applicationData?.extracted_visa_data) {
+      const initialState = Object.keys(applicationData.extracted_visa_data).reduce(
+        (acc, key) => {
+          acc[key] = false;
+          return acc;
+        },
+        {} as Record<string, boolean>
+      );
+      setAccordionState(initialState);
+    } else {
+      setAccordionState({});
+    }
+  }, [applicationData?.extracted_visa_data]);
+
   // Helper function to get value from values object (for legacy support)
   const getValue = (field: string): string | number => {
     if (!applicationData || !applicationData.values) return "N/A";
@@ -157,11 +186,15 @@ const ApplicationDetail: React.FC<ModalProps> = ({
     if (!applicationData || !applicationData.documents) {
       return null;
     }
-    const doc = applicationData.documents[documentType as keyof typeof applicationData.documents];
-    if (doc && doc.file_path) {
-      return doc.file_path;
+    const docEntry = applicationData.documents[documentType];
+    if (!docEntry) {
+      return null;
     }
-    return null;
+    if (Array.isArray(docEntry)) {
+      const firstDoc = docEntry.find((item) => Boolean(item?.file_path));
+      return firstDoc?.file_path || null;
+    }
+    return docEntry.file_path || null;
   };
 
   // Helper function to format status
@@ -169,6 +202,131 @@ const ApplicationDetail: React.FC<ModalProps> = ({
     return status
       .replace(/_/g, " ")
       .replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  const formatLabel = (label: string): string => {
+    return label
+      .replace(/_/g, " ")
+      .replace(/\s+/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  const formatSectionTitle = (key: string): string => {
+    const match = key.match(/^step_(\d+)_([\w\d_]+)$/i);
+    if (match) {
+      const [, stepNumber, rest] = match;
+      return `Step ${stepNumber} ${formatLabel(rest)}`;
+    }
+    return formatLabel(key);
+  };
+
+  const formatDisplayValue = (value: any): string => {
+    if (value === null || value === undefined) {
+      return "N/A";
+    }
+    if (typeof value === "boolean") {
+      return value ? "Yes" : "No";
+    }
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : "N/A";
+    }
+    if (Array.isArray(value)) {
+      return value.length > 0 ? value.map((item) => formatDisplayValue(item)).join(", ") : "N/A";
+    }
+    return String(value);
+  };
+
+  const isPlainObject = (value: any): value is Record<string, any> => {
+    return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+  };
+
+  const renderObjectContent = (data: any, level = 0): JSX.Element => {
+    if (Array.isArray(data)) {
+      return (
+        <div className="flex flex-col gap-3">
+          {data.length > 0 ? (
+            data.map((item, index) => (
+              <div
+                key={`array-item-${level}-${index}`}
+                className="border border-[#E9EAEA] rounded-[10px] p-4 bg-white"
+              >
+                {isPlainObject(item)
+                  ? renderObjectContent(item, level + 1)
+                  : (
+                    <p className="text-[14px] font-[500] text-[#24282E]">
+                      {formatDisplayValue(item)}
+                    </p>
+                  )}
+              </div>
+            ))
+          ) : (
+            <p className="text-[14px] font-[500] text-[#727A90]">N/A</p>
+          )}
+        </div>
+      );
+    }
+
+    if (!isPlainObject(data)) {
+      return (
+        <p className="text-[14px] font-[500] text-[#24282E]">
+          {formatDisplayValue(data)}
+        </p>
+      );
+    }
+
+    const entries = Object.entries(data);
+
+    if (entries.length === 0) {
+      return <p className="text-[14px] font-[500] text-[#727A90]">No data available.</p>;
+    }
+
+    return (
+      <div className={`flex flex-col gap-4 ${level > 0 ? "border border-[#E9EAEA] rounded-[10px] p-4 bg-[#F9FAFB]" : ""}`}>
+        {entries.map(([key, value]) => {
+          const label = formatLabel(key);
+          const entryKey = `${key}-${level}`;
+
+          if (isPlainObject(value)) {
+            return (
+              <div key={entryKey} className="flex flex-col gap-3">
+                <p className="text-[14px] font-[600] text-[#24282E]">{label}</p>
+                {renderObjectContent(value, level + 1)}
+              </div>
+            );
+          }
+
+          if (Array.isArray(value)) {
+            return (
+              <div key={entryKey} className="flex flex-col gap-3">
+                <p className="text-[14px] font-[500] text-[#727A90]">{label}</p>
+                {renderObjectContent(value, level + 1)}
+              </div>
+            );
+          }
+
+          return (
+            <div key={entryKey} className="grid grid-cols-12 gap-4">
+              <div className="col-span-5 md:col-span-4">
+                <p className="text-[14px] font-[500] text-[#727A90]">{label}</p>
+              </div>
+              <div className="col-span-7 md:col-span-8">
+                <p className="text-[14px] font-[500] text-[#24282E]">
+                  {formatDisplayValue(value)}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const toggleAccordion = (sectionKey: string) => {
+    setAccordionState((prev) => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey],
+    }));
   };
 
   // Get dynamic field values from customer/applicant or values
@@ -434,7 +592,6 @@ const ApplicationDetail: React.FC<ModalProps> = ({
           />
         ) : isPersonalEdit ? (
           <EditPersonalInfo
-            setIsPersonalEdit={setIsPersonalEdit}
             onClose={onClose}
           />
         ) : (
@@ -613,194 +770,47 @@ const ApplicationDetail: React.FC<ModalProps> = ({
               </div>
 
               <div className="col-span-7">
-                <div className={`flex flex-col gap-4 ${styles.mainDiv}`}>
-                  <h1 className="text-[20px] font-[600] text-[#24282E]">
-                    Application Info
-                  </h1>
-                  <div className="grid grid-cols-12">
-                    <div className="col-span-6">
-                      <p className="text-[14px] font-[500] text-[#727A90]">
-                        Email
-                      </p>
-                      <p className="text-[14px] font-[500] text-[#24282E]">
-                        {String(email)}
-                      </p>
-                    </div>
-                    <div className="col-span-6">
-                      <p className="text-[14px] font-[500] text-[#727A90]">
-                        Phone Number
-                      </p>
-                      <p className="text-[14px] font-[500] text-[#24282E]">
-                        {String(phone)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-12">
-                    <div className="col-span-6">
-                      <p className="text-[14px] font-[500] text-[#727A90]">
-                        Visa Type
-                      </p>
-                      <p className="text-[14px] font-[500] text-[#24282E]">
-                        {String(visaType)}
-                      </p>
-                    </div>
-                    <div className="col-span-6">
-                      <p className="text-[14px] font-[500] text-[#727A90]">
-                        Country
-                      </p>
-                      <p className="text-[14px] font-[500] text-[#24282E]">
-                        {String(country)}
-                      </p>
+                {applicationData?.extracted_visa_data && Object.keys(applicationData.extracted_visa_data).length > 0 ? (
+                  <div className={`flex flex-col gap-4 ${styles.mainDiv}`}>
+                    <h1 className="text-[20px] font-[600] text-[#24282E]">Extracted Visa Data</h1>
+                    <div className="flex flex-col gap-3">
+                      {Object.entries(applicationData.extracted_visa_data).map(([sectionKey, sectionValue]) => {
+                        const isOpen = accordionState[sectionKey] ?? false;
+                        return (
+                          <div
+                            key={sectionKey}
+                            className="border border-[#E9EAEA] rounded-[12px] overflow-hidden bg-white"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => toggleAccordion(sectionKey)}
+                              className="w-full flex items-center justify-between px-5 py-3 hover:bg-[#42DA8210] transition-colors"
+                            >
+                              <span className="text-[16px] font-[600] text-[#24282E]">
+                                {formatSectionTitle(sectionKey)}
+                              </span>
+                              {isOpen ? (
+                                <ChevronUp className="w-5 h-5 text-[#24282E]" />
+                              ) : (
+                                <ChevronDown className="w-5 h-5 text-[#24282E]" />
+                              )}
+                            </button>
+                            {isOpen && (
+                              <div className="px-5 py-4 flex flex-col gap-4">
+                                {renderObjectContent(sectionValue)}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                  <div className="grid grid-cols-12">
-                    <div className="col-span-6">
-                      <p className="text-[14px] font-[500] text-[#727A90]">
-                        Passport Number
-                      </p>
-                      <p className="text-[14px] font-[500] text-[#24282E]">
-                        {String(passportNumber)}
-                      </p>
-                    </div>
-                    <div className="col-span-6">
-                      <p className="text-[14px] font-[500] text-[#727A90]">
-                        Arrival Date
-                      </p>
-                      <p className="text-[14px] font-[500] text-[#24282E]">
-                        {String(arrivalDate)}
-                      </p>
-                    </div>
+                ) : (
+                  <div className={`flex flex-col gap-4 ${styles.mainDiv}`}>
+                    <h1 className="text-[20px] font-[600] text-[#24282E]">Extracted Visa Data</h1>
+                    <p className="text-[14px] font-[500] text-[#727A90]">No extracted visa data available.</p>
                   </div>
-                  
-                  {/* Collapsible More Details Section */}
-                  <div className="mt-4">
-                    <button
-                      onClick={() => setShowMoreDetails(!showMoreDetails)}
-                      className="flex items-center gap-2 text-[#42DA82] hover:text-[#42DA82]/80 transition-colors"
-                    >
-                      <span className="text-[14px] font-[500]">
-                        {showMoreDetails ? "Hide" : "View"} More Details
-                      </span>
-                      {showMoreDetails ? (
-                        <ChevronUp className="w-4 h-4" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4" />
-                      )}
-                    </button>
-                    
-                    {showMoreDetails && (
-                      <div className="mt-4 grid grid-cols-12 gap-4 pt-4 border-t border-gray-200">
-                        {departureDate !== "N/A" && (
-                          <div className="col-span-6">
-                            <p className="text-[14px] font-[500] text-[#727A90]">
-                              Departure Date
-                            </p>
-                            <p className="text-[14px] font-[500] text-[#24282E]">
-                              {String(departureDate)}
-                            </p>
-                          </div>
-                        )}
-                        {purposeOfVisit !== "N/A" && (
-                          <div className="col-span-6">
-                            <p className="text-[14px] font-[500] text-[#727A90]">
-                              Purpose of Visit
-                            </p>
-                            <p className="text-[14px] font-[500] text-[#24282E]">
-                              {String(purposeOfVisit)}
-                            </p>
-                          </div>
-                        )}
-                        {birthDate !== "N/A" && (
-                          <div className="col-span-6">
-                            <p className="text-[14px] font-[500] text-[#727A90]">
-                              Date of Birth
-                            </p>
-                            <p className="text-[14px] font-[500] text-[#24282E]">
-                              {String(birthDate)}
-                            </p>
-                          </div>
-                        )}
-                        {gender !== "N/A" && (
-                          <div className="col-span-6">
-                            <p className="text-[14px] font-[500] text-[#727A90]">
-                              Gender
-                            </p>
-                            <p className="text-[14px] font-[500] text-[#24282E]">
-                              {String(gender).charAt(0).toUpperCase() + String(gender).slice(1)}
-                            </p>
-                          </div>
-                        )}
-                        {accommodationDetails !== "N/A" && (
-                          <div className="col-span-12">
-                            <p className="text-[14px] font-[500] text-[#727A90]">
-                              Accommodation Details
-                            </p>
-                            <p className="text-[14px] font-[500] text-[#24282E]">
-                              {String(accommodationDetails)}
-                            </p>
-                          </div>
-                        )}
-                        {travelHistory !== "N/A" && (
-                          <div className="col-span-12">
-                            <p className="text-[14px] font-[500] text-[#727A90]">
-                              Travel History
-                            </p>
-                            <p className="text-[14px] font-[500] text-[#24282E]">
-                              {String(travelHistory)}
-                            </p>
-                          </div>
-                        )}
-                        {/* Additional fields from values */}
-                        {applicationData.values && Object.keys(applicationData.values).length > 0 && Object.keys(applicationData.values).map((key) => {
-                          const fieldData = applicationData.values[key];
-                          // Skip already displayed fields and document fields
-                          const skipFields = [
-                            "full_name", "name", "email", "phone", "phone_number",
-                            "passport_number", "visa_type", "purpose_of_visit",
-                            "nationality", "birth_country", "arrival_date", "flight_date",
-                            "departure_date", "accommodation_details", "travel_history",
-                            "birth_date", "date_of_birth", "gender", "photo", "passport_photo",
-                            "passport_scan", "passport_copy"
-                          ];
-                          
-                          if (skipFields.includes(key)) {
-                            return null;
-                          }
-                          
-                          // Handle different value structures
-                          let value: any = null;
-                          if (fieldData && typeof fieldData === "object" && 'value' in fieldData) {
-                            value = fieldData.value;
-                            if (typeof value === "object") {
-                              return null; // Skip document objects
-                            }
-                          } else if (fieldData && (typeof fieldData === "string" || typeof fieldData === "number")) {
-                            value = fieldData;
-                          }
-                          
-                          if (!value || value === "N/A" || value === "") {
-                            return null;
-                          }
-                          
-                          const label = (fieldData && typeof fieldData === "object" && 'label' in fieldData) 
-                            ? fieldData.label 
-                            : key.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
-                          
-                          return (
-                            <div key={key} className="col-span-6">
-                              <p className="text-[14px] font-[500] text-[#727A90]">
-                                {label}
-                              </p>
-                              <p className="text-[14px] font-[500] text-[#24282E]">
-                                {String(value)}
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                )}
                 <div className={`mt-2 ${styles.mainDiv}`}>
                   <h1 className="text-[20px] font-[600] text-[#24282E] mb-3">
                     Actions
@@ -874,7 +884,7 @@ const ApplicationDetail: React.FC<ModalProps> = ({
               </div>
             </div>
             <hr className="my-4" />
-            <div className="flex justify-between p-6 pt-0 items-center pt-4">
+            <div className="flex justify-between p-6 items-center">
               <div className="flex gap-6">
                 <div>
                   <div className="flex items-center">
