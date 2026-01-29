@@ -4,7 +4,6 @@ import styles from "./styles.module.css";
 import { useEffect, useState, useRef, JSX } from "react";
 import PdfSvg from "@/Assets/svgs/PdfSvg";
 import EyeSvg from "@/Assets/svgs/EyeSvg";
-import DropDownSvg from "@/Assets/svgs/DropDown";
 import EditSvg from "@/Assets/svgs/EditSvg";
 import CopySvg from "@/Assets/svgs/CopySvg";
 import TicketSvg from "@/Assets/svgs/TicketSvg";
@@ -18,6 +17,7 @@ import { BASE_URL } from "@/utils/api";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import GenericProfileImage from "@/Assets/Images/generic-profile.png";
 import { getApiWithAuth } from "@/utils/api";
+import StatusDropdown from "@/components/StatusDropdown/page";
 import { toast } from "react-toastify";
 import React from "react";
 
@@ -490,9 +490,9 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                       <p className="text-[14px] font-[500] text-[#727A90]">
                         Official Application ID
                       </p>
-                      <button onClick={() => setIsPersonalEdit(true)}>
+                      {/* <button onClick={() => setIsPersonalEdit(true)}>
                         <EditSvg />
-                      </button>
+                      </button> */}
                     </div>
                     <p className="w-full text-[14px] font-[500] text-[#24282E]">
                       {applicationData.application_id}
@@ -515,7 +515,7 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                         {String(passportNumber)}
                       </p>
                     </div>
-                    <CopySvg />
+                    {/* <CopySvg /> */}
                   </div>
                 </div>
                 {/* <div className={`${styles.mainDiv}`}>
@@ -635,10 +635,15 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                     <h3 className="text-[14px] font-[500] text-[#24222E]">
                       Status
                     </h3>
-                    <span className={styles.tableChip}>
-                      {formatStatus(applicationData.visa_status)}
-                      <DropDownSvg color="#F05D3D" />
-                    </span>
+                    <StatusDropdown
+                      status={applicationData.visa_status}
+                      applicationId={applicationData.id}
+                      onStatusChange={(newStatus) => {
+                        setApplicationData((prev) =>
+                          prev ? { ...prev, visa_status: newStatus } : null
+                        );
+                      }}
+                    />
                   </div>
                   {applicationData.visa_status === "cancel" || applicationData.visa_status === "rejected" ? (
                     <>
