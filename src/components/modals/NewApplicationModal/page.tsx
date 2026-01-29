@@ -5,7 +5,6 @@ import { ChevronDown } from "lucide-react";
 import "@/styles/globals.css";
 import { getApiWithAuth } from "@/utils/api";
 import { toast } from "react-toastify";
-import axios from "axios";
 import { BASE_URL } from "@/utils/api";
 import { getAccessToken } from "@/utils/asyncStorage";
 import React from "react";
@@ -108,7 +107,7 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
         );
         if (foundCountry) {
           setSelectedCountry(foundCountry.country);
-          
+
           // After country is set, find and set visa type
           const countryData = countriesData.find(
             (item) => item.country.id === foundCountry.country.id
@@ -134,7 +133,7 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
       );
       if (countryData) {
         setVisaTypes(countryData.visa_types);
-        
+
         // If we're in edit mode and haven't set visa type yet, try to set it now
         if (editData && !selectedVisaTypeId) {
           const visaTypeName = editData.values?.visa_type?.value || editData.values?.visa_type || editData.form_name || "";
@@ -219,28 +218,30 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
         formData.append("other_documents", otherDocuments);
       }
 
-      // For FormData, we need to pass it directly without setting Content-Type header
-      // The browser will set it automatically with the boundary
-      // Use axios directly for FormData to handle multipart/form-data correctly
+      // Use native fetch for FormData so the browser sets Content-Type with the correct
+      // multipart boundary. Axios can merge default headers (e.g. Content-Type) which
+      // breaks multipart parsing and can cause the server to save the entire request
+      // body as the file (inflated size). Backend quick_entry.html uses fetch the same way.
       const token = getAccessToken();
-      const headers: any = {};
-      
+      const headers: Record<string, string> = {};
       if (token) {
         headers.Authorization = `Bearer ${token}`;
       }
-      
-      // Use PUT for edit mode, POST for create mode
-      const apiUrl = isEditMode 
+
+      const apiUrl = isEditMode
         ? `${BASE_URL}applications/quick-entry/${editData.id}`
         : `${BASE_URL}applications/quick-entry`;
-      
-      const httpMethod = isEditMode ? axios.put : axios.post;
-      
-      const response = await httpMethod(apiUrl, formData, {
+      const method = isEditMode ? "PUT" : "POST";
+
+      const response = await fetch(apiUrl, {
+        method,
         headers,
+        body: formData,
       });
 
-      if (response.data?.success || response.status === 200 || response.status === 201) {
+      const data = await response.json();
+
+      if (data?.success || response.status === 200 || response.status === 201) {
         toast.success(isEditMode ? "Application updated successfully!" : "Application created successfully!");
         // Reset form
         setSelectedCountry(null);
@@ -259,11 +260,11 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
         }
         onClose();
       } else {
-        toast.error(response.data?.message || (isEditMode ? "Failed to update application" : "Failed to create application"));
+        toast.error(data?.message || (isEditMode ? "Failed to update application" : "Failed to create application"));
       }
     } catch (error: any) {
       console.error("Error creating application:", error);
-      toast.error(error.message || "Failed to create application");
+      toast.error(error?.message || "Failed to create application");
     } finally {
       setIsSubmitting(false);
     }
