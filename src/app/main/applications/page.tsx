@@ -227,8 +227,6 @@ export default function Applications() {
         <GeneralData
           search={true}
           header="Application List"
-          showFilters={true}
-          showSeeMore={true}
           onSearchChange={setSearchTerm}
           searchQuery={searchTerm}
         />

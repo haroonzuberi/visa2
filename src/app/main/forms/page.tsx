@@ -153,8 +153,7 @@ export default function Forms() {
           searchQuery={searchTerm}
           onSearchChange={setSearchTerm}
           header="Visa Lists"
-          showSeeMore={true}
-          showFilters={true}
+          
         />
 
         {/* Forms Table */}
