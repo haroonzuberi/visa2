@@ -17,9 +17,8 @@ import NewApplication from "../NewApplicationModal/page";
 import { BASE_URL } from "@/utils/api";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import GenericProfileImage from "@/Assets/Images/generic-profile.png";
-import { getApiWithAuth, putAPIWithAuth } from "@/utils/api";
+import { getApiWithAuth } from "@/utils/api";
 import { toast } from "react-toastify";
-import jsPDF from "jspdf";
 import React from "react";
 
 interface Document {
@@ -151,8 +150,6 @@ const ApplicationDetail: React.FC<ModalProps> = ({
   const [accordionState, setAccordionState] = useState<Record<string, boolean>>({});
   const [applicationData, setApplicationData] = useState<ApplicationData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const profileImageRef = useRef<HTMLImageElement>(null);
-  const passportImageRef = useRef<HTMLImageElement>(null);
   const pollingInterval = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -290,221 +287,42 @@ const ApplicationDetail: React.FC<ModalProps> = ({
   const birthDate = getValue(applicationData, " birth_date") || getValue(applicationData, "date_of_birth") || "N/A";
   const gender = getValue(applicationData, "gender") || "N/A";
   
-  // Get images from documents object
-  const photoUrl = getImageUrl(applicationData, "user_photo") || getImageUrl(applicationData, "passport_photo");
-  const passportPhotoUrl = getImageUrl(applicationData, "passport_photo") || getImageUrl(applicationData, "national_id_card_photo") || photoUrl;
-  const nationalIdCardPhotoUrl = getImageUrl(applicationData, "national_id_card_photo");
-  const otherDocumentsUrl = getImageUrl(applicationData, "other_documents");
-  
-  // Use local asset as fallback
+  // Get document info (file_path, original_filename) - supports both key and document_type lookup
+  const userPhotoDoc = getDocumentInfo(applicationData, "user_photo", "USER_PHOTO");
+  const passportPhotoDoc = getDocumentInfo(applicationData, "passport_photo", "PASSPORT_PHOTO");
+  const passportPdfDoc = getDocumentInfo(applicationData, "passport_photo_pdf", "PASSPORT_PHOTO_PDF");
+  const nationalIdCardDoc = getDocumentInfo(applicationData, "national_id_card_photo", "NATIONAL_ID_CARD_PHOTO");
+  const otherDocumentsDoc = getDocumentInfo(applicationData, "other_documents", "OTHER_DOCUMENTS");
+
+  const photoUrl = userPhotoDoc?.file_path || passportPhotoDoc?.file_path;
+  const passportPhotoUrl = passportPhotoDoc?.file_path || nationalIdCardDoc?.file_path || photoUrl;
+  const nationalIdCardPhotoUrl = nationalIdCardDoc?.file_path;
+  const otherDocumentsUrl = otherDocumentsDoc?.file_path;
+
   const displayPhotoUrl = photoUrl || GenericProfileImage.src;
   const displayPassportPhotoUrl = passportPhotoUrl || GenericProfileImage.src;
   const displayNationalIdCardPhotoUrl = nationalIdCardPhotoUrl || GenericProfileImage.src;
   const displayOtherDocumentsUrl = otherDocumentsUrl || GenericProfileImage.src;
 
-  // Check if images are present (not fallback)
-  const hasProfilePhoto = photoUrl !== null;
-  const hasPassportPhoto = passportPhotoUrl !== null;
-  const hasNationalIdCardPhoto = nationalIdCardPhotoUrl !== null;
-  const hasOtherDocuments = otherDocumentsUrl !== null;
+  const hasProfilePhoto = userPhotoDoc !== null;
+  const hasPassportPhoto = passportPhotoDoc !== null;
+  const hasPassportPdf = passportPdfDoc !== null;
+  const hasNationalIdCardPhoto = nationalIdCardDoc !== null;
+  const hasOtherDocuments = otherDocumentsDoc !== null;
 
-  // Download image function using canvas (avoids CORS issues)
-  const downloadImage = (imageUrl: string, filename: string, imageElement?: HTMLImageElement) => {
+  const handleDownload = async (filePath: string, filename: string) => {
     try {
-      const img = imageElement || new Image();
-      
-      // If image element is provided, use it directly
-      if (imageElement) {
-        downloadImageFromElement(imageElement, filename);
-        return;
-      }
-      
-      // Otherwise, load the image
-      img.crossOrigin = 'anonymous'; // Try to handle CORS
-      img.onload = () => {
-        downloadImageFromElement(img, filename);
-      };
-      img.onerror = () => {
-        toast.error("Failed to load image for download");
-      };
-      img.src = imageUrl;
-    } catch (error: any) {
-      console.error("Error downloading image:", error);
-      toast.error("Failed to download image");
-    }
-  };
-
-  // Helper function to download image from an image element using canvas
-  const downloadImageFromElement = (img: HTMLImageElement, filename: string) => {
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth || img.width;
-      canvas.height = img.naturalHeight || img.height;
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) {
-        toast.error("Failed to create canvas context");
-        return;
-      }
-      
-      ctx.drawImage(img, 0, 0);
-      
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          toast.error("Failed to convert image to blob");
-          return;
-        }
-        
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        toast.success("Image downloaded successfully");
-      }, 'image/png');
-    } catch (error: any) {
-      console.error("Error downloading image:", error);
-      toast.error("Failed to download image");
-    }
-  };
-
-  // Download image as PDF function using canvas (avoids CORS issues)
-  const downloadImageAsPDF = (imageUrl: string, filename: string, imageElement?: HTMLImageElement) => {
-    try {
-      const img = imageElement || new Image();
-      
-      // If image element is provided, use it directly
-      if (imageElement) {
-        createPDFFromElement(imageElement, filename);
-        return;
-      }
-      
-      // Otherwise, load the image
-      img.crossOrigin = 'anonymous'; // Try to handle CORS
-      img.onload = () => {
-        createPDFFromElement(img, filename);
-      };
-      img.onerror = () => {
-        toast.error("Failed to load image for PDF");
-      };
-      img.src = imageUrl;
-    } catch (error: any) {
-      console.error("Error creating PDF:", error);
-      toast.error("Failed to create PDF");
-    }
-  };
-
-  // Helper function to create PDF from an image element using canvas
-  const createPDFFromElement = (img: HTMLImageElement, filename: string) => {
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth || img.width;
-      canvas.height = img.naturalHeight || img.height;
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) {
-        toast.error("Failed to create canvas context");
-        return;
-      }
-      
-      ctx.drawImage(img, 0, 0);
-      
-      const imageDataUrl = canvas.toDataURL('image/png');
-      
-      // Create PDF
-      const pdf = new jsPDF();
-      const pdfImg = new Image();
-      pdfImg.src = imageDataUrl;
-      
-      pdfImg.onload = () => {
-        const imgWidth = pdf.internal.pageSize.getWidth();
-        const imgHeight = (pdfImg.height * imgWidth) / pdfImg.width;
-        
-        // If image is taller than page, scale it down
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const scaledHeight = imgHeight > pageHeight ? pageHeight - 20 : imgHeight;
-        const scaledWidth = (pdfImg.width * scaledHeight) / pdfImg.height;
-        
-        const x = (imgWidth - scaledWidth) / 2;
-        const y = 10;
-        
-        pdf.addImage(imageDataUrl, "PNG", x, y, scaledWidth, scaledHeight);
-        pdf.save(filename.replace(/\.[^/.]+$/, "") + ".pdf");
-        toast.success("PDF downloaded successfully");
-      };
-      
-      pdfImg.onerror = () => {
-        toast.error("Failed to load image for PDF");
-      };
-    } catch (error: any) {
-      console.error("Error creating PDF:", error);
-      toast.error("Failed to create PDF");
-    }
-  };
-
-  // Handle profile profile download
-  const handleDownloadProfilePhoto = () => {
-    if (photoUrl && hasProfilePhoto && profileImageRef.current) {
-      const filename = `profile_photo_${applicationData?.application_id || "photo"}.png`;
-      downloadImage(photoUrl, filename, profileImageRef.current);
-    }
-  };
-
-  // Handle profile photo PDF download
-  const handleDownloadProfilePhotoPDF = () => {
-    if (photoUrl && hasProfilePhoto && profileImageRef.current) {
-      const filename = `profile_photo_${applicationData?.application_id || "photo"}.png`;
-      downloadImageAsPDF(photoUrl, filename, profileImageRef.current);
-    }
-  };
-
-  // Handle passport photo download
-  const handleDownloadPassportPhoto = () => {
-    if (passportPhotoUrl && hasPassportPhoto && passportImageRef.current) {
-      const filename = `passport_photo_${applicationData?.application_id || "passport"}.png`;
-      downloadImage(passportPhotoUrl, filename, passportImageRef.current);
-    }
-  };
-
-  // Handle passport photo PDF download
-  const handleDownloadPassportPhotoPDF = () => {
-    if (passportPhotoUrl && hasPassportPhoto && passportImageRef.current) {
-      const filename = `passport_photo_${applicationData?.application_id || "passport"}.png`;
-      downloadImageAsPDF(passportPhotoUrl, filename, passportImageRef.current);
-    }
-  };
-
-  // Handle National ID Card Photo download
-  const handleDownloadNationalIdCardPhoto = () => {
-    if (nationalIdCardPhotoUrl && hasNationalIdCardPhoto) {
-      const filename = `national_id_card_${applicationData?.application_id || "nic"}.png`;
-      downloadImage(nationalIdCardPhotoUrl, filename);
-    }
-  };
-
-  // Handle National ID Card Photo PDF download
-  const handleDownloadNationalIdCardPhotoPDF = () => {
-    if (nationalIdCardPhotoUrl && hasNationalIdCardPhoto) {
-      const filename = `national_id_card_${applicationData?.application_id || "nic"}.png`;
-      downloadImageAsPDF(nationalIdCardPhotoUrl, filename);
-    }
-  };
-
-  // Handle Other Documents download
-  const handleDownloadOtherDocuments = () => {
-    if (otherDocumentsUrl && hasOtherDocuments) {
-      const filename = `other_documents_${applicationData?.application_id || "documents"}.png`;
-      downloadImage(otherDocumentsUrl, filename);
-    }
-  };
-  // Handle Other Documents PDF download
-  const handleDownloadOtherDocumentsPDF = () => {
-    if (otherDocumentsUrl && hasOtherDocuments) {
-      const filename = `other_documents_${applicationData?.application_id || "documents"}.png`;
-      downloadImageAsPDF(otherDocumentsUrl, filename);
+      const res = await fetch(filePath, { mode: "cors" });
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Download failed. Opening in new tab.");
+      window.open(filePath, "_blank");
     }
   };
 
@@ -556,7 +374,6 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                   className={`flex flex-col items-center mb-2 ${styles.mainDiv}`}
                 >
                   <img
-                    ref={profileImageRef}
                     src={displayPhotoUrl}
                     alt="Profile"
                     className="w-[120px] h-[120px] rounded-full object-cover"
@@ -567,14 +384,14 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                   />
                   <p className="mt-2 font-medium">{String(name)}</p>
                   <span className="text-gray-500 text-sm">Photo</span>
-                  {hasProfilePhoto && (
+                  {hasProfilePhoto && userPhotoDoc && (
                     <div className="flex gap-2 mt-3 justify-center">
                       <button
-                        onClick={handleDownloadProfilePhoto}
+                        onClick={() => handleDownload(userPhotoDoc.file_path, userPhotoDoc.original_filename)}
                         className="bg-[#42DA82] text-white px-3 py-1.5 rounded-[12px] font-semibold text-[12px] whitespace-nowrap"
                         title="Download Profile Photo"
                       >
-                        Download Image
+                        Download
                       </button>
                     </div>
                   )}
@@ -583,7 +400,6 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                   className={`flex flex-col items-center mb-2 ${styles.mainDiv}`}
                 >
                   <img
-                    ref={passportImageRef}
                     src={displayPassportPhotoUrl}
                     alt="Passport"
                     className="w-[120px] h-[120px] rounded-full object-cover"
@@ -593,22 +409,26 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                     }}
                   />
                   <p className="mt-2 text-sm text-gray-500">Passport Picture</p>
-                  {hasPassportPhoto && (
+                  {(hasPassportPhoto || hasPassportPdf) && (
                     <div className="flex gap-2 mt-3 justify-center">
-                      <button
-                        onClick={handleDownloadPassportPhoto}
-                        className="bg-[#42DA82] text-white px-3 py-1.5 rounded-[12px] font-semibold text-[12px] whitespace-nowrap"
-                        title="Download Passport Photo"
-                      >
-                        Download Image
-                      </button>
-                      <button
-                        onClick={handleDownloadPassportPhotoPDF}
-                        className="bg-[#42DA82] text-white px-3 py-1.5 rounded-[12px] font-semibold text-[12px] whitespace-nowrap"
-                        title="Download Passport Photo as PDF"
-                      >
-                        Download PDF
-                      </button>
+                      {passportPhotoDoc && (
+                        <button
+                          onClick={() => handleDownload(passportPhotoDoc.file_path, passportPhotoDoc.original_filename)}
+                          className="bg-[#42DA82] text-white px-3 py-1.5 rounded-[12px] font-semibold text-[12px] whitespace-nowrap"
+                          title="Download Passport Photo"
+                        >
+                          Download Image
+                        </button>
+                      )}
+                      {passportPdfDoc && (
+                        <button
+                          onClick={() => handleDownload(passportPdfDoc.file_path, passportPdfDoc.original_filename)}
+                          className="bg-[#42DA82] text-white px-3 py-1.5 rounded-[12px] font-semibold text-[12px] whitespace-nowrap"
+                          title="Download Passport PDF"
+                        >
+                          Download PDF
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -628,11 +448,11 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                     <p className="mt-2 text-sm text-gray-500">National ID Card</p>
                     <div className="flex gap-2 mt-3 justify-center">
                       <button
-                        onClick={handleDownloadNationalIdCardPhoto}
+                        onClick={() => handleDownload(nationalIdCardDoc!.file_path, nationalIdCardDoc!.original_filename)}
                         className="bg-[#42DA82] text-white px-3 py-1.5 rounded-[12px] font-semibold text-[12px] whitespace-nowrap"
                         title="Download National ID Card Photo"
                       >
-                        Download Image
+                        Download
                       </button>
                     </div>
                   </div>
@@ -653,11 +473,11 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                     <p className="mt-2 text-sm text-gray-500">Other Documents</p>
                     <div className="flex gap-2 mt-3 justify-center">
                       <button
-                        onClick={handleDownloadOtherDocuments}
+                        onClick={() => handleDownload(otherDocumentsDoc!.file_path, otherDocumentsDoc!.original_filename)}
                         className="bg-[#42DA82] text-white px-3 py-1.5 rounded-[12px] font-semibold text-[12px] whitespace-nowrap"
                         title="Download Other Documents"
                       >
-                        Download Image
+                        Download
                       </button>
                     </div>
                   </div>
@@ -912,19 +732,35 @@ const getValue = (applicationData: ApplicationData | null, field: string): strin
   return "N/A";
 };
 
-const getImageUrl = (applicationData: ApplicationData | null, documentType: string): string | null => {
-  if (!applicationData || !applicationData.documents) {
-    return null;
+const getDocumentInfo = (
+  applicationData: ApplicationData | null,
+  ...documentTypes: string[]
+): { file_path: string; original_filename: string } | null => {
+  if (!applicationData?.documents) return null;
+  const docs = applicationData.documents;
+
+  const extractFromEntry = (entry: Document | Document[]): { file_path: string; original_filename: string } | null => {
+    const doc = Array.isArray(entry) ? entry.find((d) => d?.file_path) : entry;
+    if (!doc?.file_path) return null;
+    return { file_path: doc.file_path, original_filename: doc.original_filename || doc.file_path.split("/").pop() || "download" };
+  };
+
+  for (const type of documentTypes) {
+    const entry = docs[type];
+    if (entry) {
+      const info = extractFromEntry(entry);
+      if (info) return info;
+    }
   }
-  const docEntry = applicationData.documents[documentType];
-  if (!docEntry) {
-    return null;
+
+  const allEntries = Object.values(docs).flatMap((e) => (Array.isArray(e) ? e : [e]));
+  for (const type of documentTypes) {
+    const doc = allEntries.find((d) => d?.document_type?.toUpperCase() === type.toUpperCase());
+    if (doc?.file_path) {
+      return { file_path: doc.file_path, original_filename: doc.original_filename || doc.file_path.split("/").pop() || "download" };
+    }
   }
-  if (Array.isArray(docEntry)) {
-    const firstDoc = docEntry.find((item) => Boolean(item?.file_path));
-    return firstDoc?.file_path || null;
-  }
-  return docEntry.file_path || null;
+  return null;
 };
 
 const formatSectionTitle = (key: string): string => {

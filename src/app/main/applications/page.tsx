@@ -409,9 +409,9 @@ export default function Applications() {
                         <span className={tableStyles.userEmail}>
                           #{getFieldValue(submission.application_id)}
                         </span>
-                        {/* <span className={tableStyles.userName}>
+                        <span className={tableStyles.userName}>
                           {getFieldValue(submission.customer_name || submission.applicant_name)}
-                        </span> */}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -473,7 +473,7 @@ export default function Applications() {
                           onClick={() => handleOpenModal(submission)}
                           className="cursor-pointer "
                         />
-                        <DropdownSVG className="cursor-pointer w-[13px] h-[8px]" />
+                        {/* <DropdownSVG className="cursor-pointer w-[13px] h-[8px]" /> */}
                       </div>
                     </TableCell>
                   </TableRow>
