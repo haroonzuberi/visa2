@@ -612,20 +612,20 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                     </div>
                   )}
                 </div>
-                <div
-                  className={`flex flex-col items-center mb-2 ${styles.mainDiv}`}
-                >
-                  <img
-                    src={displayNationalIdCardPhotoUrl}
-                    alt="National ID Card"
-                    className="w-[120px] h-[120px] rounded-lg object-cover"
-                    crossOrigin="anonymous"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = GenericProfileImage.src;
-                    }}
-                  />
-                  <p className="mt-2 text-sm text-gray-500">National ID Card</p>
-                  {hasNationalIdCardPhoto && (
+                {hasNationalIdCardPhoto && (
+                  <div
+                    className={`flex flex-col items-center mb-2 ${styles.mainDiv}`}
+                  >
+                    <img
+                      src={displayNationalIdCardPhotoUrl}
+                      alt="National ID Card"
+                      className="w-[120px] h-[120px] rounded-lg object-cover"
+                      crossOrigin="anonymous"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = GenericProfileImage.src;
+                      }}
+                    />
+                    <p className="mt-2 text-sm text-gray-500">National ID Card</p>
                     <div className="flex gap-2 mt-3 justify-center">
                       <button
                         onClick={handleDownloadNationalIdCardPhoto}
@@ -635,22 +635,22 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                         Download Image
                       </button>
                     </div>
-                  )}
-                </div>
-                <div
-                  className={`flex flex-col items-center mb-2 ${styles.mainDiv}`}
-                >
-                  <img
-                    src={displayOtherDocumentsUrl}
-                    alt="Other Documents"
-                    className="w-[120px] h-[120px] rounded-lg object-cover"
-                    crossOrigin="anonymous"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = GenericProfileImage.src;
-                    }}
-                  />
-                  <p className="mt-2 text-sm text-gray-500">Other Documents</p>
-                  {hasOtherDocuments && (
+                  </div>
+                )}
+                {hasOtherDocuments && (
+                  <div
+                    className={`flex flex-col items-center mb-2 ${styles.mainDiv}`}
+                  >
+                    <img
+                      src={displayOtherDocumentsUrl}
+                      alt="Other Documents"
+                      className="w-[120px] h-[120px] rounded-lg object-cover"
+                      crossOrigin="anonymous"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = GenericProfileImage.src;
+                      }}
+                    />
+                    <p className="mt-2 text-sm text-gray-500">Other Documents</p>
                     <div className="flex gap-2 mt-3 justify-center">
                       <button
                         onClick={handleDownloadOtherDocuments}
@@ -660,8 +660,8 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                         Download Image
                       </button>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
                 <div
                   className={`flex flex-col items-center mb-2 ${styles.mainDiv}`}
                 >
@@ -835,18 +835,21 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                     <h3 className="text-[14px] font-[500] text-[#24282E] mb-1">
                       Internal Notes
                     </h3>
-                    {applicationData?.internal_notes && (
-                      <textarea
-                        className={styles.textArenaStyles}
-                        placeholder=" write Description Here"
-                        defaultValue={applicationData?.internal_notes}
-                      ></textarea>
+                    {applicationData?.internal_notes ? (
+                      <p
+                        className={`overflow-y-auto whitespace-pre-wrap ${styles.textArenaStyles}`}
+                        style={{ height: "470px" }}
+                      >
+                        {applicationData.internal_notes}
+                      </p>
+                    ) : (
+                      <p className="text-[14px] font-[500] text-[#727A90]">No internal notes.</p>
                     )}
                   </div>
                 </div>
               </div>
             </div>
-            <hr className="my-4" />
+            {/* <hr className="my-4" />
             <div className="flex justify-between p-6 items-center">
               <div className="flex gap-6">
                 <div>
@@ -879,7 +882,7 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                   <span>Apply</span>
                 </button>
               </div>
-            </div>
+            </div> */}
           </>
         )}
       </div>
@@ -933,6 +936,16 @@ const formatSectionTitle = (key: string): string => {
   return key.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
+const formatForDisplay = (value: any): string => {
+  if (value === null || value === undefined || value === "") {
+    return "N/A";
+  }
+  if (typeof value === "string") {
+    return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+  return String(value);
+};
+
 const renderObjectContent = (data: any, level = 0): JSX.Element => {
   if (Array.isArray(data)) {
     return (
@@ -943,7 +956,7 @@ const renderObjectContent = (data: any, level = 0): JSX.Element => {
               key={`array-item-${level}-${index}`}
               className="border border-[#E9EAEA] rounded-[10px] p-4 bg-white"
             >
-              {typeof item === "object" ? renderObjectContent(item, level + 1) : <p>{item}</p>}
+              {typeof item === "object" ? renderObjectContent(item, level + 1) : <p>{formatForDisplay(item)}</p>}
             </div>
           ))
         ) : (
@@ -954,14 +967,14 @@ const renderObjectContent = (data: any, level = 0): JSX.Element => {
   }
 
   if (typeof data !== "object" || data === null) {
-    return <p>{data}</p>;
+    return <p>{formatForDisplay(data)}</p>;
   }
 
   return (
     <div className="flex flex-col gap-4">
       {Object.entries(data).map(([key, value]) => (
         <div key={key} className="flex flex-col">
-          <p className="font-bold">{key}</p>
+          <p className="font-bold">{formatForDisplay(key)}</p>
           {renderObjectContent(value, level + 1)}
         </div>
       ))}

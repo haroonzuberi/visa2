@@ -365,7 +365,7 @@ export default function Applications() {
             <TableHeader>
               <TableRow>
                 <TableHead className={tableStyles.tableHeaders}>
-                  Customers
+                  Application ID
                 </TableHead>
                 <TableHead className={tableStyles.tableHeaders}>Tags</TableHead>
                 <TableHead className={tableStyles.tableHeaders}>
@@ -409,9 +409,9 @@ export default function Applications() {
                         <span className={tableStyles.userEmail}>
                           #{getFieldValue(submission.application_id)}
                         </span>
-                        <span className={tableStyles.userName}>
+                        {/* <span className={tableStyles.userName}>
                           {getFieldValue(submission.customer_name || submission.applicant_name)}
-                        </span>
+                        </span> */}
                       </div>
                     </TableCell>
                     <TableCell>
