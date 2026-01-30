@@ -16,7 +16,7 @@ import NewApplication from "../NewApplicationModal/page";
 import { BASE_URL } from "@/utils/api";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import GenericProfileImage from "@/Assets/Images/generic-profile.png";
-import { getApiWithAuth } from "@/utils/api";
+import { getApiWithAuth, patchApiWithAuth } from "@/utils/api";
 import StatusDropdown from "@/components/StatusDropdown/page";
 import { toast } from "react-toastify";
 import React from "react";
@@ -151,6 +151,13 @@ const ApplicationDetail: React.FC<ModalProps> = ({
   const [applicationData, setApplicationData] = useState<ApplicationData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const pollingInterval = useRef<NodeJS.Timeout | null>(null);
+  const [imageModal, setImageModal] = useState<{ isOpen: boolean; imageUrl: string; alt: string }>({ 
+    isOpen: false, 
+    imageUrl: '', 
+    alt: '' 
+  });
+  // State for inline editing
+  const [editingFields, setEditingFields] = useState<Record<string, { value: any; originalValue: any; isSaving: boolean }>>({});
 
   useEffect(() => {
     const fetchApplicationDetails = async () => {
@@ -246,7 +253,16 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                   </button>
                   {isOpen && (
                     <div className="px-5 py-4 flex flex-col gap-4">
-                      {renderObjectContent(sectionValue)}
+                      {renderObjectContent(
+                        sectionValue,
+                        sectionKey,
+                        0,
+                        startEditing,
+                        cancelEditing,
+                        updateEditingValue,
+                        saveField,
+                        editingFields
+                      )}
                     </div>
                   )}
                 </div>
@@ -326,6 +342,118 @@ const ApplicationDetail: React.FC<ModalProps> = ({
     }
   };
 
+  // Inline editing functions
+  const startEditing = (fieldPath: string, currentValue: any) => {
+    setEditingFields((prev) => ({
+      ...prev,
+      [fieldPath]: {
+        value: currentValue,
+        originalValue: currentValue,
+        isSaving: false,
+      },
+    }));
+  };
+
+  const cancelEditing = (fieldPath: string) => {
+    setEditingFields((prev) => {
+      const newState = { ...prev };
+      delete newState[fieldPath];
+      return newState;
+    });
+  };
+
+  const updateEditingValue = (fieldPath: string, newValue: any) => {
+    setEditingFields((prev) => ({
+      ...prev,
+      [fieldPath]: {
+        ...prev[fieldPath],
+        value: newValue,
+      },
+    }));
+  };
+
+  const saveField = async (fieldPath: string, fieldName: string) => {
+    if (!applicationData) return;
+
+    const editingField = editingFields[fieldPath];
+    if (!editingField) return;
+
+    // Check if value changed
+    if (editingField.value === editingField.originalValue) {
+      cancelEditing(fieldPath);
+      return;
+    }
+
+    // Set saving state
+    setEditingFields((prev) => ({
+      ...prev,
+      [fieldPath]: {
+        ...prev[fieldPath],
+        isSaving: true,
+      },
+    }));
+
+    try {
+      // Update the extracted_visa_data in the applicationData
+      const pathParts = fieldPath.split('.');
+      const sectionKey = pathParts[0]; // e.g., "step_01_registration"
+      const fieldKey = pathParts[pathParts.length - 1]; // e.g., "nationality_region"
+
+      // Create updated extracted_visa_data
+      const updatedExtractedData = { ...applicationData.extracted_visa_data };
+      if (!updatedExtractedData[sectionKey]) {
+        updatedExtractedData[sectionKey] = {};
+      }
+
+      // Navigate to the nested field and update it
+      let current = updatedExtractedData[sectionKey];
+      for (let i = 1; i < pathParts.length - 1; i++) {
+        if (!current[pathParts[i]]) {
+          current[pathParts[i]] = {};
+        }
+        current = current[pathParts[i]];
+      }
+      current[fieldKey] = editingField.value;
+
+      // Call API to update - send complete extracted_visa_data
+      const response: any = await patchApiWithAuth(`applications/${applicationData.id}/extracted-visa-data`, {
+        extracted_visa_data: updatedExtractedData,
+      });
+
+      if (response?.success) {
+        // Update local state
+        setApplicationData((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            extracted_visa_data: updatedExtractedData,
+          };
+        });
+        toast.success("Field updated successfully");
+        cancelEditing(fieldPath);
+      } else {
+        toast.error(response?.data?.message || "Failed to update field");
+        setEditingFields((prev) => ({
+          ...prev,
+          [fieldPath]: {
+            ...prev[fieldPath],
+            isSaving: false,
+          },
+        }));
+      }
+    } catch (error: any) {
+      console.error("Error updating field:", error);
+      toast.error(error?.message || "Failed to update field");
+      setEditingFields((prev) => ({
+        ...prev,
+        [fieldPath]: {
+          ...prev[fieldPath],
+          isSaving: false,
+        },
+      }));
+    }
+  };
+
   // Show loading state
   if (isLoading || !applicationData) {
     return (
@@ -376,8 +504,15 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                   <img
                     src={displayPhotoUrl}
                     alt="Profile"
-                    className="w-[120px] h-[120px] rounded-full object-cover"
+                    className="w-[120px] h-[120px] rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
                     crossOrigin="anonymous"
+                    onClick={() => {
+                      if (hasProfilePhoto && userPhotoDoc) {
+                        setImageModal({ isOpen: true, imageUrl: userPhotoDoc.file_path, alt: "Profile Photo" });
+                      } else if (displayPhotoUrl !== GenericProfileImage.src) {
+                        setImageModal({ isOpen: true, imageUrl: displayPhotoUrl, alt: "Profile Photo" });
+                      }
+                    }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = GenericProfileImage.src;
                     }}
@@ -402,8 +537,15 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                   <img
                     src={displayPassportPhotoUrl}
                     alt="Passport"
-                    className="w-[120px] h-[120px] rounded-full object-cover"
+                    className="w-[120px] h-[120px] rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
                     crossOrigin="anonymous"
+                    onClick={() => {
+                      if (hasPassportPhoto && passportPhotoDoc) {
+                        setImageModal({ isOpen: true, imageUrl: passportPhotoDoc.file_path, alt: "Passport Photo" });
+                      } else if (displayPassportPhotoUrl !== GenericProfileImage.src) {
+                        setImageModal({ isOpen: true, imageUrl: displayPassportPhotoUrl, alt: "Passport Photo" });
+                      }
+                    }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = GenericProfileImage.src;
                     }}
@@ -557,7 +699,16 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                             </button>
                             {isOpen && (
                               <div className="px-5 py-4 flex flex-col gap-4">
-                                {renderObjectContent(sectionValue)}
+                                {renderObjectContent(
+                                  sectionValue,
+                                  sectionKey,
+                                  0,
+                                  startEditing,
+                                  cancelEditing,
+                                  updateEditingValue,
+                                  saveField,
+                                  editingFields
+                                )}
                               </div>
                             )}
                           </div>
@@ -711,6 +862,32 @@ const ApplicationDetail: React.FC<ModalProps> = ({
           </>
         )}
       </div>
+
+      {/* Image Modal */}
+      {imageModal.isOpen && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black bg-opacity-75 flex items-center justify-center"
+          onClick={() => setImageModal({ isOpen: false, imageUrl: '', alt: '' })}
+        >
+          <div className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center">
+            <button
+              onClick={() => setImageModal({ isOpen: false, imageUrl: '', alt: '' })}
+              className="absolute top-4 right-4 bg-white/90 hover:bg-white border-[#E9EAEA] border-[1px] p-2 rounded-[10px] z-10"
+            >
+              <CrossSvg size={24} />
+            </button>
+            <img
+              src={imageModal.imageUrl}
+              alt={imageModal.alt}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = GenericProfileImage.src;
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -787,19 +964,33 @@ const formatForDisplay = (value: any): string => {
   return String(value);
 };
 
-const renderObjectContent = (data: any, level = 0): JSX.Element => {
+const renderObjectContent = (
+  data: any,
+  basePath: string = "",
+  level: number = 0,
+  startEditing?: (path: string, value: any) => void,
+  cancelEditing?: (path: string) => void,
+  updateEditingValue?: (path: string, value: any) => void,
+  saveField?: (path: string, fieldName: string) => void,
+  editingFields?: Record<string, { value: any; originalValue: any; isSaving: boolean }>
+): JSX.Element => {
   if (Array.isArray(data)) {
     return (
       <div className="flex flex-col gap-3">
         {data.length > 0 ? (
-          data.map((item, index) => (
-            <div
-              key={`array-item-${level}-${index}`}
-              className="border border-[#E9EAEA] rounded-[10px] p-4 bg-white"
-            >
-              {typeof item === "object" ? renderObjectContent(item, level + 1) : <p>{formatForDisplay(item)}</p>}
-            </div>
-          ))
+          data.map((item, index) => {
+            const itemPath = `${basePath}.${index}`;
+            return (
+              <div
+                key={`array-item-${level}-${index}`}
+                className="border border-[#E9EAEA] rounded-[10px] p-4 bg-white"
+              >
+                {typeof item === "object" && item !== null
+                  ? renderObjectContent(item, itemPath, level + 1, startEditing, cancelEditing, updateEditingValue, saveField, editingFields)
+                  : <p>{formatForDisplay(item)}</p>}
+              </div>
+            );
+          })
         ) : (
           <p className="text-[14px] font-[500] text-[#727A90]">N/A</p>
         )}
@@ -808,17 +999,126 @@ const renderObjectContent = (data: any, level = 0): JSX.Element => {
   }
 
   if (typeof data !== "object" || data === null) {
-    return <p>{formatForDisplay(data)}</p>;
+    const fieldPath = basePath;
+    const isEditing = editingFields && editingFields[fieldPath];
+    const displayValue = isEditing ? editingFields[fieldPath].value : data;
+
+    return (
+      <div className="flex items-center gap-2 group">
+        {isEditing ? (
+          <>
+            <input
+              type="text"
+              value={displayValue}
+              onChange={(e) => updateEditingValue?.(fieldPath, e.target.value)}
+              className="flex-1 px-3 py-2 border border-[#42DA82] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#42DA82]/20 text-[14px]"
+              disabled={isEditing.isSaving}
+              autoFocus
+            />
+            <div className="flex items-center gap-1">
+              {isEditing.isSaving ? (
+                <div className="w-5 h-5 border-2 border-[#42DA82] border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <>
+                  <button
+                    onClick={() => saveField?.(fieldPath, basePath.split('.').pop() || '')}
+                    className="p-1.5 hover:bg-[#42DA82]/10 rounded transition-colors"
+                    title="Save"
+                  >
+                    <Check className="w-4 h-4 text-[#42DA82]" />
+                  </button>
+                  <button
+                    onClick={() => cancelEditing?.(fieldPath)}
+                    className="p-1.5 hover:bg-red-100 rounded transition-colors"
+                    title="Cancel"
+                    disabled={isEditing.isSaving}
+                  >
+                    <CrossSvg size={16} className="text-red-500" />
+                  </button>
+                </>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="flex-1 text-[14px] font-[500] text-[#24282E]">{formatForDisplay(data)}</p>
+            <button
+              onClick={() => startEditing?.(fieldPath, data)}
+              className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-[#42DA82]/10 rounded transition-all"
+              title="Edit"
+            >
+              <EditSvg className="w-4 h-4 text-[#727A90]" />
+            </button>
+          </>
+        )}
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col gap-4">
-      {Object.entries(data).map(([key, value]) => (
-        <div key={key} className="flex flex-col">
-          <p className="font-bold">{formatForDisplay(key)}</p>
-          {renderObjectContent(value, level + 1)}
-        </div>
-      ))}
+      {Object.entries(data).map(([key, value]) => {
+        const fieldPath = basePath ? `${basePath}.${key}` : key;
+        const isEditing = editingFields && editingFields[fieldPath];
+        const isValueObject = typeof value === "object" && value !== null && !Array.isArray(value);
+
+        return (
+          <div key={key} className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 group">
+              <p className="font-bold text-[14px] text-[#24282E]">{formatForDisplay(key)}</p>
+              {!isValueObject && (
+                <>
+                  {isEditing ? (
+                    <div className="flex items-center gap-1 ml-auto">
+                      {isEditing.isSaving ? (
+                        <div className="w-4 h-4 border-2 border-[#42DA82] border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => saveField?.(fieldPath, key)}
+                            className="p-1 hover:bg-[#42DA82]/10 rounded transition-colors"
+                            title="Save"
+                          >
+                            <Check className="w-3.5 h-3.5 text-[#42DA82]" />
+                          </button>
+                          <button
+                            onClick={() => cancelEditing?.(fieldPath)}
+                            className="p-1 hover:bg-red-100 rounded transition-colors"
+                            title="Cancel"
+                            disabled={isEditing.isSaving}
+                          >
+                            <CrossSvg size={14} className="text-red-500" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => startEditing?.(fieldPath, value)}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[#42DA82]/10 rounded transition-all ml-auto"
+                      title="Edit"
+                    >
+                      <EditSvg className="w-3.5 h-3.5 text-[#727A90]" />
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+            {isEditing && !isValueObject ? (
+              <input
+                type="text"
+                value={editingFields[fieldPath].value}
+                onChange={(e) => updateEditingValue?.(fieldPath, e.target.value)}
+                className="px-3 py-2 border border-[#42DA82] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#42DA82]/20 text-[14px]"
+                disabled={isEditing.isSaving}
+                autoFocus
+              />
+            ) : (
+              renderObjectContent(value, fieldPath, level + 1, startEditing, cancelEditing, updateEditingValue, saveField, editingFields)
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };

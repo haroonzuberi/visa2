@@ -51,7 +51,6 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
   const [email, setEmail] = useState("");
   const [internalNotes, setInternalNotes] = useState("");
   const [passportNumber, setPassportNumber] = useState("");
-  const [nationalIdCardPhoto, setNationalIdCardPhoto] = useState<File | null>(null);
   const [passportPhoto, setPassportPhoto] = useState<File | null>(null);
   const [userPhoto, setUserPhoto] = useState<File | null>(null);
   const [otherDocuments, setOtherDocuments] = useState<File | null>(null);
@@ -166,7 +165,25 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     if (event.target.files && event.target.files[0]) {
-      setter(event.target.files[0]);
+      const file = event.target.files[0];
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      const validExtensions = ['jpg', 'jpeg', 'png'];
+      
+      if (!fileExtension || !validExtensions.includes(fileExtension)) {
+        toast.error("Please upload only JPG or PNG images");
+        event.target.value = ''; // Reset the input
+        return;
+      }
+      
+      // Also check MIME type for additional validation
+      const validMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!validMimeTypes.includes(file.type)) {
+        toast.error("Please upload only JPG or PNG images");
+        event.target.value = ''; // Reset the input
+        return;
+      }
+      
+      setter(file);
     }
   };
 
@@ -205,9 +222,6 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
         formData.append("internal_notes", internalNotes);
       }
       // Only append files if they are provided (required for create, optional for edit)
-      if (nationalIdCardPhoto) {
-        formData.append("national_id_card_photo", nationalIdCardPhoto);
-      }
       if (passportPhoto) {
         formData.append("passport_photo", passportPhoto);
       }
@@ -250,7 +264,6 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
         setEmail("");
         setInternalNotes("");
         setPassportNumber("");
-        setNationalIdCardPhoto(null);
         setPassportPhoto(null);
         setUserPhoto(null);
         setOtherDocuments(null);
@@ -476,29 +489,6 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
 
                     {/* File Uploads */}
                     <div className="grid grid-cols-2 gap-4">
-                      {/* National ID Card Photo */}
-                      <div>
-                        <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
-                          National ID Card Photo
-                        </label>
-                        <div className="border border-[#E9EAEA] rounded-[10px] p-4">
-                          <input
-                            type="file"
-                            accept=".jpg,.jpeg,.png,.pdf"
-                            onChange={(e) => handleFileChange(setNationalIdCardPhoto, e)}
-                            className="w-full text-[12px] text-[#727A90]"
-                          />
-                          <p className="text-[12px] text-[#727A90] mt-2">
-                            Accepted: JPG, PNG, PDF
-                          </p>
-                          {nationalIdCardPhoto && (
-                            <p className="text-[12px] text-[#42DA82] mt-1">
-                              Selected: {nationalIdCardPhoto.name}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
                       {/* Passport Photo */}
                       <div>
                         <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
@@ -507,12 +497,12 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                         <div className="border border-[#E9EAEA] rounded-[10px] p-4">
                           <input
                             type="file"
-                            accept=".jpg,.jpeg,.png,.pdf"
+                            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                             onChange={(e) => handleFileChange(setPassportPhoto, e)}
                             className="w-full text-[12px] text-[#727A90]"
                           />
                           <p className="text-[12px] text-[#727A90] mt-2">
-                            Accepted: JPG, PNG, PDF
+                            Accepted: JPG, PNG
                           </p>
                           {passportPhoto && (
                             <p className="text-[12px] text-[#42DA82] mt-1">
@@ -530,12 +520,12 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                         <div className="border border-[#E9EAEA] rounded-[10px] p-4">
                           <input
                             type="file"
-                            accept=".jpg,.jpeg,.png,.pdf"
+                            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                             onChange={(e) => handleFileChange(setUserPhoto, e)}
                             className="w-full text-[12px] text-[#727A90]"
                           />
                           <p className="text-[12px] text-[#727A90] mt-2">
-                            Accepted: JPG, PNG, PDF
+                            Accepted: JPG, PNG
                           </p>
                           {userPhoto && (
                             <p className="text-[12px] text-[#42DA82] mt-1">
@@ -553,12 +543,12 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                         <div className="border border-[#E9EAEA] rounded-[10px] p-4">
                           <input
                             type="file"
-                            accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                             onChange={(e) => handleFileChange(setOtherDocuments, e)}
                             className="w-full text-[12px] text-[#727A90]"
                           />
                           <p className="text-[12px] text-[#727A90] mt-2">
-                            Accepted: JPG, PNG, PDF, DOC, DOCX
+                            Accepted: JPG, PNG
                           </p>
                           {otherDocuments && (
                             <p className="text-[12px] text-[#42DA82] mt-1">
