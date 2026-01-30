@@ -1041,13 +1041,15 @@ const renderObjectContent = (
           </>
         ) : (
           <>
-            <p className="flex-1 text-[14px] font-[500] text-[#24282E]">{formatForDisplay(data)}</p>
+            <p className="text-[14px] font-[500] text-[#24282E]">{formatForDisplay(data)}</p>
             <button
               onClick={() => startEditing?.(fieldPath, data)}
-              className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-[#42DA82]/10 rounded transition-all"
+              className="p-1 hover:bg-[#42DA82]/10 rounded transition-all ml-1"
               title="Edit"
             >
-              <EditSvg className="w-4 h-4 text-[#727A90]" />
+              <svg className="w-4 h-4 text-[#727A90]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
             </button>
           </>
         )}
@@ -1064,55 +1066,43 @@ const renderObjectContent = (
 
         return (
           <div key={key} className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 group">
+            <div className="flex items-center gap-2">
               <p className="font-bold text-[14px] text-[#24282E]">{formatForDisplay(key)}</p>
-              {!isValueObject && (
-                <>
-                  {isEditing ? (
-                    <div className="flex items-center gap-1 ml-auto">
-                      {isEditing.isSaving ? (
-                        <div className="w-4 h-4 border-2 border-[#42DA82] border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => saveField?.(fieldPath, key)}
-                            className="p-1 hover:bg-[#42DA82]/10 rounded transition-colors"
-                            title="Save"
-                          >
-                            <Check className="w-3.5 h-3.5 text-[#42DA82]" />
-                          </button>
-                          <button
-                            onClick={() => cancelEditing?.(fieldPath)}
-                            className="p-1 hover:bg-red-100 rounded transition-colors"
-                            title="Cancel"
-                            disabled={isEditing.isSaving}
-                          >
-                            <CrossSvg size={14} className="text-red-500" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => startEditing?.(fieldPath, value)}
-                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[#42DA82]/10 rounded transition-all ml-auto"
-                      title="Edit"
-                    >
-                      <EditSvg className="w-3.5 h-3.5 text-[#727A90]" />
-                    </button>
-                  )}
-                </>
-              )}
             </div>
             {isEditing && !isValueObject ? (
-              <input
-                type="text"
-                value={editingFields[fieldPath].value}
-                onChange={(e) => updateEditingValue?.(fieldPath, e.target.value)}
-                className="px-3 py-2 border border-[#42DA82] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#42DA82]/20 text-[14px]"
-                disabled={isEditing.isSaving}
-                autoFocus
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={editingFields[fieldPath].value}
+                  onChange={(e) => updateEditingValue?.(fieldPath, e.target.value)}
+                  className="flex-1 px-3 py-2 border border-[#42DA82] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#42DA82]/20 text-[14px]"
+                  disabled={isEditing.isSaving}
+                  autoFocus
+                />
+                <div className="flex items-center gap-1">
+                  {isEditing.isSaving ? (
+                    <div className="w-4 h-4 border-2 border-[#42DA82] border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => saveField?.(fieldPath, key)}
+                        className="p-1 hover:bg-[#42DA82]/10 rounded transition-colors"
+                        title="Save"
+                      >
+                        <Check className="w-3.5 h-3.5 text-[#42DA82]" />
+                      </button>
+                      <button
+                        onClick={() => cancelEditing?.(fieldPath)}
+                        className="p-1 hover:bg-red-100 rounded transition-colors"
+                        title="Cancel"
+                        disabled={isEditing.isSaving}
+                      >
+                        <CrossSvg size={14} className="text-red-500" />
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
             ) : (
               renderObjectContent(value, fieldPath, level + 1, startEditing, cancelEditing, updateEditingValue, saveField, editingFields)
             )}
