@@ -48,6 +48,11 @@ const menuItems = [
     path: "/main/applications",
   },
   {
+    name: "Configurations",
+    icon: SettingsSvg,
+    path: "/main/configurations",
+  },
+  {
     name: "Settings",
     icon: SettingsSvg,
     path: "/main/settings",

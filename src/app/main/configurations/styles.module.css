@@ -1,0 +1,3 @@
+.header {
+    @apply text-[13px] sm:text-2xl font-[600] text-[#24282E]
+}

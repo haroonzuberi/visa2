@@ -1,7 +1,7 @@
 "use client";
 import CrossSvg from "@/Assets/svgs/CrossSvg";
 import styles from "./styles.module.css";
-import { useEffect, useState, useRef, JSX } from "react";
+import { useEffect, useState, useRef, JSX, useMemo, useCallback } from "react";
 import PdfSvg from "@/Assets/svgs/PdfSvg";
 import EyeSvg from "@/Assets/svgs/EyeSvg";
 import EditSvg from "@/Assets/svgs/EditSvg";
@@ -149,6 +149,7 @@ const ApplicationDetail: React.FC<ModalProps> = ({
   const [isEdit, setIsEdit] = useState<boolean>(false);
   const [accordionState, setAccordionState] = useState<Record<string, boolean>>({});
   const [applicationData, setApplicationData] = useState<ApplicationData | null>(null);
+  const [defaultValues, setDefaultValues] = useState<any>(null); // Store default values from API
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const pollingInterval = useRef<NodeJS.Timeout | null>(null);
   const [imageModal, setImageModal] = useState<{ isOpen: boolean; imageUrl: string; alt: string }>({ 
@@ -158,6 +159,56 @@ const ApplicationDetail: React.FC<ModalProps> = ({
   });
   // State for inline editing
   const [editingFields, setEditingFields] = useState<Record<string, { value: any; originalValue: any; isSaving: boolean }>>({});
+
+  // Fetch default values for the country
+  useEffect(() => {
+    const fetchDefaultValues = async () => {
+      if (!applicationData) return;
+
+      // Map country codes to country names (API expects names, not codes)
+      const countryCodeToName: Record<string, string> = {
+        "in": "india",
+        "vn": "vietnam",
+        "india": "india",
+        "vietnam": "vietnam",
+      };
+
+      // Get country from visa_type or extracted_visa_data or default to "india"
+      let countryName = "india"; // Default fallback
+      
+      // Priority 1: Use country name from visa_type
+      if (applicationData.visa_type?.country?.name) {
+        countryName = applicationData.visa_type.country.name.toLowerCase();
+      } 
+      // Priority 2: Map country code to name
+      else if (applicationData.visa_type?.country?.code) {
+        const code = applicationData.visa_type.country.code.toLowerCase();
+        countryName = countryCodeToName[code] || code; // Fallback to code if not in map
+      } 
+      // Priority 3: Try to get country from extracted data
+      else if (applicationData.extracted_visa_data?.step_01_registration?.nationality_region) {
+        const nationality = String(applicationData.extracted_visa_data.step_01_registration.nationality_region).toLowerCase();
+        if (nationality.includes("india")) countryName = "india";
+        else if (nationality.includes("vietnam")) countryName = "vietnam";
+      }
+
+      try {
+        const response: any = await getApiWithAuth(`visa-default-values/${countryName}`);
+        if (response.success && response.data?.data?.default_value) {
+          const defaultValueData = response.data.data.default_value;
+          setDefaultValues(defaultValueData);
+          console.log("Default values fetched successfully for country:", countryName, defaultValueData);
+        } else {
+          console.warn("No default values in response:", response);
+        }
+      } catch (error) {
+        console.error("Error fetching default values:", error);
+        // Don't show error toast, just continue without defaults
+      }
+    };
+
+    fetchDefaultValues();
+  }, [applicationData]);
 
   useEffect(() => {
     const fetchApplicationDetails = async () => {
@@ -212,6 +263,120 @@ const ApplicationDetail: React.FC<ModalProps> = ({
     };
   }, [applicationData?.background_processing_status?.status]);
 
+  // Helper function to check if a value is empty/N/A
+  const isEmptyOrNA = (value: any): boolean => {
+    if (value === null || value === undefined) return true;
+    const strValue = String(value).trim();
+    return strValue === "" || strValue.toLowerCase() === "n/a";
+  };
+
+  // Helper function to check if a default value is valid
+  const isValidDefault = (value: any): boolean => {
+    if (value === null || value === undefined) return false;
+    const strValue = String(value).trim();
+    return strValue !== "" && strValue.toLowerCase() !== "n/a";
+  };
+
+  // Merge extracted visa data with default values
+  const mergeWithDefaults = (extractedData: any, defaults: any): any => {
+    // If no defaults yet, return extracted data (will merge when defaults load)
+    if (!defaults || !extractedData) {
+      console.log("Merge skipped - defaults:", !!defaults, "extractedData:", !!extractedData);
+      return extractedData;
+    }
+
+    const merged: any = {};
+
+    // Get all section keys from both extracted and default data
+    const allSectionKeys = new Set([
+      ...Object.keys(extractedData),
+      ...Object.keys(defaults)
+    ]);
+
+    // Iterate through each section
+    allSectionKeys.forEach((sectionKey) => {
+      merged[sectionKey] = {};
+      const extractedSection = extractedData[sectionKey] || {};
+      const defaultSection = defaults[sectionKey] || {};
+
+      // Get all field keys from both extracted and default sections
+      const allFieldKeys = new Set([
+        ...Object.keys(extractedSection),
+        ...Object.keys(defaultSection)
+      ]);
+
+      allFieldKeys.forEach((fieldKey) => {
+        const extractedValue = extractedSection[fieldKey];
+        const defaultValue = defaultSection[fieldKey];
+
+        // If extracted value is empty/N/A and default exists, use default
+        if (isEmptyOrNA(extractedValue) && isValidDefault(defaultValue)) {
+          merged[sectionKey][fieldKey] = defaultValue;
+        } 
+        // If extracted value exists and is not empty, use it
+        else if (!isEmptyOrNA(extractedValue)) {
+          // Handle nested objects
+          if (typeof extractedValue === "object" && extractedValue !== null && !Array.isArray(extractedValue)) {
+            if (typeof defaultValue === "object" && defaultValue !== null) {
+              // Recursively merge nested objects
+              const nestedMerged: any = {};
+              const allNestedKeys = new Set([
+                ...Object.keys(extractedValue),
+                ...Object.keys(defaultValue)
+              ]);
+              
+              allNestedKeys.forEach((nestedKey) => {
+                const nestedExtracted = extractedValue[nestedKey];
+                const nestedDefault = defaultValue[nestedKey];
+                
+                if (isEmptyOrNA(nestedExtracted) && isValidDefault(nestedDefault)) {
+                  nestedMerged[nestedKey] = nestedDefault;
+                } else if (!isEmptyOrNA(nestedExtracted)) {
+                  nestedMerged[nestedKey] = nestedExtracted;
+                } else {
+                  nestedMerged[nestedKey] = nestedExtracted !== undefined ? nestedExtracted : nestedDefault;
+                }
+              });
+              
+              merged[sectionKey][fieldKey] = nestedMerged;
+            } else {
+              merged[sectionKey][fieldKey] = extractedValue;
+            }
+          } else {
+            merged[sectionKey][fieldKey] = extractedValue;
+          }
+        }
+        // If extracted value is empty but no default, use extracted (which will be empty/N/A)
+        else {
+          merged[sectionKey][fieldKey] = extractedValue !== undefined ? extractedValue : defaultValue;
+        }
+      });
+    });
+
+    return merged;
+  };
+
+  // Compute merged data using useMemo to ensure it updates when defaultValues or extracted_visa_data changes
+  const mergedVisaData = useMemo(() => {
+    if (!applicationData?.extracted_visa_data) return null;
+    const merged = mergeWithDefaults(applicationData.extracted_visa_data, defaultValues);
+    
+    // Debug logging
+    console.log("=== useMemo: Merging Data ===");
+    console.log("Default values:", defaultValues);
+    console.log("Extracted data:", applicationData.extracted_visa_data);
+    console.log("Merged data:", merged);
+    
+    // Example check for specific field
+    if (defaultValues?.step_01_registration?.visa_service) {
+      console.log("Default visa_service:", defaultValues.step_01_registration.visa_service);
+      console.log("Extracted visa_service:", applicationData.extracted_visa_data?.step_01_registration?.visa_service);
+      console.log("Merged visa_service:", merged?.step_01_registration?.visa_service);
+    }
+    
+    return merged;
+  }, [applicationData?.extracted_visa_data, defaultValues]);
+
   const renderExtractedVisaData = () => {
     if (applicationData?.background_processing_status?.status === "in_progress") {
       return (
@@ -226,11 +391,27 @@ const ApplicationDetail: React.FC<ModalProps> = ({
       applicationData?.extracted_visa_data &&
       Object.keys(applicationData.extracted_visa_data).length > 0
     ) {
+      // Merge extracted data with default values
+      const mergedData = mergeWithDefaults(applicationData.extracted_visa_data, defaultValues);
+      
+      // Debug logging
+      console.log("=== Merging Data ===");
+      console.log("Default values:", defaultValues);
+      console.log("Extracted data:", applicationData.extracted_visa_data);
+      console.log("Merged data:", mergedData);
+      
+      // Example check for specific field
+      if (defaultValues?.step_01_registration?.visa_service) {
+        console.log("Default visa_service:", defaultValues.step_01_registration.visa_service);
+        console.log("Extracted visa_service:", applicationData.extracted_visa_data?.step_01_registration?.visa_service);
+        console.log("Merged visa_service:", mergedData?.step_01_registration?.visa_service);
+      }
+
       return (
         <div className={`flex flex-col gap-4 ${styles.mainDiv}`}>
           <h1 className="text-[20px] font-[600] text-[#24482E]">Extracted Visa Data</h1>
           <div className="flex flex-col gap-3">
-            {Object.entries(applicationData.extracted_visa_data).map(([sectionKey, sectionValue]) => {
+            {Object.entries(mergedData).map(([sectionKey, sectionValue]) => {
               const isOpen = accordionState[sectionKey] ?? false;
               return (
                 <div
@@ -672,11 +853,11 @@ const ApplicationDetail: React.FC<ModalProps> = ({
               </div>
 
               <div className="col-span-7">
-                {applicationData?.extracted_visa_data && Object.keys(applicationData.extracted_visa_data).length > 0 ? (
+                {mergedVisaData && Object.keys(mergedVisaData).length > 0 ? (
                   <div className={`flex flex-col gap-4 ${styles.mainDiv}`}>
                     <h1 className="text-[20px] font-[600] text-[#24282E]">Extracted Visa Data</h1>
                     <div className="flex flex-col gap-3">
-                      {Object.entries(applicationData.extracted_visa_data).map(([sectionKey, sectionValue]) => {
+                      {Object.entries(mergedVisaData).map(([sectionKey, sectionValue]) => {
                         const isOpen = accordionState[sectionKey] ?? false;
                         return (
                           <div

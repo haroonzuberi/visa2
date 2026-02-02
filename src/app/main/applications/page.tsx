@@ -361,6 +361,7 @@ export default function Applications() {
           onPageChange={handlePageChange}
         />
       </div>
+
       {isApplicationDetail && selectedApplication && (
         <ApplicationDetail
           setIsApplicationDetail={setIsApplicationDetail}
