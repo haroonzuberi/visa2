@@ -1206,7 +1206,7 @@ const renderObjectContent = (
                     className="p-1.5 hover:bg-[#42DA82]/10 rounded transition-colors"
                     title="Save"
                   >
-                    <Check className="w-4 h-4 text-[#42DA82]" />
+                    <Check size={16} className="text-[#42DA82]" />
                   </button>
                   <button
                     onClick={() => cancelEditing?.(fieldPath)}
@@ -1270,7 +1270,7 @@ const renderObjectContent = (
                         className="p-1 hover:bg-[#42DA82]/10 rounded transition-colors"
                         title="Save"
                       >
-                        <Check className="w-3.5 h-3.5 text-[#42DA82]" />
+                        <Check className="text-[20px] text-[#42DA82]" />
                       </button>
                       <button
                         onClick={() => cancelEditing?.(fieldPath)}
