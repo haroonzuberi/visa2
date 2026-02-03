@@ -5,7 +5,7 @@ import IndiaFlag from "@/Assets/svgs/IndiaFlag";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { getApiWithAuth, putAPIWithAuth } from "@/utils/api";
 import { toast } from "react-toastify";
-import { Check, X, Plus, Trash2 } from "lucide-react";
+import { Check, X, Plus, Trash2, Star } from "lucide-react";
 
 interface Country {
   name: string;
@@ -21,6 +21,7 @@ export default function Configurations() {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [editingField, setEditingField] = useState<string | null>(null); // Track which field is being edited (path like "step_01_registration.nationality_region")
   const [editingValues, setEditingValues] = useState<string[]>([]); // Array of values for multi-input support
+  const [defaultIndex, setDefaultIndex] = useState<number | null>(null); // Track which index is the default value (null means no default)
   const [isSaving, setIsSaving] = useState(false);
   const [accordionState, setAccordionState] = useState<Record<string, boolean>>({
     "step_01_registration": true,
@@ -113,6 +114,9 @@ export default function Configurations() {
     const transformed: any = {};
 
     Object.entries(apiData).forEach(([sectionKey, sectionValue]: [string, any]) => {
+      // Skip _defaults key - it's metadata, not display data
+      if (sectionKey === "_defaults") return;
+      
       if (typeof sectionValue === "object" && sectionValue !== null) {
         transformed[sectionKey] = {};
         
@@ -124,9 +128,11 @@ export default function Configurations() {
             transformed[sectionKey][displayKey] = {};
             Object.entries(fieldValue).forEach(([nestedKey, nestedValue]: [string, any]) => {
               const nestedDisplayKey = snakeToTitleCase(nestedKey);
+              // For display, keep the value as-is (brackets will be parsed in renderField)
               transformed[sectionKey][displayKey][nestedDisplayKey] = nestedValue || "N/A";
             });
           } else {
+            // For display, keep the value as-is (brackets will be parsed in renderField)
             transformed[sectionKey][displayKey] = fieldValue || "N/A";
           }
         });
@@ -189,6 +195,7 @@ export default function Configurations() {
       }
       current = current[pathParts[i]];
     }
+    // Value already has {} brackets around default from prepareValueForSave
     current[pathParts[pathParts.length - 1]] = value;
 
     setOriginalApiData(updatedData);
@@ -201,8 +208,13 @@ export default function Configurations() {
 
     try {
       setIsSaving(true);
+      // Create a copy without _defaults for the API payload (or include it if API supports it)
+      const dataToSave = JSON.parse(JSON.stringify(originalApiData));
+      // Keep _defaults in the data structure if API supports it, otherwise remove it
+      // For now, we'll include it in case the API needs it
+      
       const response: any = await putAPIWithAuth(`visa-default-values/${selectedCountry}`, {
-        default_value: originalApiData,
+        default_value: dataToSave,
       });
 
       if (response.success) {
@@ -219,23 +231,61 @@ export default function Configurations() {
     } finally {
       setIsSaving(false);
       setEditingField(null);
+      setDefaultIndex(null);
     }
+  };
+
+  // Parse value string to extract values and identify default (wrapped in {})
+  const parseValueString = (valueStr: string): { values: string[]; defaultIndex: number | null } => {
+    if (!valueStr || valueStr === "N/A") {
+      return { values: [""], defaultIndex: null };
+    }
+    
+    const parts = valueStr.split("\n").filter(v => v.trim() !== "");
+    const values: string[] = [];
+    let defaultIndex: number | null = null;
+    
+    parts.forEach((part, index) => {
+      // Check if value is wrapped in {}
+      if (part.startsWith("{") && part.endsWith("}")) {
+        // Remove brackets and add to values
+        const unwrappedValue = part.slice(1, -1);
+        values.push(unwrappedValue);
+        defaultIndex = values.length - 1; // Current index in values array
+      } else {
+        values.push(part);
+      }
+    });
+    
+    return { values: values.length > 0 ? values : [""], defaultIndex };
   };
 
   // Start editing a field
   const startEditing = (sectionKey: string, displayFieldKey: string, currentValue: string, parentPath?: string) => {
     const apiPath = getFieldApiPath(sectionKey, displayFieldKey, parentPath);
     setEditingField(apiPath);
-    // Split by \n to support multiple values, or start with one empty input
+    
+    // Parse value string to extract values and default index
     const valueStr = currentValue === "N/A" ? "" : String(currentValue);
-    const values = valueStr ? valueStr.split("\n").filter(v => v.trim() !== "") : [""];
+    const { values, defaultIndex: parsedDefaultIndex } = parseValueString(valueStr);
+    
+    console.log('=== startEditing Debug ===');
+    console.log('Field:', displayFieldKey);
+    console.log('currentValue:', currentValue);
+    console.log('valueStr:', valueStr);
+    console.log('parsed values:', values);
+    console.log('parsedDefaultIndex:', parsedDefaultIndex);
+    console.log('Value at defaultIndex:', parsedDefaultIndex !== null ? values[parsedDefaultIndex] : 'N/A');
+    
     setEditingValues(values.length > 0 ? values : [""]);
+    setDefaultIndex(parsedDefaultIndex);
   };
 
   // Cancel editing - reload original data to revert changes
   const cancelEditing = async () => {
     setEditingField(null);
     setEditingValues([]);
+    setDefaultIndex(null);
     
     // Reload original data from API to revert any unsaved changes
     if (selectedCountry) {
@@ -258,15 +308,103 @@ export default function Configurations() {
     setEditingValues([...editingValues, ""]);
   };
 
+  // Get filtered (non-empty) values and their original indices
+  const getFilteredValuesWithIndices = () => {
+    const filtered: Array<{ value: string; originalIndex: number }> = [];
+    editingValues.forEach((value, index) => {
+      if (value.trim() !== "") {
+        filtered.push({ value, originalIndex: index });
+      }
+    });
+    return filtered;
+  };
+
+  // Set/unset default value
+  const toggleDefault = (index: number) => {
+    // index is the position in editingValues array
+    // We need to find the corresponding index in the filtered array
+    const filtered = getFilteredValuesWithIndices();
+    const filteredIndex = filtered.findIndex(item => item.originalIndex === index);
+    
+    if (filteredIndex === -1) {
+      // Can't set empty value as default
+      return;
+    }
+    
+    let newDefaultIndex: number | null;
+    if (defaultIndex === filteredIndex) {
+      // Unset default if clicking the same index
+      newDefaultIndex = null;
+    } else {
+      // Set new default (using filtered index)
+      newDefaultIndex = filteredIndex;
+    }
+    
+    // Update state and immediately update API data with the new default
+    setDefaultIndex(newDefaultIndex);
+    
+    // Use functional update to get latest editingValues
+    setEditingValues((currentValues) => {
+      if (editingField && originalApiData) {
+        const filteredValues = currentValues.filter(v => v.trim() !== "");
+        let valueToSave: string;
+        if (newDefaultIndex !== null && newDefaultIndex < filteredValues.length) {
+          valueToSave = filteredValues.map((value, idx) => 
+            idx === newDefaultIndex ? `{${value}}` : value
+          ).join("\n");
+        } else {
+          valueToSave = filteredValues.join("\n");
+        }
+        console.log('=== toggleDefault ===');
+        console.log('newDefaultIndex:', newDefaultIndex);
+        console.log('filteredValues:', filteredValues);
+        console.log('valueToSave:', valueToSave);
+        updateApiDataValue(editingField, valueToSave);
+      }
+      return currentValues; // Don't change, just read
+    });
+  };
+
   // Remove an input field
   const removeInputField = (index: number) => {
     if (editingValues.length > 1) {
       const newValues = editingValues.filter((_, i) => i !== index);
       setEditingValues(newValues);
-      // Update API data immediately
+      
+      // Recalculate default index based on filtered values
+      const filteredBefore = getFilteredValuesWithIndices();
+      const filteredAfter = newValues
+        .map((value, idx) => ({ value, originalIndex: idx }))
+        .filter(item => item.value.trim() !== "");
+      
+      let newDefaultIndex: number | null = null;
+      if (defaultIndex !== null && defaultIndex < filteredBefore.length) {
+        const defaultOriginalIndex = filteredBefore[defaultIndex].originalIndex;
+        
+        if (defaultOriginalIndex === index) {
+          // If removing the default field, clear the default
+          newDefaultIndex = null;
+        } else {
+          // Find the new filtered index for the default value
+          const newFilteredIndex = filteredAfter.findIndex(
+            item => item.originalIndex === (defaultOriginalIndex > index ? defaultOriginalIndex - 1 : defaultOriginalIndex)
+          );
+          newDefaultIndex = newFilteredIndex !== -1 ? newFilteredIndex : null;
+        }
+      }
+      setDefaultIndex(newDefaultIndex);
+      
+      // Update API data immediately with {} brackets if default is set
       const apiPath = editingField;
       if (apiPath && originalApiData) {
-        const valueToSave = newValues.join("\n");
+        let valueToSave: string;
+        if (newDefaultIndex !== null && newDefaultIndex < filteredAfter.length) {
+          valueToSave = filteredAfter.map((item, idx) => 
+            idx === newDefaultIndex ? `{${item.value}}` : item.value
+          ).join("\n");
+        } else {
+          valueToSave = filteredAfter.map(item => item.value).join("\n");
+        }
         updateApiDataValue(apiPath, valueToSave);
       }
     }
@@ -278,9 +416,44 @@ export default function Configurations() {
     newValues[index] = value;
     setEditingValues(newValues);
     
-    // Update API data immediately
+    // Recalculate default index if the default value became empty
+    const filteredBefore = getFilteredValuesWithIndices();
+    const filteredAfter = newValues
+      .map((val, idx) => ({ value: val, originalIndex: idx }))
+      .filter(item => item.value.trim() !== "");
+    
+    let updatedDefaultIndex = defaultIndex;
+    if (defaultIndex !== null && defaultIndex < filteredBefore.length) {
+      const defaultOriginalIndex = filteredBefore[defaultIndex].originalIndex;
+      // If the default value became empty, clear it
+      if (newValues[defaultOriginalIndex].trim() === "") {
+        updatedDefaultIndex = null;
+        setDefaultIndex(null);
+      } else {
+        // Find the new filtered index for the default value
+        const newFilteredIndex = filteredAfter.findIndex(
+          item => item.originalIndex === defaultOriginalIndex
+        );
+        if (newFilteredIndex !== -1) {
+          updatedDefaultIndex = newFilteredIndex;
+          setDefaultIndex(newFilteredIndex);
+        } else {
+          updatedDefaultIndex = null;
+          setDefaultIndex(null);
+        }
+      }
+    }
+    
+    // Update API data immediately with {} brackets if default is set
     const apiPath = getFieldApiPath(sectionKey, displayFieldKey, parentPath);
-    const valueToSave = newValues.join("\n");
+    let valueToSave: string;
+    if (updatedDefaultIndex !== null && updatedDefaultIndex < filteredAfter.length) {
+      valueToSave = filteredAfter.map((item, idx) => 
+        idx === updatedDefaultIndex ? `{${item.value}}` : item.value
+      ).join("\n");
+    } else {
+      valueToSave = filteredAfter.map(item => item.value).join("\n");
+    }
     const updatedData = updateApiDataValue(apiPath, valueToSave);
     
     // Update display data immediately for real-time feedback
@@ -290,16 +463,83 @@ export default function Configurations() {
     }
   };
 
-  // Handle save - convert array to \n separated string
-  const prepareValueForSave = (): string => {
-    return editingValues.filter(v => v.trim() !== "").join("\n");
+  // Handle save - convert array to \n separated string, wrapping default value in {}
+  const prepareValueForSave = (currentDefaultIndex: number | null = null): string => {
+    // Use provided defaultIndex or fall back to state (to avoid stale closures)
+    const indexToUse = currentDefaultIndex !== null ? currentDefaultIndex : defaultIndex;
+    
+    // Get filtered values with their original indices to preserve default correctly
+    const filteredWithIndices = editingValues
+      .map((value, originalIndex) => ({ value, originalIndex }))
+      .filter(item => item.value.trim() !== "");
+    
+    console.log('=== prepareValueForSave Debug ===');
+    console.log('editingValues:', editingValues);
+    console.log('defaultIndex (state):', defaultIndex);
+    console.log('indexToUse:', indexToUse);
+    console.log('filteredWithIndices:', filteredWithIndices);
+    
+    if (indexToUse !== null && indexToUse < filteredWithIndices.length) {
+      // Find which value in the filtered array corresponds to the defaultIndex
+      // defaultIndex is the index in the filtered array from when editing started
+      const defaultItem = filteredWithIndices[indexToUse];
+      console.log('defaultItem:', defaultItem);
+      if (defaultItem) {
+        // Wrap the default value in {} brackets
+        const valuesWithDefault = filteredWithIndices.map((item, idx) => {
+          if (idx === indexToUse) {
+            return `{${item.value}}`;
+          }
+          return item.value;
+        });
+        console.log('valuesWithDefault:', valuesWithDefault);
+        return valuesWithDefault.join("\n");
+      }
+    }
+    const result = filteredWithIndices.map(item => item.value).join("\n");
+    console.log('No default, returning:', result);
+    return result;
   };
 
   // Handle save on blur or enter
   const handleSave = async () => {
     if (editingField) {
-      // Update the API data with the joined values before saving
-      const valueToSave = prepareValueForSave();
+      // Get the latest defaultIndex and editingValues from state to avoid stale closures
+      let latestDefaultIndex: number | null = null;
+      let latestEditingValues: string[] = [];
+      
+      // Use functional state updates to get latest values
+      setDefaultIndex((prev) => {
+        latestDefaultIndex = prev;
+        return prev; // Don't change, just read
+      });
+      setEditingValues((prev) => {
+        latestEditingValues = prev;
+        return prev; // Don't change, just read
+      });
+      
+      // Prepare value with latest state
+      const filteredWithIndices = latestEditingValues
+        .map((value, originalIndex) => ({ value, originalIndex }))
+        .filter(item => item.value.trim() !== "");
+      
+      let valueToSave: string;
+      if (latestDefaultIndex !== null && latestDefaultIndex < filteredWithIndices.length) {
+        valueToSave = filteredWithIndices.map((item, idx) => {
+          if (idx === latestDefaultIndex) {
+            return `{${item.value}}`;
+          }
+          return item.value;
+        }).join("\n");
+      } else {
+        valueToSave = filteredWithIndices.map(item => item.value).join("\n");
+      }
+      
+      console.log('=== handleSave ===');
+      console.log('latestDefaultIndex:', latestDefaultIndex);
+      console.log('latestEditingValues:', latestEditingValues);
+      console.log('valueToSave:', valueToSave);
+      
       updateApiDataValue(editingField, valueToSave);
       await saveDefaultValues();
     }
@@ -343,46 +583,86 @@ export default function Configurations() {
         </p>
         {isEditing ? (
           <div className="flex flex-col gap-2">
-            {editingValues.map((value, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={value}
-                  onChange={(e) => updateInputValue(index, e.target.value, sectionKey, fieldKey, parentPath)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && e.ctrlKey) {
-                      // Ctrl+Enter to save
-                      handleSave();
-                    } else if (e.key === "Escape") {
-                      cancelEditing();
-                    }
-                  }}
-                  className="flex-1 px-3 py-2 border border-[#42DA82] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#42DA82]/20 text-[14px] text-[#24282E]"
-                  autoFocus={index === 0}
-                  disabled={isSaving}
-                  placeholder={`Option ${index + 1}`}
-                />
-                {index === editingValues.length - 1 ? (
-                  <button
-                    type="button"
-                    onClick={addInputField}
-                    className="p-1.5 hover:bg-[#42DA82]/10 rounded transition-all border border-[#42DA82]"
-                    title="Add another option"
-                  >
-                    <Plus className="w-4 h-4 text-[#42DA82]" />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => removeInputField(index)}
-                    className="p-1.5 hover:bg-red-100 rounded transition-all border border-red-300"
-                    title="Remove this option"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </button>
-                )}
-              </div>
-            ))}
+            {editingValues.map((value, index) => {
+              // Check if this index corresponds to the default in filtered array
+              const filtered = getFilteredValuesWithIndices();
+              const isDefault = defaultIndex !== null && 
+                                defaultIndex < filtered.length && 
+                                filtered[defaultIndex].originalIndex === index;
+              return (
+                <div key={index} className="flex items-center gap-2">
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      value={value}
+                      onChange={(e) => updateInputValue(index, e.target.value, sectionKey, fieldKey, parentPath)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && e.ctrlKey) {
+                          // Ctrl+Enter to save
+                          handleSave();
+                        } else if (e.key === "Escape") {
+                          cancelEditing();
+                        }
+                      }}
+                      className={`w-full py-2 border rounded-[8px] focus:outline-none focus:ring-2 text-[14px] text-[#24282E] ${
+                        isDefault 
+                          ? "px-3 pr-20 border-[#42DA82] bg-[#42DA8210] focus:ring-[#42DA82]/20" 
+                          : "px-3 border-[#42DA82] focus:ring-[#42DA82]/20"
+                      }`}
+                      autoFocus={index === 0}
+                      disabled={isSaving}
+                      placeholder={`Option ${index + 1}`}
+                    />
+                    {isDefault && (
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#42DA82] text-white text-[10px] font-[600] px-2 py-0.5 rounded-[4px] pointer-events-none">
+                        Default
+                      </span>
+                    )}
+                  </div>
+                  {/* Show star icon only if there are multiple input fields (dropdown) */}
+                  {editingValues.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => toggleDefault(index)}
+                      className={`p-1.5 rounded transition-all border ${
+                        isDefault
+                          ? "border-[#42DA82] bg-[#42DA8210]"
+                          : "border-[#E9EAEA] hover:border-[#42DA82] hover:bg-[#42DA8210]"
+                      }`}
+                      title={isDefault ? "Remove as default" : "Set as default"}
+                    >
+                      <Star 
+                        className={`w-4 h-4 ${
+                          isDefault ? "text-[#42DA82] fill-[#42DA82]" : "text-[#727A90]"
+                        }`} 
+                      />
+                    </button>
+                  )}
+                  {/* Show plus icon on last field */}
+                  {index === editingValues.length - 1 && (
+                    <button
+                      type="button"
+                      onClick={addInputField}
+                      className="p-1.5 hover:bg-[#42DA82]/10 rounded transition-all border border-[#42DA82]"
+                      title="Add another option"
+                    >
+                      <Plus className="w-4 h-4 text-[#42DA82]" />
+                    </button>
+                  )}
+                  {/* Show delete icon on all fields (including last one) if there's more than one field */}
+                  {editingValues.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeInputField(index)}
+                      className="p-1.5 hover:bg-red-100 rounded transition-all border border-red-300"
+                      title="Remove this option"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
             <div className="flex items-center gap-1 mt-1">
               {isSaving ? (
                 <div className="w-4 h-4 border-2 border-[#42DA82] border-t-transparent rounded-full animate-spin"></div>
@@ -410,17 +690,33 @@ export default function Configurations() {
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <p className="text-[14px] font-[400] text-[#727A90]">
+            <div className="flex-1">
               {hasMultipleValues ? (
-                <span className="flex flex-col gap-1">
-                  {displayValue.split("\n").map((line, idx) => (
-                    <span key={idx}>{line || "N/A"}</span>
-                  ))}
-                </span>
+                <div className="flex flex-col gap-1">
+                  {displayValue.split("\n").map((line, idx) => {
+                    // Check if line is wrapped in {} brackets (default value)
+                    const isDefault = line.startsWith("{") && line.endsWith("}");
+                    const displayLine = isDefault ? line.slice(1, -1) : line; // Remove brackets for display
+                    return (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span className="text-[14px] font-[400] text-[#727A90]">{displayLine || "N/A"}</span>
+                        {isDefault && (
+                          <span className="bg-[#42DA82] text-white text-[10px] font-[600] px-2 py-0.5 rounded-[4px]">
+                            Default
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               ) : (
-                displayValue || "N/A"
+                <p className="text-[14px] font-[400] text-[#727A90]">
+                  {displayValue.startsWith("{") && displayValue.endsWith("}") 
+                    ? displayValue.slice(1, -1) 
+                    : displayValue || "N/A"}
+                </p>
               )}
-            </p>
+            </div>
             <button
               type="button"
               onClick={() => startEditing(sectionKey, fieldKey, displayValue, parentPath)}
