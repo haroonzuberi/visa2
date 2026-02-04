@@ -111,6 +111,11 @@ const LoadingSkeleton = () =>
         <div className="h-6 w-[100px] bg-gray-200 rounded-full"></div>
       </TableCell>
 
+      {/* Latest Note Column */}
+      <TableCell className="py-4">
+        <div className="h-4 w-[200px] bg-gray-200 rounded"></div>
+      </TableCell>
+
       {/* Visa Type & Country Column */}
       <TableCell className="py-4">
         <div className="flex flex-col gap-1">
@@ -174,11 +179,20 @@ export default function Applications() {
     dispatch(fetchSubmissions(buildFetchParams()));
   }, [dispatch, currentPage, searchTerm, filterFormId, filterStatus, filterApplicationId]);
 
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   useEffect(() => {
     setIsModalOpen(searchParams.get("modal") === "open");
   }, [searchParams]);
 
   useEffect(() => {
+    // Only run after component is mounted on client side to avoid hydration errors
+    if (!isMounted || typeof window === "undefined") return;
+
     if (isModalOpen) {
       document.body.style.overflow = "hidden";
     } else {
@@ -186,9 +200,11 @@ export default function Applications() {
     }
 
     return () => {
-      document.body.style.overflow = "auto";
+      if (isMounted && typeof window !== "undefined") {
+        document.body.style.overflow = "auto";
+      }
     };
-  }, [isModalOpen]);
+  }, [isModalOpen, isMounted]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -388,6 +404,9 @@ export default function Applications() {
                   Status
                 </TableHead>
                 <TableHead className={tableStyles.tableHeaders}>
+                  Latest Note
+                </TableHead>
+                <TableHead className={tableStyles.tableHeaders}>
                   Visa Type & Country
                 </TableHead>
                 <TableHead className={tableStyles.tableHeaders}>
@@ -404,7 +423,7 @@ export default function Applications() {
                 <LoadingSkeleton />
               ) : !data || (Array.isArray(data) && data.length === 0) ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8">
+                  <TableCell colSpan={10} className="text-center py-8">
                     No applications found
                   </TableCell>
                 </TableRow>
@@ -441,7 +460,17 @@ export default function Applications() {
                         : "N/A"}
                     </TableCell>
                     <TableCell>
-                      {getFieldValue(submission.flight_date)}
+                      {(() => {
+                        const dateValue = submission.flight_date || submission.expected_arrival_date;
+                        if (!dateValue) return 'N/A';
+                        
+                        try {
+                          const date = new Date(dateValue);
+                          return date.toLocaleDateString();
+                        } catch {
+                          return dateValue;
+                        }
+                      })()}
                     </TableCell>
                     <TableCell>
                       <Priority level={getFieldValue(submission.priority)} />
@@ -455,6 +484,29 @@ export default function Applications() {
                           dispatch(fetchSubmissions({ skip }));
                         }}
                       />
+                    </TableCell>
+                    <TableCell>
+                      <div className="max-w-[200px]">
+                        <span className="text-[12px] text-[#24282E] line-clamp-2">
+                          {(() => {
+                            // Handle latest_note as object or string
+                            const latestNote = submission.latest_note || 
+                                             submission.latest_comment || 
+                                             submission.latest_issue_note ||
+                                             getFieldValue(submission.latest_note);
+                            
+                            if (!latestNote) return "No notes";
+                            
+                            // If it's an object, extract the content field
+                            if (typeof latestNote === 'object' && latestNote !== null) {
+                              return latestNote.content || latestNote.note || JSON.stringify(latestNote);
+                            }
+                            
+                            // If it's a string, return it directly
+                            return String(latestNote);
+                          })()}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">

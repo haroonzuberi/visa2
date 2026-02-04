@@ -119,7 +119,11 @@ export const deleteApi = async <T>(url: string): Promise<ApiResponse<T>> => {
     const res = await axios.delete<T>(url);
     return { data: res.data, status: res.status, success: true };
   } catch (err: any) {
-    return { data: err?.response?.data, success: false };
+    return { 
+      data: err?.response?.data, 
+      status: err?.response?.status,
+      success: false 
+    };
   }
 };
 

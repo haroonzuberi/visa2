@@ -9,6 +9,7 @@ import CopySvg from "@/Assets/svgs/CopySvg";
 import TicketSvg from "@/Assets/svgs/TicketSvg";
 import { Check } from "lucide-react";
 import PencilSvg from "@/Assets/svgs/PencilSvg";
+import TrashSvg from "@/Assets/svgs/TrashSvg";
 import EditInfo from "../EditInfoModal/page";
 import RefundAmount from "../RefundAmountModal/page";
 import EditPersonalInfo from "../EditPersonalInfoModal/page";
@@ -171,13 +172,15 @@ const ApplicationDetail: React.FC<ModalProps> = ({
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   // Issues state
-  const [issues, setIssues] = useState<any[]>([]);
+  const [currentIssues, setCurrentIssues] = useState<any[]>([]);
+  const [issueHistory, setIssueHistory] = useState<any[]>([]);
   const [isLoadingIssues, setIsLoadingIssues] = useState(false);
   const [showIssueForm, setShowIssueForm] = useState(false);
   const [selectedIssueType, setSelectedIssueType] = useState("");
   const [issueNotes, setIssueNotes] = useState("");
   const [sendNotification, setSendNotification] = useState(true);
   const [isSubmittingIssue, setIsSubmittingIssue] = useState(false);
+  const [isDeletingIssue, setIsDeletingIssue] = useState<string | null>(null);
 
   // Fetch default values for the country
   useEffect(() => {
@@ -299,7 +302,8 @@ const ApplicationDetail: React.FC<ModalProps> = ({
   useEffect(() => {
     const fetchIssues = async () => {
       if (!applicationData?.id || applicationData.visa_status !== "have_issues") {
-        setIssues([]);
+        setCurrentIssues([]);
+        setIssueHistory([]);
         setShowIssueForm(false);
         setSelectedIssueType("");
         setIssueNotes("");
@@ -312,14 +316,25 @@ const ApplicationDetail: React.FC<ModalProps> = ({
         const response: any = await getApiWithAuth(
           `applications/${applicationData.id}/issues`
         );
-        if (response.success && response.data?.data?.current_issues) {
-          setIssues(Array.isArray(response.data.data.current_issues) ? response.data.data.current_issues : []);
+        if (response.success && response.data?.data) {
+          setCurrentIssues(
+            Array.isArray(response.data.data.current_issues) 
+              ? response.data.data.current_issues 
+              : []
+          );
+          setIssueHistory(
+            Array.isArray(response.data.data.issue_history) 
+              ? response.data.data.issue_history 
+              : []
+          );
         } else {
-          setIssues([]);
+          setCurrentIssues([]);
+          setIssueHistory([]);
         }
       } catch (error) {
         console.error("Error fetching issues:", error);
-        setIssues([]);
+        setCurrentIssues([]);
+        setIssueHistory([]);
       } finally {
         setIsLoadingIssues(false);
       }
@@ -736,10 +751,15 @@ const ApplicationDetail: React.FC<ModalProps> = ({
         const issuesResponse: any = await getApiWithAuth(
           `applications/${applicationData.id}/issues`
         );
-        if (issuesResponse.success && issuesResponse.data?.data?.current_issues) {
-          setIssues(
-            Array.isArray(issuesResponse.data.data.current_issues)
-              ? issuesResponse.data.data.current_issues
+        if (issuesResponse.success && issuesResponse.data?.data) {
+          setCurrentIssues(
+            Array.isArray(issuesResponse.data.data.current_issues) 
+              ? issuesResponse.data.data.current_issues 
+              : []
+          );
+          setIssueHistory(
+            Array.isArray(issuesResponse.data.data.issue_history) 
+              ? issuesResponse.data.data.issue_history 
               : []
           );
         }
@@ -770,10 +790,15 @@ const ApplicationDetail: React.FC<ModalProps> = ({
         const issuesResponse: any = await getApiWithAuth(
           `applications/${applicationData.id}/issues`
         );
-        if (issuesResponse.success && issuesResponse.data?.data?.current_issues) {
-          setIssues(
-            Array.isArray(issuesResponse.data.data.current_issues)
-              ? issuesResponse.data.data.current_issues
+        if (issuesResponse.success && issuesResponse.data?.data) {
+          setCurrentIssues(
+            Array.isArray(issuesResponse.data.data.current_issues) 
+              ? issuesResponse.data.data.current_issues 
+              : []
+          );
+          setIssueHistory(
+            Array.isArray(issuesResponse.data.data.issue_history) 
+              ? issuesResponse.data.data.issue_history 
               : []
           );
         }
@@ -785,6 +810,103 @@ const ApplicationDetail: React.FC<ModalProps> = ({
     } catch (error: any) {
       console.error("Error resolving issue:", error);
       toast.error(error?.message || "Failed to resolve issue. Please try again.");
+    }
+  };
+
+  const handleDeleteIssue = async (issueType: string, reportedAt: string, isCurrentIssue: boolean = false) => {
+    if (!applicationData?.id) return;
+
+    setIsDeletingIssue(`${issueType}-${reportedAt}`);
+    try {
+      // Don't URL encode - use issue_type directly as path parameter
+      const deleteUrl = `applications/${applicationData.id}/issues/${issueType}`;
+      console.log("Deleting issue - URL:", deleteUrl, "Issue Type:", issueType, "Full URL:", `${BASE_URL}${deleteUrl}`);
+      
+      const response: any = await deleteApi(deleteUrl);
+      console.log("Delete response:", response);
+
+      // Check for success - either success flag is true, or status is 200/204
+      if (response.success || response.status === 200 || response.status === 204) {
+        toast.success("Issue deleted successfully");
+        // Refresh issues list
+        const issuesResponse: any = await getApiWithAuth(
+          `applications/${applicationData.id}/issues`
+        );
+        if (issuesResponse.success && issuesResponse.data?.data) {
+          setCurrentIssues(
+            Array.isArray(issuesResponse.data.data.current_issues) 
+              ? issuesResponse.data.data.current_issues 
+              : []
+          );
+          setIssueHistory(
+            Array.isArray(issuesResponse.data.data.issue_history) 
+              ? issuesResponse.data.data.issue_history 
+              : []
+          );
+        }
+      } else {
+        // Handle 404 specifically
+        if (response.status === 404) {
+          toast.error("Issue not found. It may have already been resolved or deleted.");
+          // Refresh issues list to get updated state
+          const issuesResponse: any = await getApiWithAuth(
+            `applications/${applicationData.id}/issues`
+          );
+          if (issuesResponse.success && issuesResponse.data?.data) {
+            setCurrentIssues(
+              Array.isArray(issuesResponse.data.data.current_issues) 
+                ? issuesResponse.data.data.current_issues 
+                : []
+            );
+            setIssueHistory(
+              Array.isArray(issuesResponse.data.data.issue_history) 
+                ? issuesResponse.data.data.issue_history 
+                : []
+            );
+          }
+        } else {
+          const errorMessage = response.data?.message || 
+                              response.data?.detail || 
+                              (typeof response.data === 'string' ? response.data : null) ||
+                              "Failed to delete issue. Please try again.";
+          console.error("Delete issue error:", response);
+          toast.error(errorMessage);
+        }
+      }
+    } catch (error: any) {
+      console.error("Error deleting issue:", error);
+      // Handle 404 from axios error
+      if (error?.response?.status === 404) {
+        toast.error("Issue not found. It may have already been resolved or deleted.");
+        // Refresh issues list to get updated state
+        try {
+          const issuesResponse: any = await getApiWithAuth(
+            `applications/${applicationData.id}/issues`
+          );
+          if (issuesResponse.success && issuesResponse.data?.data) {
+            setCurrentIssues(
+              Array.isArray(issuesResponse.data.data.current_issues) 
+                ? issuesResponse.data.data.current_issues 
+                : []
+            );
+            setIssueHistory(
+              Array.isArray(issuesResponse.data.data.issue_history) 
+                ? issuesResponse.data.data.issue_history 
+                : []
+            );
+          }
+        } catch (refreshError) {
+          console.error("Error refreshing issues:", refreshError);
+        }
+      } else {
+        const errorMessage = error?.response?.data?.message || 
+                            error?.response?.data?.detail ||
+                            error?.message || 
+                            "Failed to delete issue. Please try again.";
+        toast.error(errorMessage);
+      }
+    } finally {
+      setIsDeletingIssue(null);
     }
   };
 
@@ -1606,67 +1728,155 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                           </div>
                         )}
 
-                        {/* Existing Issues List */}
+                        {/* Current Issues List */}
                         {isLoadingIssues ? (
                           <div className="flex items-center justify-center py-4">
                             <div className="w-5 h-5 border-2 border-[#42DA82] border-t-transparent rounded-full animate-spin"></div>
                           </div>
-                        ) : issues.length === 0 ? (
-                          !showIssueForm && (
-                            <p className="text-[12px] text-[#727A90] text-center py-4">
-                              No issues reported yet.
-                            </p>
-                          )
                         ) : (
-                          <div className="flex flex-col gap-2">
-                            {issues.map((issue: any) => {
-                              const issueTypeLabel =
-                                ISSUE_TYPES.find((t) => t.value === issue.issue_type)
-                                  ?.label || issue.issue_type;
-                              const issueDate = new Date(issue.reported_at);
-                              const formattedDate = issueDate.toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              });
-                              const formattedTime = issueDate.toLocaleTimeString("en-US", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              });
+                          <>
+                            {/* Current Issues Section */}
+                            {currentIssues.length > 0 && (
+                              <div className="flex flex-col gap-3">
+                                <h4 className="text-[13px] font-[600] text-[#24282E]">
+                                  Current Issues
+                                </h4>
+                                <div className="flex flex-col gap-2">
+                                  {currentIssues.map((issue: any, index: number) => {
+                                    const issueTypeLabel =
+                                      ISSUE_TYPES.find((t) => t.value === issue.issue_type)
+                                        ?.label || issue.issue_type;
+                                    const issueDate = new Date(issue.reported_at);
+                                    const formattedDate = issueDate.toLocaleDateString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                    });
+                                    const formattedTime = issueDate.toLocaleTimeString("en-US", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    });
+                                    const deleteKey = `${issue.issue_type}-${issue.reported_at}`;
+                                    const isDeleting = isDeletingIssue === deleteKey;
 
-                              return (
-                                <div
-                                  key={issue.issue_type || issue.id}
-                                  className="bg-[#F9FAFB] rounded-[8px] p-3 border border-[#E9EAEA]"
-                                >
-                                  <div className="flex items-start justify-between mb-2">
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-[13px] font-[600] text-[#F05D3D]">
-                                          {issueTypeLabel}
-                                        </span>
-                                        <span className="text-[10px] text-[#727A90]">
-                                          {formattedDate} at {formattedTime}
-                                        </span>
+                                    return (
+                                      <div
+                                        key={`current-${issue.issue_type}-${issue.reported_at}-${index}`}
+                                        className="bg-[#F9FAFB] rounded-[8px] p-3 border border-[#E9EAEA]"
+                                      >
+                                        <div className="flex items-start justify-between mb-2">
+                                          <div className="flex-1">
+                                            <span className="text-[13px] font-[600] text-[#F05D3D]">
+                                              {issueTypeLabel}
+                                            </span>
+                                            <p className="text-[12px] text-[#24282E] mt-1 whitespace-pre-wrap">
+                                              {issue.additional_notes?.trim() || "No notes"}
+                                            </p>
+                                          </div>
+                                          <div className="flex items-center gap-2 ml-2">
+                                            <button
+                                              onClick={() => handleResolveIssue(issue.issue_type)}
+                                              className="px-2 py-1 text-[11px] bg-[#42DA82] text-white rounded-[6px] hover:bg-[#2fb96a] transition-colors"
+                                              title="Resolve issue"
+                                            >
+                                              Resolve
+                                            </button>
+                                            <button
+                                              onClick={() => handleDeleteIssue(issue.issue_type, issue.reported_at, true)}
+                                              disabled={isDeleting}
+                                              className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-[6px] transition-colors disabled:opacity-50"
+                                              title="Delete issue"
+                                            >
+                                              {isDeleting ? (
+                                                <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                                              ) : (
+                                                <TrashSvg />
+                                              )}
+                                            </button>
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center justify-end mt-2">
+                                          <span className="text-[10px] text-[#727A90]">
+                                            {formattedDate} at {formattedTime}
+                                          </span>
+                                        </div>
                                       </div>
-                                      {issue.additional_notes && (
-                                        <p className="text-[12px] text-[#24282E] mt-1 whitespace-pre-wrap">
-                                          {issue.additional_notes}
-                                        </p>
-                                      )}
-                                    </div>
-                                    <button
-                                      onClick={() => handleResolveIssue(issue.issue_type)}
-                                      className="ml-2 px-2 py-1 text-[11px] bg-[#42DA82] text-white rounded-[6px] hover:bg-[#2fb96a] transition-colors"
-                                      title="Resolve issue"
-                                    >
-                                      Resolve
-                                    </button>
-                                  </div>
+                                    );
+                                  })}
                                 </div>
-                              );
-                            })}
-                          </div>
+                              </div>
+                            )}
+
+                            {/* Issue History Section */}
+                            {issueHistory.length > 0 && (
+                              <div className="flex flex-col gap-3 mt-4">
+                                <h4 className="text-[13px] font-[600] text-[#24282E]">
+                                  Issue History
+                                </h4>
+                                <div className="flex flex-col gap-2">
+                                  {issueHistory.map((issue: any, index: number) => {
+                                    const issueTypeLabel =
+                                      ISSUE_TYPES.find((t) => t.value === issue.issue_type)
+                                        ?.label || issue.issue_type;
+                                    const issueDate = new Date(issue.reported_at);
+                                    const formattedDate = issueDate.toLocaleDateString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                    });
+                                    const formattedTime = issueDate.toLocaleTimeString("en-US", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    });
+                                    const deleteKey = `${issue.issue_type}-${issue.reported_at}`;
+                                    const isDeleting = isDeletingIssue === deleteKey;
+
+                                    return (
+                                      <div
+                                        key={`history-${issue.issue_type}-${issue.reported_at}-${index}`}
+                                        className="bg-[#F9FAFB] rounded-[8px] p-3 border border-[#E9EAEA]"
+                                      >
+                                        <div className="flex items-start justify-between mb-2">
+                                          <div className="flex-1">
+                                            <span className="text-[13px] font-[600] text-[#F05D3D]">
+                                              {issueTypeLabel}
+                                            </span>
+                                            <p className="text-[12px] text-[#24282E] mt-1 whitespace-pre-wrap">
+                                              {issue.additional_notes?.trim() || "No notes"}
+                                            </p>
+                                          </div>
+                                          <button
+                                            onClick={() => handleDeleteIssue(issue.issue_type, issue.reported_at, false)}
+                                            disabled={isDeleting}
+                                            className="ml-2 p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-[6px] transition-colors disabled:opacity-50"
+                                            title="Delete issue (only works for current issues)"
+                                          >
+                                            {isDeleting ? (
+                                              <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                                            ) : (
+                                              <TrashSvg />
+                                            )}
+                                          </button>
+                                        </div>
+                                        <div className="flex items-center justify-end mt-2">
+                                          <span className="text-[10px] text-[#727A90]">
+                                            {formattedDate} at {formattedTime}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Empty State */}
+                            {currentIssues.length === 0 && issueHistory.length === 0 && !showIssueForm && (
+                              <p className="text-[12px] text-[#727A90] text-center py-4">
+                                No issues reported yet.
+                              </p>
+                            )}
+                          </>
                         )}
                       </div>
                     </>
