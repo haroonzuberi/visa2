@@ -4,8 +4,8 @@ import { useState, useRef, useLayoutEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { putAPIWithAuth } from "@/utils/api";
 import { toast } from "react-toastify";
-
-const STATUS_OPTIONS = [
+ 
+export const STATUS_OPTIONS = [
   "new",
   "ready_to_apply",
   "have_issues",

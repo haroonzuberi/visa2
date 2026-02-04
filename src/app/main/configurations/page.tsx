@@ -740,7 +740,7 @@ export default function Configurations() {
       </div>
 
       <div className="bg-white rounded-xl p-6 mt-4">
-        <h2 className="text-[20px] font-[600] text-[#24282E] mb-6">Extracted Visa Data</h2>
+        <h2 className="text-[20px] font-[600] text-[#24282E] mb-6">Default Visa Data</h2>
         
         {/* Country Selector Section */}
         <div className="mb-6">

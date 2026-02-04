@@ -15,6 +15,7 @@ import tableStyles from "../table.styles.module.css";
 import DropdownSVG from "@/Assets/svgs/DropdownSVG";
 import IndiaFlag from "@/Assets/svgs/IndiaFlag";
 import EyeIcon from "@/Assets/svgs/EyeIcon";
+import TrashSvg from "@/Assets/svgs/TrashSvg";
 import GeneralData from "../../../components/ui/tableheader/page";
 import TableFooterComponent from "@/components/ui/tablefooter/page";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
@@ -32,7 +33,20 @@ import {
   fetchSubmissions,
   setCurrentPage,
 } from "@/store/slices/formSubmissionSlice";
-import StatusDropdown from "@/components/StatusDropdown/page";
+import StatusDropdown, { STATUS_OPTIONS } from "@/components/StatusDropdown/page";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { deleteApi } from "@/utils/api";
+import { toast } from "react-toastify";
 
 const Priority = ({ level = "" }: { level: string }) => {
   const getColor = () => {
@@ -118,6 +132,9 @@ const LoadingSkeleton = () =>
     </TableRow>
   ));
 
+const formatStatusLabel = (status: string) =>
+  status.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+
 export default function Applications() {
   const dispatch = useDispatch<AppDispatch>();
   const [searchTerm, setSearchTerm] = useState("");
@@ -134,11 +151,28 @@ export default function Applications() {
   const [selectedApplication, setSelectedApplication] = useState<any | null>(
     null
   );
+  const [openDeleteId, setOpenDeleteId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [filterFormId, setFilterFormId] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterApplicationId, setFilterApplicationId] = useState("");
+
+  const buildFetchParams = (pageOverride?: number) => {
+    const page = pageOverride ?? currentPage;
+    const skip = (page - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
+
+    return {
+      skip,
+      search: searchTerm.trim(),
+      formId: filterFormId.trim() || undefined,
+      status: filterStatus || undefined,
+      applicationId: filterApplicationId.trim() || undefined,
+    };
+  };
 
   useEffect(() => {
-    const skip = (currentPage - 1) * PAGINATION_CONFIG.DEFAULT_PAGE_SIZE;
-    dispatch(fetchSubmissions({ skip }));
-  }, [dispatch, currentPage, searchTerm]);
+    dispatch(fetchSubmissions(buildFetchParams()));
+  }, [dispatch, currentPage, searchTerm, filterFormId, filterStatus, filterApplicationId]);
 
   useEffect(() => {
     setIsModalOpen(searchParams.get("modal") === "open");
@@ -156,10 +190,10 @@ export default function Applications() {
     };
   }, [isModalOpen]);
 
-  // const handleSearch = (value: string) => {
-  //   setSearchTerm(value);
-  //   dispatch(setCurrentPage(1));
-  // };
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    dispatch(setCurrentPage(1));
+  };
 
   const handlePageChange = (page: number) => {
     dispatch(setCurrentPage(page));
@@ -182,6 +216,37 @@ export default function Applications() {
   const handleCloseModal = () => {
     setIsApplicationDetail(false);
     setSelectedApplication(null);
+  };
+
+  const refreshList = () => {
+    dispatch(fetchSubmissions(buildFetchParams()));
+  };
+
+  const handleDeleteApplication = async (applicationId: number): Promise<boolean> => {
+    try {
+      setDeletingId(applicationId);
+      const response = await deleteApi(`applications/${applicationId}`);
+
+      if (response.success) {
+        toast.success("Application deleted successfully");
+        refreshList();
+        return true;
+      } else {
+        const message =
+          (response.data as any)?.message ||
+          "Failed to delete application. Please try again.";
+        toast.error(message);
+        return false;
+      }
+    } catch (error: any) {
+      console.error("Error deleting application:", error);
+      toast.error(
+        error?.message || "Failed to delete application. Please try again."
+      );
+      return false;
+    } finally {
+      setDeletingId((current) => (current === applicationId ? null : current));
+    }
   };
 
   // Helper to safely get field value or return N/A
@@ -227,9 +292,79 @@ export default function Applications() {
         <GeneralData
           search={true}
           header="Application List"
-          onSearchChange={setSearchTerm}
+          onSearchChange={handleSearch}
           searchQuery={searchTerm}
         />
+
+        {/* Filters row */}
+        <div className="bg-white px-4 py-3 border-t border-gray-100 flex flex-wrap gap-3 items-end">
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-medium text-gray-600">
+              Application ID
+            </label>
+            <input
+              type="text"
+              value={filterApplicationId}
+              onChange={(e) => {
+                setFilterApplicationId(e.target.value);
+                dispatch(setCurrentPage(1));
+              }}
+              placeholder="e.g. VISA-1234"
+              className="w-40 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#42DA82]/40"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-medium text-gray-600">
+              Form ID
+            </label>
+            <input
+              type="number"
+              value={filterFormId}
+              onChange={(e) => {
+                setFilterFormId(e.target.value);
+                dispatch(setCurrentPage(1));
+              }}
+              placeholder="Form ID"
+              className="w-32 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#42DA82]/40"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-medium text-gray-600">
+              Status
+            </label>
+            <select
+              value={filterStatus}
+              onChange={(e) => {
+                setFilterStatus(e.target.value);
+                dispatch(setCurrentPage(1));
+              }}
+              className="w-44 px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#42DA82]/40"
+            >
+              <option value="">All statuses</option>
+              {STATUS_OPTIONS.map((status) => (
+                <option key={status} value={status}>
+                  {formatStatusLabel(status)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setFilterApplicationId("");
+              setFilterFormId("");
+              setFilterStatus("");
+              setSearchTerm("");
+              dispatch(setCurrentPage(1));
+            }}
+            className="ml-auto px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+          >
+            Clear Filters
+          </button>
+        </div>
 
         {/* Application Table */}
         <div className="bg-white rounded-xl">
@@ -339,12 +474,69 @@ export default function Applications() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex justify-center items-center gap-2">
+                      <div className="flex justify-center items-center gap-3">
                         <EyeIcon
                           onClick={() => handleOpenModal(submission)}
-                          className="cursor-pointer "
+                          className="cursor-pointer"
                         />
-                        {/* <DropdownSVG className="cursor-pointer w-[13px] h-[8px]" /> */}
+                        <AlertDialog
+                          open={openDeleteId === submission.id}
+                          onOpenChange={(open) => {
+                            // Prevent closing while delete is in progress
+                            if (deletingId === submission.id) return;
+                            setOpenDeleteId(open ? submission.id : null);
+                          }}
+                        >
+                          <AlertDialogTrigger asChild>
+                            <button
+                              type="button"
+                              className="p-1 rounded hover:bg-red-50 focus:outline-none"
+                              title="Delete application"
+                            >
+                              <TrashSvg className="w-4 h-4" />
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="bg-white rounded-lg shadow-lg p-6 max-w-md">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Delete this application?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will
+                                permanently delete the application{" "}
+                                <span className="font-semibold">
+                                  #{getFieldValue(submission.application_id)}
+                                </span>{" "}
+                                and all related data.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel
+                                disabled={deletingId === submission.id}
+                              >
+                                Cancel
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-red-600 hover:bg-red-700"
+                                disabled={deletingId === submission.id}
+                                onClick={async (e) => {
+                                  // Prevent Radix from auto-closing before the API call finishes
+                                  e.preventDefault();
+                                  const success = await handleDeleteApplication(
+                                    submission.id
+                                  );
+                                  if (success) {
+                                    setOpenDeleteId(null);
+                                  }
+                                }}
+                              >
+                                {deletingId === submission.id
+                                  ? "Deleting..."
+                                  : "Delete"}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </TableCell>
                   </TableRow>

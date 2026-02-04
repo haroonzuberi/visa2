@@ -76,14 +76,41 @@ const initialState: FormSubmissionState = {
 export const fetchSubmissions = createAsyncThunk(
   "formSubmissions/fetchFormSubmissions",
   async (
-    { skip = 0, search = "" }: { skip?: number; search?: string },
+    {
+      skip = 0,
+      search = "",
+      formId,
+      status,
+      applicationId,
+    }: {
+      skip?: number;
+      search?: string;
+      formId?: string | number;
+      status?: string;
+      applicationId?: string;
+    },
     { rejectWithValue }
   ) => {
     try {
+      const params = new URLSearchParams();
+      params.append("skip", String(skip));
+      params.append("limit", String(PAGINATION_CONFIG.DEFAULT_PAGE_SIZE));
+
+      if (search) {
+        params.append("search", search);
+      }
+      if (formId) {
+        params.append("form_id", String(formId));
+      }
+      if (status) {
+        params.append("status", status);
+      }
+      if (applicationId) {
+        params.append("application_id", applicationId);
+      }
+
       const response: any = await getApiWithAuth(
-        `form-submissions/?skip=${skip}&limit=${
-          PAGINATION_CONFIG.DEFAULT_PAGE_SIZE
-        }${search ? `&search=${search}` : ""}`
+        `form-submissions/?${params.toString()}`
       );
       
       if (!response?.success) {
