@@ -1,16 +1,11 @@
 "use client";
 import CrossSvg from "@/Assets/svgs/CrossSvg";
 import styles from "./styles.module.css";
-import { useEffect, useState, useRef, JSX, useMemo, useCallback } from "react";
+import { useEffect, useState, useRef, JSX, useMemo } from "react";
 import PdfSvg from "@/Assets/svgs/PdfSvg";
-import EyeSvg from "@/Assets/svgs/EyeSvg";
-import EditSvg from "@/Assets/svgs/EditSvg";
-import CopySvg from "@/Assets/svgs/CopySvg";
-import TicketSvg from "@/Assets/svgs/TicketSvg";
 import { Check } from "lucide-react";
 import PencilSvg from "@/Assets/svgs/PencilSvg";
 import TrashSvg from "@/Assets/svgs/TrashSvg";
-import EditInfo from "../EditInfoModal/page";
 import RefundAmount from "../RefundAmountModal/page";
 import EditPersonalInfo from "../EditPersonalInfoModal/page";
 import NewApplication from "../NewApplicationModal/page";
@@ -61,6 +56,7 @@ interface ApplicationData {
   customer_id: number;
   applicant_id: number;
   visa_status: string;
+  price_paid: any;
   payment_status: string;
   priority: string;
   submitted_by: string;
@@ -97,14 +93,6 @@ interface ApplicationData {
     steps: Record<string, { status: string; error: string | null }>;
   };
   internal_notes?: string;
-}
-
-interface BackgroundProcessingStatus {
-  status: string;
-  error: string | null;
-  started_at: string;
-  completed_at: string;
-  steps: Record<string, { status: string; error: string | null }>;
 }
 
 interface ModalProps {
@@ -146,9 +134,8 @@ const ApplicationDetail: React.FC<ModalProps> = ({
   data,
 }) => {
   const [isRefund, setIsRefund] = useState<boolean>(false);
-  const [isPersonalEdit, setIsPersonalEdit] = useState<boolean>(false);
+  const [isPersonalEdit] = useState<boolean>(false);
   const [isNewApplication, setIsNewApplication] = useState<boolean>(false);
-  const [isEdit, setIsEdit] = useState<boolean>(false);
   const [accordionState, setAccordionState] = useState<Record<string, boolean>>({});
   const [applicationData, setApplicationData] = useState<ApplicationData | null>(null);
   const [defaultValues, setDefaultValues] = useState<any>(null); // Store default values from API
@@ -164,6 +151,9 @@ const ApplicationDetail: React.FC<ModalProps> = ({
   const passportPhotoInputRef = useRef<HTMLInputElement | null>(null);
   const otherDocumentsInputRef = useRef<HTMLInputElement | null>(null);
   const [isUpdatingImage, setIsUpdatingImage] = useState(false);
+  const [isEditingPrice, setIsEditingPrice] = useState(false);
+  const [priceInput, setPriceInput] = useState("");
+  const [isUpdatingPrice, setIsUpdatingPrice] = useState(false);
   
   // Comments state
   const [comments, setComments] = useState<any[]>([]);
@@ -567,18 +557,7 @@ const ApplicationDetail: React.FC<ModalProps> = ({
 
   // Get dynamic field values from customer/applicant or values
   const name = applicationData?.applicant?.name || applicationData?.customer?.name || getValue(applicationData, "full_name") || getValue(applicationData, "name") || "N/A";
-  const email = applicationData?.applicant?.email || applicationData?.customer?.email || getValue(applicationData, "email") || "N/A";
-  const phone = applicationData?.applicant?.phone || applicationData?.customer?.phone || getValue(applicationData, "phone") || getValue(applicationData, "phone_number") || "N/A";
   const passportNumber = applicationData?.applicant?.passport_number || getValue(applicationData, "passport_number") || "N/A";
-  const visaType = getValue(applicationData, "visa_type") || getValue(applicationData, "purpose_of_visit") || "N/A";
-  const country = getValue(applicationData, " nationality") || getValue(applicationData, "birth_country") || "India";
-  const arrivalDate = getValue(applicationData, "arrival_date") || getValue(applicationData, "flight_date") || "N/A";
-  const departureDate = getValue(applicationData, "departure_date") || "N/A";
-  const purposeOfVisit = getValue(applicationData, "purpose_of_visit") || "N/A";
-  const accommodationDetails = getValue(applicationData, "accommodation_details") || "N/A";
-  const travelHistory = getValue(applicationData, "travel_history") || "N/A";
-  const birthDate = getValue(applicationData, " birth_date") || getValue(applicationData, "date_of_birth") || "N/A";
-  const gender = getValue(applicationData, "gender") || "N/A";
 
   // Get document info (file_path, original_filename) - supports both key and document_type lookup
   const userPhotoDoc = getDocumentInfo(applicationData, "user_photo", "USER_PHOTO");
@@ -708,6 +687,65 @@ const ApplicationDetail: React.FC<ModalProps> = ({
         : "Failed to update image"));
     } finally {
       setIsUpdatingImage(false);
+    }
+  };
+
+  const handleUpdatePrice = async () => {
+    if (!applicationData) return;
+
+    const trimmed = priceInput.trim();
+    if (!trimmed) {
+      toast.error("Please enter a valid price");
+      return;
+    }
+
+    setIsUpdatingPrice(true);
+    try {
+      const formData = new FormData();
+      formData.append("price_paid", trimmed);
+
+      const token = await getAccessToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const apiUrl = `${BASE_URL}applications/quick-entry/${applicationData.id}`;
+
+      const response = await fetch(apiUrl, {
+        method: "PUT",
+        headers,
+        body: formData,
+      });
+
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch {
+        // ignore JSON parse errors
+      }
+
+      if (data?.success || response.ok) {
+        toast.success("Price updated successfully");
+        try {
+          const refreshed: any = await getApiWithAuth(
+            `form-submissions/${applicationData.id}`
+          );
+          if (refreshed.success && refreshed.data) {
+            setApplicationData(refreshed.data);
+          }
+        } catch (err) {
+          console.error("Failed to refresh application after price update", err);
+        }
+        setIsEditingPrice(false);
+      } else {
+        toast.error(data?.message || "Failed to update price");
+      }
+    } catch (error: any) {
+      console.error("Error updating price:", error);
+      toast.error(error?.message || "Failed to update price");
+    } finally {
+      setIsUpdatingPrice(false);
     }
   };
 
@@ -1895,6 +1933,99 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                     ) : (
                       <p className="text-[14px] font-[500] text-[#727A90]">No internal notes.</p>
                     )}
+                  </div>
+
+                  {/* Price Footer */}
+                  <div className="mt-4 border-t border-[#E9EAEA] pt-3 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-[13px] font-[500] text-[#727A90]">
+                        Price Paid
+                      </span>
+                      {isEditingPrice ? (
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={priceInput}
+                          onChange={(e) => setPriceInput(e.target.value)}
+                          className="mt-1 w-full px-3 py-2 border border-[#E9EAEA] rounded-[8px] text-[14px] focus:outline-none focus:ring-2 focus:ring-[#42DA82]/20"
+                          placeholder="Enter price paid"
+                          disabled={isUpdatingPrice}
+                        />
+                      ) : (
+                        <span className="mt-1 text-[16px] font-[600] text-[#24282E]">
+                          {applicationData?.price_paid && applicationData?.price_paid !== "N/A"
+                            ? applicationData?.price_paid
+                            : "N/A"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isEditingPrice ? (
+                        <>
+                          <button
+                            onClick={handleUpdatePrice}
+                            disabled={isUpdatingPrice || !priceInput.trim()}
+                            className="px-3 py-1.5 bg-[#42DA82] text-white rounded-[8px] text-[12px] font-medium hover:bg-[#2fb96a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                          >
+                            {isUpdatingPrice ? (
+                              <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : null}
+                            <span>Save</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setIsEditingPrice(false);
+                              setPriceInput(
+                                applicationData?.price_paid && applicationData?.price_paid !== "N/A"
+                                  ? String(applicationData?.price_paid)
+                                  : ""
+                              );
+                            }}
+                            disabled={isUpdatingPrice}
+                            className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-[8px] text-[12px] font-medium hover:bg-gray-300 transition-colors disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setIsEditingPrice(true);
+                            setPriceInput(
+                              applicationData?.price_paid && applicationData?.price_paid !== "N/A"
+                                ? String(applicationData?.price_paid)
+                                : ""
+                            );
+                          }}
+                          className="p-2 border border-[#E9EAEA] rounded-[8px] hover:bg-[#42DA8210] transition-colors"
+                          title="Edit price"
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M4 20H7L17.5 9.5L14.5 6.5L4 17V20Z"
+                              stroke="#42DA82"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            <path
+                              d="M14.5 6.5L16.75 4.25C17.16 3.84 17.84 3.84 18.25 4.25L19.75 5.75C20.16 6.16 20.16 6.84 19.75 7.25L17.5 9.5"
+                              stroke="#42DA82"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

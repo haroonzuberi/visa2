@@ -79,15 +79,21 @@ export const fetchSubmissions = createAsyncThunk(
     {
       skip = 0,
       search = "",
-      formId,
       status,
       applicationId,
+      priority,
+      country,
+      sortBy,
+      sortOrder,
     }: {
       skip?: number;
       search?: string;
-      formId?: string | number;
       status?: string;
       applicationId?: string;
+      priority?: string;
+      country?: string;
+      sortBy?: string;
+      sortOrder?: string;
     },
     { rejectWithValue }
   ) => {
@@ -99,14 +105,23 @@ export const fetchSubmissions = createAsyncThunk(
       if (search) {
         params.append("search", search);
       }
-      if (formId) {
-        params.append("form_id", String(formId));
-      }
       if (status) {
         params.append("status", status);
       }
       if (applicationId) {
         params.append("application_id", applicationId);
+      }
+      if (priority) {
+        params.append("priority", priority);
+      }
+      if (country) {
+        params.append("country", country);
+      }
+      if (sortBy) {
+        params.append("sort_by", sortBy);
+      }
+      if (sortOrder) {
+        params.append("sort_order", sortOrder);
       }
 
       const response: any = await getApiWithAuth(

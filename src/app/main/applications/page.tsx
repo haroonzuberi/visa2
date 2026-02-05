@@ -93,7 +93,7 @@ const LoadingSkeleton = () =>
         <div className="h-4 w-[140px] bg-gray-200 rounded"></div>
       </TableCell>
 
-      {/* Flight Date Column */}
+      {/* Arrival Date Column */}
       <TableCell className="py-4">
         <div className="h-4 w-[120px] bg-gray-200 rounded"></div>
       </TableCell>
@@ -158,9 +158,12 @@ export default function Applications() {
   );
   const [openDeleteId, setOpenDeleteId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [filterFormId, setFilterFormId] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterApplicationId, setFilterApplicationId] = useState("");
+  const [filterPriority, setFilterPriority] = useState("");
+  const [filterCountry, setFilterCountry] = useState("");
+  const [sortBy, setSortBy] = useState("created_at");
+  const [sortOrder, setSortOrder] = useState("desc");
 
   const buildFetchParams = (pageOverride?: number) => {
     const page = pageOverride ?? currentPage;
@@ -169,15 +172,18 @@ export default function Applications() {
     return {
       skip,
       search: searchTerm.trim(),
-      formId: filterFormId.trim() || undefined,
       status: filterStatus || undefined,
       applicationId: filterApplicationId.trim() || undefined,
+      priority: filterPriority || undefined,
+      country: filterCountry.trim() || undefined,
+      sortBy: sortBy || undefined,
+      sortOrder: sortOrder || undefined,
     };
   };
 
   useEffect(() => {
     dispatch(fetchSubmissions(buildFetchParams()));
-  }, [dispatch, currentPage, searchTerm, filterFormId, filterStatus, filterApplicationId]);
+  }, [dispatch, currentPage, searchTerm, filterStatus, filterApplicationId, filterPriority, filterCountry, sortBy, sortOrder]);
 
   const [isMounted, setIsMounted] = useState(false);
 
@@ -332,22 +338,6 @@ export default function Applications() {
 
           <div className="flex flex-col gap-1">
             <label className="text-[11px] font-medium text-gray-600">
-              Form ID
-            </label>
-            <input
-              type="number"
-              value={filterFormId}
-              onChange={(e) => {
-                setFilterFormId(e.target.value);
-                dispatch(setCurrentPage(1));
-              }}
-              placeholder="Form ID"
-              className="w-32 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#42DA82]/40"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-gray-600">
               Status
             </label>
             <select
@@ -367,12 +357,87 @@ export default function Applications() {
             </select>
           </div>
 
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-medium text-gray-600">
+              Priority
+            </label>
+            <select
+              value={filterPriority}
+              onChange={(e) => {
+                setFilterPriority(e.target.value);
+                dispatch(setCurrentPage(1));
+              }}
+              className="w-36 px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#42DA82]/40"
+            >
+              <option value="">All priorities</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-medium text-gray-600">
+              Country
+            </label>
+            <input
+              type="text"
+              value={filterCountry}
+              onChange={(e) => {
+                setFilterCountry(e.target.value);
+                dispatch(setCurrentPage(1));
+              }}
+              placeholder="e.g. India"
+              className="w-36 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#42DA82]/40"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-medium text-gray-600">
+              Sort By
+            </label>
+            <select
+              value={sortBy}
+              onChange={(e) => {
+                setSortBy(e.target.value);
+                dispatch(setCurrentPage(1));
+              }}
+              className="w-44 px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#42DA82]/40"
+            >
+              <option value="">No sorting</option>
+              <option value="flight_date">Arrival Date</option>
+              <option value="created_at">Application Date</option>
+            </select>
+          </div>
+
+          {sortBy && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-gray-600">
+                Sort Order
+              </label>
+              <select
+                value={sortOrder}
+                onChange={(e) => {
+                  setSortOrder(e.target.value);
+                  dispatch(setCurrentPage(1));
+                }}
+                className="w-36 px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#42DA82]/40"
+              >
+                <option value="asc">Ascending</option>
+                <option value="desc">Descending</option>
+              </select>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={() => {
               setFilterApplicationId("");
-              setFilterFormId("");
               setFilterStatus("");
+              setFilterPriority("");
+              setFilterCountry("");
+              setSortBy("created_at");
+              setSortOrder("desc");
               setSearchTerm("");
               dispatch(setCurrentPage(1));
             }}
@@ -395,7 +460,7 @@ export default function Applications() {
                   Application Date
                 </TableHead>
                 <TableHead className={tableStyles.tableHeaders}>
-                  Flight Date
+                  Arrival Date
                 </TableHead>
                 <TableHead className={tableStyles.tableHeaders}>
                   Priority Level

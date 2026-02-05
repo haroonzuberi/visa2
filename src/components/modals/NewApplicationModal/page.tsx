@@ -51,6 +51,7 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
   const [email, setEmail] = useState("");
   const [internalNotes, setInternalNotes] = useState("");
   const [passportNumber, setPassportNumber] = useState("");
+  const [pricePaid, setPricePaid] = useState("");
   const [passportPhoto, setPassportPhoto] = useState<File | null>(null);
   const [userPhoto, setUserPhoto] = useState<File | null>(null);
   const [otherDocuments, setOtherDocuments] = useState<File | null>(null);
@@ -92,11 +93,13 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
       const phoneValue = editData.customer?.phone || editData.applicant?.phone || editData.values?.phone?.value || editData.values?.phone || editData.values?.phone_number?.value || editData.values?.phone_number || "";
       const passportNumberValue = editData.applicant?.passport_number || editData.values?.passport_number?.value || editData.values?.passport_number || "";
       const internalNotesValue = editData.values?.internal_notes?.value || editData.values?.internal_notes || "";
+      const pricePaidValue = editData.values?.price_paid?.value || editData.values?.price_paid || "";
 
       // Set email and phone
       if (emailValue) setEmail(emailValue);
       if (phoneValue) setPhone(phoneValue);
       if (internalNotesValue) setInternalNotes(internalNotesValue);
+      if (pricePaidValue) setPricePaid(String(pricePaidValue));
       if (passportNumberValue) setPassportNumber(passportNumberValue);
 
       // Find and set country
@@ -204,6 +207,7 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
     }
     const trimmedPhone = phone.trim();
     const trimmedEmail = email.trim();
+    const trimmedPricePaid = pricePaid.trim();
 
     setIsSubmitting(true);
     try {
@@ -220,6 +224,9 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
       }
       if (internalNotes.trim()) {
         formData.append("internal_notes", internalNotes);
+      }
+      if (trimmedPricePaid) {
+        formData.append("price_paid", trimmedPricePaid);
       }
       // Only append files if they are provided (required for create, optional for edit)
       if (passportPhoto) {
@@ -264,6 +271,7 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
         setEmail("");
         setInternalNotes("");
         setPassportNumber("");
+        setPricePaid("");
         setPassportPhoto(null);
         setUserPhoto(null);
         setOtherDocuments(null);
@@ -428,7 +436,7 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                       </div>
                     </div>
 
-                    {/* Phone, Passport Number, and Email */}
+                    {/* Phone, Email, Passport Number, and Price Paid */}
                     <div className="grid grid-cols-2 gap-4">
                       {/* Phone Number */}
                       <div>
@@ -459,7 +467,7 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                       </div>
 
                       {/* Passport Number */}
-                      <div className="col-span-2">
+                      <div>
                         <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
                           Passport Number <span className="text-red-500">*</span>
                         </label>
@@ -469,6 +477,22 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                           onChange={(e) => setPassportNumber(e.target.value)}
                           className="w-full px-4 py-3 border border-[#E9EAEA] rounded-[10px] focus:outline-none focus:border-[#42DA82]"
                           placeholder="Enter passport number"
+                        />
+                      </div>
+
+                      {/* Price Paid (optional) */}
+                      <div>
+                        <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
+                          Price Paid
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={pricePaid}
+                          onChange={(e) => setPricePaid(e.target.value)}
+                          className="w-full px-4 py-3 border border-[#E9EAEA] rounded-[10px] focus:outline-none focus:border-[#42DA82]"
+                          placeholder="Enter price paid (optional)"
                         />
                       </div>
                     </div>
