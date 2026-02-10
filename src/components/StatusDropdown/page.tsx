@@ -4,7 +4,8 @@ import { useState, useRef, useLayoutEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { putAPIWithAuth } from "@/utils/api";
 import { toast } from "react-toastify";
- 
+
+// All allowed visa_status values from backend
 export const STATUS_OPTIONS = [
   "new",
   "ready_to_apply",
@@ -16,8 +17,10 @@ export const STATUS_OPTIONS = [
   "cancelled",
   "temp_id_saved",
   "ready_for_payment",
+  "payment_pending",
   "payment_verified",
-  "visa_granted",
+  "under_process",
+  "granted",
   "visa_delivered",
 ];
 
@@ -33,7 +36,7 @@ const getStatusStyle = (status: string) => {
       return "bg-[#feefec] text-[#F05D3D] text-[10px] font-[600] border-[1px] rounded-[100px] text-nowrap border-[#FACDC3]";
     case "gov_fee_paid":
     case "payment_verified":
-    case "visa_granted":
+    case "granted":
     case "visa_delivered":
       return "bg-[#ECFBF3] text-[#42DA82] text-[10px] font-[600] border-[1px] rounded-[100px] text-nowrap border-[#42DA82]";
     case "cancelled":
@@ -41,6 +44,8 @@ const getStatusStyle = (status: string) => {
       return "bg-[#E6F4F5] text-[#009499] text-[10px] font-[600] border-[1px] rounded-[100px] text-nowrap border-[#B0DEDF]";
     case "ready_to_apply":
     case "ready_for_payment":
+    case "under_process":
+    case "payment_pending":
       return "bg-[#E6F5FE] text-[#019BF4] text-[10px] font-[600] border-[1px] rounded-[100px] text-nowrap border-[#B0E0FC]";
     case "rejected":
       return "bg-[#FDEDED] text-[#D32F2F] text-[10px] font-[600] border-[1px] rounded-[100px] text-nowrap border-[#F5C6C6]";

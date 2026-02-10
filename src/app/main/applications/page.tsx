@@ -404,7 +404,6 @@ export default function Applications() {
               }}
               className="w-44 px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#42DA82]/40"
             >
-              <option value="">No sorting</option>
               <option value="flight_date">Arrival Date</option>
               <option value="created_at">Application Date</option>
             </select>

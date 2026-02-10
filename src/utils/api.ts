@@ -6,6 +6,34 @@ export const STATIC_URL = "";
 
 axios.defaults.baseURL = BASE_URL;
 
+// Global response interceptor to handle auth errors (e.g., expired token)
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+
+    if (typeof window !== "undefined" && status === 401) {
+      try {
+        // Clear token from storage so Redux initial state picks it up on reload
+        localStorage.removeItem("token");
+      } catch (e) {
+        console.error("Error clearing auth token on 401:", e);
+      }
+
+      // Force user back to login page
+      try {
+        if (window.location.pathname !== "/auth/login") {
+          window.location.href = "/auth/login";
+        }
+      } catch (e) {
+        console.error("Error redirecting to login on 401:", e);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 // Define API response types
 interface ApiResponse<T = any> {
   data: T;

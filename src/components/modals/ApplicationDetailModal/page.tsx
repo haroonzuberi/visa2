@@ -15,6 +15,7 @@ import GenericProfileImage from "@/Assets/Images/generic-profile.png";
 import { getApiWithAuth, patchApiWithAuth, postAPIWithAuth, deleteApi } from "@/utils/api";
 import { getAccessToken } from "@/utils/asyncStorage";
 import StatusDropdown from "@/components/StatusDropdown/page";
+import PaymentStatusDropdown from "@/components/StatusDropdown/PaymentStatusDropdown";
 import { toast } from "react-toastify";
 import React from "react";
 
@@ -171,6 +172,20 @@ const ApplicationDetail: React.FC<ModalProps> = ({
   const [sendNotification, setSendNotification] = useState(true);
   const [isSubmittingIssue, setIsSubmittingIssue] = useState(false);
   const [isDeletingIssue, setIsDeletingIssue] = useState<string | null>(null);
+
+  // Close modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
 
   // Fetch default values for the country
   useEffect(() => {
@@ -1635,19 +1650,38 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                     </div>
                   </div> */}
 
-                  <div className="flex items-center justify-between mt-6">
-                    <h3 className="text-[14px] font-[500] text-[#24222E]">
-                      Status
-                    </h3>
-                    <StatusDropdown
-                      status={applicationData.visa_status}
-                      applicationId={applicationData.id}
-                      onStatusChange={(newStatus) => {
-                        setApplicationData((prev) =>
-                          prev ? { ...prev, visa_status: newStatus } : null
-                        );
-                      }}
-                    />
+                  <div className="flex flex-col gap-3 mt-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-[14px] font-[500] text-[#24222E]">
+                        Status
+                      </h3>
+                      <StatusDropdown
+                        status={applicationData.visa_status}
+                        applicationId={applicationData.id}
+                        onStatusChange={(newStatus) => {
+                          setApplicationData((prev) =>
+                            prev ? { ...prev, visa_status: newStatus } : null
+                          );
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-[14px] font-[500] text-[#24222E]">
+                        Payment Status
+                      </h3>
+                      {applicationData && (
+                        <PaymentStatusDropdown
+                          status={applicationData.payment_status}
+                          applicationId={applicationData.id}
+                          onStatusChange={(newStatus) => {
+                            setApplicationData((prev) =>
+                              prev ? { ...prev, payment_status: newStatus } : prev
+                            );
+                          }}
+                        />
+                      )}
+                    </div>
                   </div>
                   {applicationData.visa_status === "cancel" || applicationData.visa_status === "rejected" ? (
                     <>
@@ -1936,7 +1970,7 @@ const ApplicationDetail: React.FC<ModalProps> = ({
                   </div>
 
                   {/* Price Footer */}
-                  <div className="mt-4 border-t border-[#E9EAEA] pt-3 flex items-center justify-between">
+                  <div className="mt-4 border-t border-[#E9EAEA] pt-3 flex items-center justify-between gap-4">
                     <div className="flex flex-col">
                       <span className="text-[13px] font-[500] text-[#727A90]">
                         Price Paid
