@@ -200,11 +200,6 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
       toast.error("Please select a visa type");
       return;
     }
-    const trimmedPassportNumber = passportNumber.trim();
-    if (!trimmedPassportNumber) {
-      toast.error("Please enter passport number");
-      return;
-    }
     const trimmedPhone = phone.trim();
     const trimmedEmail = email.trim();
     const trimmedPricePaid = pricePaid.trim();
@@ -218,7 +213,10 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
       if (trimmedPhone) {
         formData.append("phone", trimmedPhone);
       }
-      formData.append("passport_number", trimmedPassportNumber);
+      const trimmedPassportNumber = passportNumber.trim();
+      if (trimmedPassportNumber) {
+        formData.append("passport_number", trimmedPassportNumber);
+      }
       if (trimmedEmail) {
         formData.append("email", trimmedEmail);
       }
@@ -466,17 +464,17 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                         />
                       </div>
 
-                      {/* Passport Number */}
+                      {/* Passport Number (optional) */}
                       <div>
                         <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
-                          Passport Number <span className="text-red-500">*</span>
+                          Passport Number
                         </label>
                         <input
                           type="text"
                           value={passportNumber}
                           onChange={(e) => setPassportNumber(e.target.value)}
                           className="w-full px-4 py-3 border border-[#E9EAEA] rounded-[10px] focus:outline-none focus:border-[#42DA82]"
-                          placeholder="Enter passport number"
+                          placeholder="Enter passport number (optional)"
                         />
                       </div>
 
