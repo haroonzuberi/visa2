@@ -1,7 +1,7 @@
 "use client";
 import CrossSvg from "@/Assets/svgs/CrossSvg";
-import { useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, Upload, ImageIcon, X } from "lucide-react";
 import "@/styles/globals.css";
 import { getApiWithAuth } from "@/utils/api";
 import { toast } from "react-toastify";
@@ -58,9 +58,45 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showVisaTypeDropdown, setShowVisaTypeDropdown] = useState(false);
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const [dragOverField, setDragOverField] = useState<"passport" | "user" | "other" | null>(null);
+  const passportInputRef = useRef<HTMLInputElement>(null);
+  const userPhotoInputRef = useRef<HTMLInputElement>(null);
+  const otherDocsInputRef = useRef<HTMLInputElement>(null);
 
   // Check if we're in edit mode
   const isEditMode = !!editData;
+
+  const VALID_EXTENSIONS = ["jpg", "jpeg", "png", "pdf"];
+  const VALID_MIME_TYPES = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
+  const PDF_MAX_BYTES = 2 * 1024 * 1024; // 2MB
+
+  const validateUploadFile = (file: File): { ok: boolean; reason?: "type" | "size" } => {
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (!ext || !VALID_EXTENSIONS.includes(ext)) return { ok: false, reason: "type" };
+    if (!VALID_MIME_TYPES.includes(file.type)) return { ok: false, reason: "type" };
+
+    if (file.type === "application/pdf" && file.size > PDF_MAX_BYTES) {
+      return { ok: false, reason: "size" };
+    }
+    return { ok: true };
+  };
+
+  const setFileIfValid = (setter: (f: File | null) => void, file: File | null) => {
+    if (!file) {
+      setter(null);
+      return;
+    }
+    const result = validateUploadFile(file);
+    if (!result.ok) {
+      if (result.reason === "size") {
+        toast.error("PDF must be under 2MB");
+        return;
+      }
+      toast.error("Please upload JPG, PNG, or PDF files");
+      return;
+    }
+    setter(file);
+  };
 
   // Fetch countries and visa types on component mount
   useEffect(() => {
@@ -69,7 +105,25 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
       try {
         const response: any = await getApiWithAuth(`visa-types/by-country?is_active=true`);
         if (response.success && response.data?.data?.countries) {
-          setCountriesData(response.data.data.countries);
+          const countries = response.data.data.countries;
+          setCountriesData(countries);
+          // When adding (not editing), default to India and India Tourist Visa
+          if (!editData && countries?.length) {
+            const indiaItem = countries.find(
+              (item: CountryWithVisaTypes) => item.country.name.toLowerCase() === "india"
+            );
+            if (indiaItem) {
+              setSelectedCountry(indiaItem.country);
+              const touristVisa = indiaItem.visa_types.find(
+                (vt: VisaType) =>
+                  vt.name.toLowerCase() === "india tourist visa" ||
+                  (vt.name.toLowerCase().includes("tourist") && vt.name.toLowerCase().includes("india"))
+              );
+              if (touristVisa) {
+                setSelectedVisaTypeId(touristVisa.id);
+              }
+            }
+          }
         } else {
           toast.error("Failed to load countries");
         }
@@ -151,9 +205,12 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
       } else {
         setVisaTypes([]);
       }
-      // Only reset visa type if we're not in edit mode
-      if (!editData) {
-        setSelectedVisaTypeId(null);
+      // Only reset visa type when current selection is not in this country's visa types (e.g. user switched country)
+      if (!editData && selectedVisaTypeId != null && countryData.visa_types.length > 0) {
+        const isCurrentVisaInList = countryData.visa_types.some((vt) => vt.id === selectedVisaTypeId);
+        if (!isCurrentVisaInList) {
+          setSelectedVisaTypeId(null);
+        }
       }
     } else {
       setVisaTypes([]);
@@ -161,33 +218,38 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
         setSelectedVisaTypeId(null);
       }
     }
-  }, [selectedCountry, countriesData, editData]);
+  }, [selectedCountry, countriesData, editData, selectedVisaTypeId]);
 
   const handleFileChange = (
     setter: (file: File | null) => void,
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      const fileExtension = file.name.split('.').pop()?.toLowerCase();
-      const validExtensions = ['jpg', 'jpeg', 'png'];
-      
-      if (!fileExtension || !validExtensions.includes(fileExtension)) {
-        toast.error("Please upload only JPG or PNG images");
-        event.target.value = ''; // Reset the input
-        return;
-      }
-      
-      // Also check MIME type for additional validation
-      const validMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-      if (!validMimeTypes.includes(file.type)) {
-        toast.error("Please upload only JPG or PNG images");
-        event.target.value = ''; // Reset the input
-        return;
-      }
-      
-      setter(file);
-    }
+    const file = event.target.files?.[0];
+    if (file) setFileIfValid(setter, file);
+    event.target.value = "";
+  };
+
+  const handleDrop = (
+    setter: (file: File | null) => void,
+    field: "passport" | "user" | "other"
+  ) => (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverField(null);
+    const file = e.dataTransfer.files?.[0];
+    if (file) setFileIfValid(setter, file);
+  };
+
+  const handleDragOver = (field: "passport" | "user" | "other") => (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverField(field);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverField(null);
   };
 
   const handleSubmit = async () => {
@@ -419,7 +481,7 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                                     }}
                                     className="w-full px-4 py-3 text-left hover:bg-[#42DA8210] transition-colors border-b border-[#E9EAEA] last:border-b-0"
                                   >
-                                    <div className="font-medium text-[#24282E]">{visaType.name}</div>
+                                    <div className="font-medium text-[#24282E]">{visaType.name} - {visaType.duration} days</div>
                                     <div className="text-[12px] text-[#727A90]">{visaType.description}</div>
                                   </button>
                                 ))
@@ -510,26 +572,64 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                     </div>
 
                     {/* File Uploads */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {/* Passport Photo */}
                       <div>
                         <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
                           Passport Photo
                         </label>
-                        <div className="border border-[#E9EAEA] rounded-[10px] p-4">
-                          <input
-                            type="file"
-                            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-                            onChange={(e) => handleFileChange(setPassportPhoto, e)}
-                            className="w-full text-[12px] text-[#727A90]"
-                          />
-                          <p className="text-[12px] text-[#727A90] mt-2">
-                            Accepted: JPG, PNG
-                          </p>
-                          {passportPhoto && (
-                            <p className="text-[12px] text-[#42DA82] mt-1">
-                              Selected: {passportPhoto.name}
-                            </p>
+                        <input
+                          ref={passportInputRef}
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                          onChange={(e) => handleFileChange(setPassportPhoto, e)}
+                          className="hidden"
+                        />
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => passportInputRef.current?.click()}
+                          onKeyDown={(e) => e.key === "Enter" && passportInputRef.current?.click()}
+                          onDragOver={handleDragOver("passport")}
+                          onDragLeave={handleDragLeave}
+                          onDrop={handleDrop(setPassportPhoto, "passport")}
+                          className={`
+                            relative rounded-[10px] border-2 border-dashed transition-all duration-200 cursor-pointer
+                            min-h-[140px] flex flex-col items-center justify-center gap-2 p-5
+                            ${dragOverField === "passport"
+                              ? "border-[#42DA82] bg-[#42DA8212]"
+                              : passportPhoto
+                              ? "border-[#42DA82]/50 bg-[#42DA8208]"
+                              : "border-[#E9EAEA] bg-[#FAFAFA] hover:border-[#42DA82]/70 hover:bg-[#42DA8208]"
+                            }
+                          `}
+                        >
+                          {passportPhoto ? (
+                            <>
+                              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#42DA82]/20">
+                                <ImageIcon className="w-6 h-6 text-[#42DA82]" />
+                              </div>
+                              <p className="text-[13px] font-medium text-[#24282E] text-center truncate max-w-full px-2">
+                                {passportPhoto.name}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setPassportPhoto(null); }}
+                                className="flex items-center gap-1 text-[12px] text-[#727A90] hover:text-[#24282E] mt-0.5"
+                              >
+                                <X className="w-3.5 h-3.5" /> Remove
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#E9EAEA]">
+                                <Upload className="w-6 h-6 text-[#727A90]" />
+                              </div>
+                              <p className="text-[13px] font-medium text-[#24282E] text-center">
+                                Drag & drop or click to upload
+                              </p>
+                              <p className="text-[12px] text-[#727A90]">JPG, PNG, PDF (max 2MB)</p>
+                            </>
                           )}
                         </div>
                       </div>
@@ -539,20 +639,58 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                         <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
                           User Photo
                         </label>
-                        <div className="border border-[#E9EAEA] rounded-[10px] p-4">
-                          <input
-                            type="file"
-                            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-                            onChange={(e) => handleFileChange(setUserPhoto, e)}
-                            className="w-full text-[12px] text-[#727A90]"
-                          />
-                          <p className="text-[12px] text-[#727A90] mt-2">
-                            Accepted: JPG, PNG
-                          </p>
-                          {userPhoto && (
-                            <p className="text-[12px] text-[#42DA82] mt-1">
-                              Selected: {userPhoto.name}
-                            </p>
+                        <input
+                          ref={userPhotoInputRef}
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                          onChange={(e) => handleFileChange(setUserPhoto, e)}
+                          className="hidden"
+                        />
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => userPhotoInputRef.current?.click()}
+                          onKeyDown={(e) => e.key === "Enter" && userPhotoInputRef.current?.click()}
+                          onDragOver={handleDragOver("user")}
+                          onDragLeave={handleDragLeave}
+                          onDrop={handleDrop(setUserPhoto, "user")}
+                          className={`
+                            relative rounded-[10px] border-2 border-dashed transition-all duration-200 cursor-pointer
+                            min-h-[140px] flex flex-col items-center justify-center gap-2 p-5
+                            ${dragOverField === "user"
+                              ? "border-[#42DA82] bg-[#42DA8212]"
+                              : userPhoto
+                              ? "border-[#42DA82]/50 bg-[#42DA8208]"
+                              : "border-[#E9EAEA] bg-[#FAFAFA] hover:border-[#42DA82]/70 hover:bg-[#42DA8208]"
+                            }
+                          `}
+                        >
+                          {userPhoto ? (
+                            <>
+                              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#42DA82]/20">
+                                <ImageIcon className="w-6 h-6 text-[#42DA82]" />
+                              </div>
+                              <p className="text-[13px] font-medium text-[#24282E] text-center truncate max-w-full px-2">
+                                {userPhoto.name}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setUserPhoto(null); }}
+                                className="flex items-center gap-1 text-[12px] text-[#727A90] hover:text-[#24282E] mt-0.5"
+                              >
+                                <X className="w-3.5 h-3.5" /> Remove
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#E9EAEA]">
+                                <Upload className="w-6 h-6 text-[#727A90]" />
+                              </div>
+                              <p className="text-[13px] font-medium text-[#24282E] text-center">
+                                Drag & drop or click to upload
+                              </p>
+                              <p className="text-[12px] text-[#727A90]">JPG, PNG, PDF (max 2MB)</p>
+                            </>
                           )}
                         </div>
                       </div>
@@ -562,20 +700,58 @@ const NewApplication = ({ setIsNewApplication, onClose, editData, onSuccess }: N
                         <label className="block text-[14px] font-[500] text-[#24282E] mb-2">
                           Other Documents
                         </label>
-                        <div className="border border-[#E9EAEA] rounded-[10px] p-4">
-                          <input
-                            type="file"
-                            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-                            onChange={(e) => handleFileChange(setOtherDocuments, e)}
-                            className="w-full text-[12px] text-[#727A90]"
-                          />
-                          <p className="text-[12px] text-[#727A90] mt-2">
-                            Accepted: JPG, PNG
-                          </p>
-                          {otherDocuments && (
-                            <p className="text-[12px] text-[#42DA82] mt-1">
-                              Selected: {otherDocuments.name}
-                            </p>
+                        <input
+                          ref={otherDocsInputRef}
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                          onChange={(e) => handleFileChange(setOtherDocuments, e)}
+                          className="hidden"
+                        />
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => otherDocsInputRef.current?.click()}
+                          onKeyDown={(e) => e.key === "Enter" && otherDocsInputRef.current?.click()}
+                          onDragOver={handleDragOver("other")}
+                          onDragLeave={handleDragLeave}
+                          onDrop={handleDrop(setOtherDocuments, "other")}
+                          className={`
+                            relative rounded-[10px] border-2 border-dashed transition-all duration-200 cursor-pointer
+                            min-h-[140px] flex flex-col items-center justify-center gap-2 p-5
+                            ${dragOverField === "other"
+                              ? "border-[#42DA82] bg-[#42DA8212]"
+                              : otherDocuments
+                              ? "border-[#42DA82]/50 bg-[#42DA8208]"
+                              : "border-[#E9EAEA] bg-[#FAFAFA] hover:border-[#42DA82]/70 hover:bg-[#42DA8208]"
+                            }
+                          `}
+                        >
+                          {otherDocuments ? (
+                            <>
+                              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#42DA82]/20">
+                                <ImageIcon className="w-6 h-6 text-[#42DA82]" />
+                              </div>
+                              <p className="text-[13px] font-medium text-[#24282E] text-center truncate max-w-full px-2">
+                                {otherDocuments.name}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setOtherDocuments(null); }}
+                                className="flex items-center gap-1 text-[12px] text-[#727A90] hover:text-[#24282E] mt-0.5"
+                              >
+                                <X className="w-3.5 h-3.5" /> Remove
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#E9EAEA]">
+                                <Upload className="w-6 h-6 text-[#727A90]" />
+                              </div>
+                              <p className="text-[13px] font-medium text-[#24282E] text-center">
+                                Drag & drop or click to upload
+                              </p>
+                              <p className="text-[12px] text-[#727A90]">JPG, PNG, PDF (max 2MB)</p>
+                            </>
                           )}
                         </div>
                       </div>

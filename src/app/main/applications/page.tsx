@@ -93,6 +93,14 @@ const LoadingSkeleton = () =>
         <div className="h-4 w-[140px] bg-gray-200 rounded"></div>
       </TableCell>
 
+      {/* Email & Phone Column */}
+      <TableCell className="py-4 w-[200px] max-w-[200px]">
+        <div className="flex flex-col gap-1">
+          <div className="h-3 max-w-[200px] bg-gray-100 rounded"></div>
+          <div className="h-3 w-[80px] bg-gray-100 rounded"></div>
+        </div>
+      </TableCell>
+
       {/* Arrival Date Column */}
       <TableCell className="py-4">
         <div className="h-4 w-[120px] bg-gray-200 rounded"></div>
@@ -159,9 +167,7 @@ export default function Applications() {
   const [openDeleteId, setOpenDeleteId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState("");
-  const [filterApplicationId, setFilterApplicationId] = useState("");
   const [filterPriority, setFilterPriority] = useState("");
-  const [filterCountry, setFilterCountry] = useState("");
   const [sortBy, setSortBy] = useState("created_at");
   const [sortOrder, setSortOrder] = useState("desc");
 
@@ -173,9 +179,7 @@ export default function Applications() {
       skip,
       search: searchTerm.trim(),
       status: filterStatus || undefined,
-      applicationId: filterApplicationId.trim() || undefined,
       priority: filterPriority || undefined,
-      country: filterCountry.trim() || undefined,
       sortBy: sortBy || undefined,
       sortOrder: sortOrder || undefined,
     };
@@ -183,7 +187,7 @@ export default function Applications() {
 
   useEffect(() => {
     dispatch(fetchSubmissions(buildFetchParams()));
-  }, [dispatch, currentPage, searchTerm, filterStatus, filterApplicationId, filterPriority, filterCountry, sortBy, sortOrder]);
+  }, [dispatch, currentPage, searchTerm, filterStatus, filterPriority, sortBy, sortOrder]);
 
   const [isMounted, setIsMounted] = useState(false);
 
@@ -322,22 +326,6 @@ export default function Applications() {
         <div className="bg-white px-4 py-3 border-t border-gray-100 flex flex-wrap gap-3 items-end">
           <div className="flex flex-col gap-1">
             <label className="text-[11px] font-medium text-gray-600">
-              Application ID
-            </label>
-            <input
-              type="text"
-              value={filterApplicationId}
-              onChange={(e) => {
-                setFilterApplicationId(e.target.value);
-                dispatch(setCurrentPage(1));
-              }}
-              placeholder="e.g. VISA-1234"
-              className="w-40 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#42DA82]/40"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-gray-600">
               Status
             </label>
             <select
@@ -374,22 +362,6 @@ export default function Applications() {
               <option value="medium">Medium</option>
               <option value="high">High</option>
             </select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-gray-600">
-              Country
-            </label>
-            <input
-              type="text"
-              value={filterCountry}
-              onChange={(e) => {
-                setFilterCountry(e.target.value);
-                dispatch(setCurrentPage(1));
-              }}
-              placeholder="e.g. India"
-              className="w-36 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#42DA82]/40"
-            />
           </div>
 
           <div className="flex flex-col gap-1">
@@ -431,10 +403,8 @@ export default function Applications() {
           <button
             type="button"
             onClick={() => {
-              setFilterApplicationId("");
               setFilterStatus("");
               setFilterPriority("");
-              setFilterCountry("");
               setSortBy("created_at");
               setSortOrder("desc");
               setSearchTerm("");
@@ -457,6 +427,9 @@ export default function Applications() {
                 {/* <TableHead className={tableStyles.tableHeaders}>Tags</TableHead> */}
                 <TableHead className={tableStyles.tableHeaders}>
                   Application Date
+                </TableHead>
+                <TableHead className={`${tableStyles.tableHeaders} w-[200px] max-w-[200px]`}>
+                  Email & Phone
                 </TableHead>
                 <TableHead className={tableStyles.tableHeaders}>
                   Arrival Date
@@ -487,7 +460,7 @@ export default function Applications() {
                 <LoadingSkeleton />
               ) : !data || (Array.isArray(data) && data.length === 0) ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8">
+                  <TableCell colSpan={9} className="text-center py-8">
                     No applications found
                   </TableCell>
                 </TableRow>
@@ -522,6 +495,16 @@ export default function Applications() {
                             }
                           })()
                         : "N/A"}
+                    </TableCell>
+                    <TableCell className="w-[200px] max-w-[200px]">
+                      <div className="flex flex-col gap-0.5 min-w-0 overflow-hidden">
+                        <span className="text-[13px] text-[#24282E] truncate" title={getFieldValue(submission.email ?? submission.customer?.email ?? submission.applicant?.email)}>
+                          {getFieldValue(submission.email ?? submission.customer?.email ?? submission.applicant?.email)}
+                        </span>
+                        <span className="text-[12px] text-[#727A90] truncate" title={getFieldValue(submission.phone ?? submission.customer?.phone ?? submission.applicant?.phone)}>
+                          {getFieldValue(submission.phone ?? submission.customer?.phone ?? submission.applicant?.phone)}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {(() => {
