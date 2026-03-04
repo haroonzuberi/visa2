@@ -23,12 +23,7 @@ export default function Configurations() {
   const [editingValues, setEditingValues] = useState<string[]>([]); // Array of values for multi-input support
   const [defaultIndex, setDefaultIndex] = useState<number | null>(null); // Track which index is the default value (null means no default)
   const [isSaving, setIsSaving] = useState(false);
-  const [accordionState, setAccordionState] = useState<Record<string, boolean>>({
-    "step_01_registration": true,
-    "step_02_applicant_details": true,
-    "step_03_address_details": true,
-    "step_04_visa_details": true,
-  });
+  const [accordionState, setAccordionState] = useState<Record<string, boolean>>({});
 
   // Fetch countries from API
   useEffect(() => {
@@ -93,10 +88,25 @@ export default function Configurations() {
     fetchDefaultValues();
   }, [selectedCountry]);
 
+  useEffect(() => {
+    if (!configurationData) return;
+
+    setAccordionState((prev) => {
+      const nextState: Record<string, boolean> = {};
+
+      Object.keys(configurationData).forEach((sectionKey) => {
+        nextState[sectionKey] = prev[sectionKey] ?? true;
+      });
+
+      return nextState;
+    });
+  }, [configurationData]);
+
   // Transform snake_case to Title Case
   const snakeToTitleCase = (str: string): string => {
     return str
       .split("_")
+      .filter(Boolean)
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(" ");
   };
@@ -159,13 +169,18 @@ export default function Configurations() {
   };
 
   const formatSectionTitle = (key: string): string => {
-    const titles: Record<string, string> = {
-      step_01_registration: "Step 01 Registration",
-      step_02_applicant_details: "Step 02 Applicant Details",
-      step_03_address_details: "Step 03 Address Details",
-      step_04_visa_details: "Step 04 Visa Details",
-    };
-    return titles[key] || key;
+    const normalizedKey = key.trim();
+    const stepMatch = normalizedKey.match(/^step_(\d+)_?(.*)$/i);
+
+    if (stepMatch) {
+      const [, rawStepNumber, rawTitle] = stepMatch;
+      const formattedTitle = rawTitle ? snakeToTitleCase(rawTitle) : "";
+      const stepNumber = rawStepNumber.padStart(2, "0");
+
+      return `Step ${stepNumber}${formattedTitle ? ` ${formattedTitle}` : ""}`;
+    }
+
+    return snakeToTitleCase(normalizedKey);
   };
 
   const formatFieldName = (key: string): string => {
@@ -203,13 +218,14 @@ export default function Configurations() {
   };
 
   // Save updated default values to API
-  const saveDefaultValues = async () => {
-    if (!originalApiData || !selectedCountry) return;
+  const saveDefaultValues = async (dataToSaveOverride?: any) => {
+    const payloadSource = dataToSaveOverride ?? originalApiData;
+    if (!payloadSource || !selectedCountry) return;
 
     try {
       setIsSaving(true);
-      // Create a copy without _defaults for the API payload (or include it if API supports it)
-      const dataToSave = JSON.parse(JSON.stringify(originalApiData));
+      // Create a copy without mutating source data
+      const dataToSave = JSON.parse(JSON.stringify(payloadSource));
       // Keep _defaults in the data structure if API supports it, otherwise remove it
       // For now, we'll include it in case the API needs it
       
@@ -219,8 +235,8 @@ export default function Configurations() {
 
       if (response.success) {
         toast.success("Default values updated successfully");
-        // Refresh the display data
-        const transformedData = transformApiDataToDisplayFormat(originalApiData);
+        const transformedData = transformApiDataToDisplayFormat(dataToSave);
+        setOriginalApiData(dataToSave);
         setConfigurationData(transformedData);
       } else {
         toast.error(response.data?.message || "Failed to update default values");
@@ -268,14 +284,6 @@ export default function Configurations() {
     // Parse value string to extract values and default index
     const valueStr = currentValue === "N/A" ? "" : String(currentValue);
     const { values, defaultIndex: parsedDefaultIndex } = parseValueString(valueStr);
-    
-    console.log('=== startEditing Debug ===');
-    console.log('Field:', displayFieldKey);
-    console.log('currentValue:', currentValue);
-    console.log('valueStr:', valueStr);
-    console.log('parsed values:', values);
-    console.log('parsedDefaultIndex:', parsedDefaultIndex);
-    console.log('Value at defaultIndex:', parsedDefaultIndex !== null ? values[parsedDefaultIndex] : 'N/A');
     
     setEditingValues(values.length > 0 ? values : [""]);
     setDefaultIndex(parsedDefaultIndex);
@@ -355,10 +363,6 @@ export default function Configurations() {
         } else {
           valueToSave = filteredValues.join("\n");
         }
-        console.log('=== toggleDefault ===');
-        console.log('newDefaultIndex:', newDefaultIndex);
-        console.log('filteredValues:', filteredValues);
-        console.log('valueToSave:', valueToSave);
         updateApiDataValue(editingField, valueToSave);
       }
       return currentValues; // Don't change, just read
@@ -473,17 +477,10 @@ export default function Configurations() {
       .map((value, originalIndex) => ({ value, originalIndex }))
       .filter(item => item.value.trim() !== "");
     
-    console.log('=== prepareValueForSave Debug ===');
-    console.log('editingValues:', editingValues);
-    console.log('defaultIndex (state):', defaultIndex);
-    console.log('indexToUse:', indexToUse);
-    console.log('filteredWithIndices:', filteredWithIndices);
-    
     if (indexToUse !== null && indexToUse < filteredWithIndices.length) {
       // Find which value in the filtered array corresponds to the defaultIndex
       // defaultIndex is the index in the filtered array from when editing started
       const defaultItem = filteredWithIndices[indexToUse];
-      console.log('defaultItem:', defaultItem);
       if (defaultItem) {
         // Wrap the default value in {} brackets
         const valuesWithDefault = filteredWithIndices.map((item, idx) => {
@@ -492,57 +489,31 @@ export default function Configurations() {
           }
           return item.value;
         });
-        console.log('valuesWithDefault:', valuesWithDefault);
         return valuesWithDefault.join("\n");
       }
     }
-    const result = filteredWithIndices.map(item => item.value).join("\n");
-    console.log('No default, returning:', result);
-    return result;
+    return filteredWithIndices.map(item => item.value).join("\n");
   };
 
   // Handle save on blur or enter
   const handleSave = async () => {
-    if (editingField) {
-      // Get the latest defaultIndex and editingValues from state to avoid stale closures
-      let latestDefaultIndex: number | null = null;
-      let latestEditingValues: string[] = [];
-      
-      // Use functional state updates to get latest values
-      setDefaultIndex((prev) => {
-        latestDefaultIndex = prev;
-        return prev; // Don't change, just read
-      });
-      setEditingValues((prev) => {
-        latestEditingValues = prev;
-        return prev; // Don't change, just read
-      });
-      
-      // Prepare value with latest state
-      const filteredWithIndices = latestEditingValues
-        .map((value, originalIndex) => ({ value, originalIndex }))
-        .filter(item => item.value.trim() !== "");
-      
-      let valueToSave: string;
-      if (latestDefaultIndex !== null && latestDefaultIndex < filteredWithIndices.length) {
-        valueToSave = filteredWithIndices.map((item, idx) => {
-          if (idx === latestDefaultIndex) {
-            return `{${item.value}}`;
-          }
-          return item.value;
-        }).join("\n");
-      } else {
-        valueToSave = filteredWithIndices.map(item => item.value).join("\n");
-      }
-      
-      console.log('=== handleSave ===');
-      console.log('latestDefaultIndex:', latestDefaultIndex);
-      console.log('latestEditingValues:', latestEditingValues);
-      console.log('valueToSave:', valueToSave);
-      
-      updateApiDataValue(editingField, valueToSave);
-      await saveDefaultValues();
+    if (!editingField) return;
+
+    const filteredWithIndices = editingValues
+      .map((value, originalIndex) => ({ value, originalIndex }))
+      .filter(item => item.value.trim() !== "");
+
+    let valueToSave: string;
+    if (defaultIndex !== null && defaultIndex < filteredWithIndices.length) {
+      valueToSave = filteredWithIndices
+        .map((item, idx) => (idx === defaultIndex ? `{${item.value}}` : item.value))
+        .join("\n");
+    } else {
+      valueToSave = filteredWithIndices.map(item => item.value).join("\n");
     }
+
+    const updatedData = updateApiDataValue(editingField, valueToSave);
+    await saveDefaultValues(updatedData);
   };
 
   const renderField = (
