@@ -157,7 +157,7 @@ export default function Applications() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isNewApplicationModalOpen, setIsNewApplicationModalOpen] =
     useState(false);
-  const { data, isLoading, error, total, currentPage }: any = useSelector(
+  const { data, isLoading, error, total, currentPage, countries }: any = useSelector(
     (state: RootState) => state.formSubmissions
   );
   const [isApplicationDetail, setIsApplicationDetail] = useState(false);
@@ -168,6 +168,7 @@ export default function Applications() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState("");
   const [filterPriority, setFilterPriority] = useState("");
+  const [filterCountry, setFilterCountry] = useState("");
   const [sortBy, setSortBy] = useState("created_at");
   const [sortOrder, setSortOrder] = useState("desc");
 
@@ -180,6 +181,7 @@ export default function Applications() {
       search: searchTerm.trim(),
       status: filterStatus || undefined,
       priority: filterPriority || undefined,
+      country: filterCountry || undefined,
       sortBy: sortBy || undefined,
       sortOrder: sortOrder || undefined,
     };
@@ -187,7 +189,7 @@ export default function Applications() {
 
   useEffect(() => {
     dispatch(fetchSubmissions(buildFetchParams()));
-  }, [dispatch, currentPage, searchTerm, filterStatus, filterPriority, sortBy, sortOrder]);
+  }, [dispatch, currentPage, searchTerm, filterStatus, filterPriority, filterCountry, sortBy, sortOrder]);
 
   const [isMounted, setIsMounted] = useState(false);
 
@@ -366,6 +368,27 @@ export default function Applications() {
 
           <div className="flex flex-col gap-1">
             <label className="text-[11px] font-medium text-gray-600">
+              Country
+            </label>
+            <select
+              value={filterCountry}
+              onChange={(e) => {
+                setFilterCountry(e.target.value);
+                dispatch(setCurrentPage(1));
+              }}
+              className="w-44 px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#42DA82]/40"
+            >
+              <option value="">All countries</option>
+              {countries && countries.length > 0 && countries.map((country: string) => (
+                <option key={country} value={country}>
+                  {country}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-medium text-gray-600">
               Sort By
             </label>
             <select
@@ -405,6 +428,7 @@ export default function Applications() {
             onClick={() => {
               setFilterStatus("");
               setFilterPriority("");
+              setFilterCountry("");
               setSortBy("created_at");
               setSortOrder("desc");
               setSearchTerm("");

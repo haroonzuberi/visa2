@@ -61,6 +61,7 @@ interface FormSubmissionState {
   error: string | null;
   total: number;
   currentPage: number;
+  countries: string[];
 }
 
 const initialState: FormSubmissionState = {
@@ -70,6 +71,7 @@ const initialState: FormSubmissionState = {
   error: null,
   total: 0,
   currentPage: 1,
+  countries: [],
 };
 
 // Async Actions
@@ -132,15 +134,17 @@ export const fetchSubmissions = createAsyncThunk(
         throw new Error(response?.message || "Failed to fetch applications");
       }
 
-      // Handle new API response structure: { total, skip, limit, data: [...] }
+      // Handle new API response structure: { total, skip, limit, countries: [...], data: [...] }
       // response.data from getApiWithAuth contains the API response body
       const responseData = response.data;
       const applicationsData = responseData?.data || (Array.isArray(responseData) ? responseData : []);
       const totalCount = responseData?.total || responseData?.results || (Array.isArray(responseData) ? responseData.length : 0);
+      const countriesList = responseData?.countries || [];
 
       return {
         applications: applicationsData,
         total: totalCount,
+        countries: countriesList,
       };
     } catch (error: any) {
       return rejectWithValue(error.message || "Failed to fetch applications");
@@ -191,6 +195,7 @@ const formSubmissionSlice = createSlice({
         state.isLoading = false;
         state.data = action.payload.applications;
         state.total = action.payload.total;
+        state.countries = action.payload.countries;
       })
       .addCase(fetchSubmissions.rejected, (state, action) => {
         state.isLoading = false;
