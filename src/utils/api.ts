@@ -1,5 +1,6 @@
 import axios, { AxiosRequestHeaders } from "axios";
-import { getAccessToken } from "./asyncStorage";
+import { getAccessToken, removeAccessToken } from "./asyncStorage";
+import { toast } from "react-toastify";
 
 export const BASE_URL = "https://api.visa2.pro/api/v1/";
 export const STATIC_URL = "";
@@ -15,9 +16,16 @@ axios.interceptors.response.use(
     if (typeof window !== "undefined" && status === 401) {
       try {
         // Clear token from storage so Redux initial state picks it up on reload
-        localStorage.removeItem("token");
+        removeAccessToken();
       } catch (e) {
         console.error("Error clearing auth token on 401:", e);
+      }
+
+      // Show user-friendly session expired message
+      try {
+        toast.error("Session expired. Please login again to continue.");
+      } catch (e) {
+        console.error("Error showing session expired toast:", e);
       }
 
       // Force user back to login page

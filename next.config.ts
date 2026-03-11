@@ -1,2 +1,5 @@
-const nextTranslate = require('next-translate-plugin')
-module.exports = nextTranslate()
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {};
+
+export default nextConfig;

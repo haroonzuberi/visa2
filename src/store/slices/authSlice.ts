@@ -5,6 +5,7 @@ import {
   getApiWithAuth,
 } from "@/utils/api";
 import { toast } from "react-toastify";
+import { getAccessToken, setAccessToken, removeAccessToken } from "@/utils/asyncStorage";
 
 // Types
 
@@ -39,7 +40,7 @@ export const loginUser = createAsyncThunk(
 
       // Store token in localStorage
       if (response.data?.access_token) {
-        localStorage.setItem("token", response.data.access_token);
+        setAccessToken(response.data.access_token);
       }
 
       toast.success("Login successful!");
@@ -178,7 +179,7 @@ const authSlice = createSlice({
   name: "auth",
   initialState: {
     user: null,
-    token: typeof window !== "undefined" ? localStorage.getItem("token") : null,
+    token: typeof window !== "undefined" ? getAccessToken() : null,
     isLoading: false,
     error: null,
   } as AuthState,
@@ -189,7 +190,7 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.token = null;
-      localStorage.removeItem("token");
+      removeAccessToken();
     },
   },
   extraReducers: (builder) => {
@@ -213,7 +214,7 @@ const authSlice = createSlice({
     builder.addCase(logoutUser.fulfilled, (state) => {
       state.user = null;
       state.token = null;
-      localStorage.removeItem("token");
+      removeAccessToken();
     });
 
     // Forgot Password

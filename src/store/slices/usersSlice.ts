@@ -8,6 +8,7 @@ import {
 } from "@/utils/api";
 import { toast } from "react-toastify";
 import { PAGINATION_CONFIG } from "@/config/pagination";
+import { removeAccessToken } from "@/utils/asyncStorage";
 import { getCurrentUser } from "./authSlice";
 
 // Types
@@ -164,7 +165,7 @@ const usersSlice = createSlice({
     },
     logout: (state) => {
       state.users = [];
-      localStorage.removeItem("token");
+      removeAccessToken();
     },
     setCurrentPage: (state, action) => {
       state.currentPage = action.payload;

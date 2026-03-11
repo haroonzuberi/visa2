@@ -1,7 +1,7 @@
 export const setAccessToken = (value: string): void => {
   try {
     if (typeof window !== "undefined") {
-      localStorage.setItem("access_token", value);
+      localStorage.setItem("token", value);
     }
   } catch (e) {
     console.error("Error saving access token:", e);
@@ -17,5 +17,15 @@ export const getAccessToken = (): string | null => {
   } catch (e) {
     console.error("Error retrieving access token:", e);
     return null;
+  }
+};
+
+export const removeAccessToken = (): void => {
+  try {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("token");
+    }
+  } catch (e) {
+    console.error("Error removing access token:", e);
   }
 };

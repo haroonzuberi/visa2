@@ -15,10 +15,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     }
   }, [token, router]);
 
-  // Only render children if user is authenticated
-  if (!token || token === "undefined" || token === "null") {
-    return null;
-  }
-
+  // Always render children to prevent hydration mismatch
+  // Redirect happens asynchronously in useEffect
   return <>{children}</>;
 } 

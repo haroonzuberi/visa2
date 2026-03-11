@@ -2,10 +2,11 @@ import "@/styles/globals.css";
 import { Providers } from "@/store/provider";
 import { plusJakartaSans } from "./fonts";
 import { Inter } from "next/font/google";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { Suspense } from "react";
-import '../i18n';
+import Image from "next/image";
+import ToastProvider from "@/components/ToastProvider";
+import I18nProvider from "@/components/I18nProvider";
+import HideLoader from "@/components/HideLoader";
+import LoginLogo from "@/Assets/Images/LoginLogo.png";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,26 +19,36 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.className} ${plusJakartaSans.variable}`}
+      suppressHydrationWarning
     >
       <body
-        className={`${inter.className} font-jakarta h-full ${plusJakartaSans.className}`}
+        className={`${inter.className} font-jakarta ${plusJakartaSans.className}`}
+        suppressHydrationWarning
       >
-        <Providers>
-          <Suspense>{children}</Suspense>
-        </Providers>
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop
-          
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="light"
-        />
+        {/* Initial page loader — rendered by server, visible before any JS loads */}
+        <div id="page-loader">
+          <div className="page-loader-logo-wrap">
+            <Image
+              src={LoginLogo}
+              alt="visa2.pro"
+              width={156}
+              height={93}
+              priority
+              style={{ width: "156px", height: "auto" }}
+            />
+          </div>
+          <div className="page-loader-track">
+            <div className="page-loader-fill" />
+          </div>
+        </div>
+
+        <I18nProvider>
+          <Providers>
+            {children}
+          </Providers>
+        </I18nProvider>
+        <HideLoader />
+        <ToastProvider />
       </body>
     </html>
   );
