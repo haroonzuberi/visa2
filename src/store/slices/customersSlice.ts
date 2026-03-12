@@ -105,10 +105,15 @@ export const fetchCustomers = createAsyncThunk(
       if (!response.success) {
         throw new Error(response.data?.message || "Failed to fetch customers");
       }
-
+      const meta = response.data?.meta;
+      const total =
+        meta?.total ??
+        meta?.results ??
+        response.data?.results ??
+        (Array.isArray(response.data?.data) ? response.data.data.length : 0);
       return {
-        customers: response.data.data,
-        total: response.data.meta.total,
+        customers: response.data.data ?? [],
+        total,
       };
     } catch (error: any) {
       toast.error(error.message || "Failed to fetch customers");

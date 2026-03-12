@@ -39,10 +39,15 @@ export const fetchGroups = createAsyncThunk(
       if (!response.success) {
         throw new Error(response.message || "Failed to fetch groups");
       }
-
+      const meta = response.data?.meta;
+      const total =
+        meta?.total ??
+        meta?.results ??
+        response.data?.results ??
+        (Array.isArray(response.data?.data) ? response.data.data.length : 0);
       return {
-        groups: response.data.data,
-        total: response.data.meta.total,
+        groups: response.data.data ?? [],
+        total,
       };
     } catch (error: any) {
       toast.error(error.message || "Failed to fetch groups");

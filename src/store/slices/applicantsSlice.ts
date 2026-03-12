@@ -33,12 +33,15 @@ export const fetchApplicants = createAsyncThunk(
       if (!response.success) {
         throw new Error(response.message || "Failed to fetch applicants");
       }
-
-      console.log(response.data.meta.total);
-
+      const meta = response.data?.meta;
+      const total =
+        meta?.total ??
+        meta?.results ??
+        response.data?.results ??
+        (Array.isArray(response.data?.data) ? response.data.data.length : 0);
       return {
         applicants: response.data,
-        total:response.data.meta.total,
+        total,
       };
     } catch (error: any) {
       toast.error(error.message || "Failed to fetch applicants");

@@ -70,10 +70,16 @@ export const fetchApplications = createAsyncThunk(
       //   throw new Error("Invalid data structure received");
       // }
 
-      console.log("RES__ POS", response)
+      const meta = response.data?.meta;
+      const total =
+        meta?.total ??
+        meta?.results ??
+        response.data?.results ??
+        response.data?.length ??
+        (Array.isArray(response.data?.data) ? response.data.data.length : 0);
       return {
-        applications: response.data.data,
-        total: response.data.results || response.data.length,
+        applications: response.data?.data ?? [],
+        total,
       };
     } catch (error: any) {
       console.error("API Error:", error);

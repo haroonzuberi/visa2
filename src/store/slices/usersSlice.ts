@@ -48,10 +48,15 @@ export const fetchUsers = createAsyncThunk(
       if (!response.success) {
         throw new Error(response.data?.message || "Failed to fetch users");
       }
-      console.log("response.data.meta.total", response.data.meta.results);
+      const meta = response.data?.meta;
+      const total =
+        meta?.total ??
+        meta?.results ??
+        response.data?.results ??
+        (Array.isArray(response.data?.data) ? response.data.data.length : 0);
       return {
-        users: response.data.data,
-        total: response.data.meta.total,
+        users: response.data.data ?? [],
+        total,
       };
     } catch (error: any) {
       toast.error(error.message || "Failed to fetch users");
