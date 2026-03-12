@@ -1,16 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import type { ReactNode } from "react";
+// Import i18n synchronously so it's initialized before any child calls useTranslation().
+// Previously i18n was loaded in useEffect, so useTranslation() ran before init → changeLanguage was undefined.
+import "../i18n";
 
-export default function I18nProvider({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    // Initialize i18n only on client-side after component mounts
-    if (typeof window !== "undefined") {
-      import("../i18n").catch((err) => {
-        console.error("Failed to load i18n:", err);
-      });
-    }
-  }, []);
-
+export default function I18nProvider({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
